@@ -1,0 +1,217 @@
+﻿@{
+    ViewData["Title"] = "Inicio";
+}
+
+<style>
+
+</style>
+
+<head>
+    <link rel="stylesheet" href="/css/index.css" />
+
+</head>
+
+<div class="text-center">
+
+<!-- 
+@if (ViewBag.NombreyApellido != null)
+{
+    <div id="menu-bienvenido">
+        <div class="d-flex align-items-center">
+            <img src="@(!string.IsNullOrEmpty(ViewBag.FotoPerfil) ? ViewBag.FotoPerfil : Url.Content("~/imagenes/usuarios/default.png"))"
+                 alt="Foto de perfil"
+                 style="width:50px; height:50px; object-fit:cover; border-radius:50%; border:1px solid #ccc; margin-right:10px;" />
+            
+            <div>
+                <h3 class="mb-0">¡Bienvenido, @ViewBag.NombreyApellido! </h3>
+                <p class="mb-0">Tu rol es: @ViewBag.Rol</p>
+            </div>
+        </div>
+    </div>
+}  #region  -->
+
+<div class="titulo-principal text-center mt-5 mb-3">
+  <h1>Sistema Gestión de Ventas</h1>
+  <h2 class="titulo-sale">Ferreteria <br> S&nbsp;A&nbsp;N&nbsp;T&nbsp;I&nbsp;A&nbsp;G&nbsp;O</h2>
+</div>
+
+
+<div class="seccion-cards">
+  <a href="/Productos/Index" style="text-decoration: none; color: inherit;">
+   <div class="card-servicio">
+    <img src="/imagenes/barra.webp" alt="Productos">
+    <h5>PRODUCTOS</h5>
+    <p>Alta, Baja, Modificación y Consultas de productos.</p>
+   </div>
+  </a>
+
+ <a href="/Ventas/Index" style="text-decoration: none; color: inherit;">
+  <div class="card-servicio">
+    <img src="/imagenes/caja.jpeg" alt="Ventas">
+    <h5>VENTAS</h5>
+    <p>Facturación, Stock, Inventario .</p>
+  </div>
+ </a>
+
+  <div class="card-servicio">
+    <img src="/imagenes/informe.png" alt="Informes">
+    <h5>INFORMES</h5>
+    <p>Registro de las ventas realizadas.</p>
+  </div>
+  <div class="card-servicio">
+    <img src="/imagenes/presupuesto.jpg" alt="Presupuesto">
+    <h5>PRESUPUESTO</h5>
+    <p>Arma el Presupuesto y lo guarda en la base de datos.</p>
+  </div>
+ <!-- #region   <div class="card-servicio">
+    <img src="/imagenes/card5.jpg" alt="Vacio">
+     <h5>vacio</h5>
+    <p>Para poner Algo .</p>
+  </div>
+  <div class="card-servicio">
+    <img src="/imagenes/card6.jpg" alt="Vacio">
+     <h5>vacio</h5>
+    <p>Para poner Algo .</p>-->
+</div>
+
+
+</div>
+<!-- MODAL USUARIO -->
+<div class="modal fade" id="modalPerfil" tabindex="-1" aria-labelledby="modalPerfilLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalPerfilLabel">Modificar Perfil</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <input type="hidden" id="usuarioHidden" value="@ViewBag.Usuario" />
+
+        <div class="mb-3 text-center">
+          <img id="fotoPerfil"
+               src="@(!string.IsNullOrEmpty(ViewBag.FotoPerfil) ? ViewBag.FotoPerfil : Url.Content("~/imagenes/usuarios/default.png"))"
+               alt="Foto de perfil"
+               style="width:80px; height:80px; object-fit:cover; border-radius:50%; border:1px solid #ccc;" />
+
+          <div class="mt-2">
+            <form id="formFoto" enctype="multipart/form-data">
+            <input type="file" name="FotoNueva" id="inputFoto" accept="image/*" class="form-control form-control-sm mb-2" onchange="mostrarVistaPrevia()" />            
+              <div class="d-flex justify-content-center gap-2">
+                <button type="button" class="btn btn-success btn-sm" onclick="cargarFoto()">Cargar</button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="eliminarFoto()">Eliminar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" action="/Usuarios/ActualizarPerfil">
+          <input type="hidden" name="Usuario" value="@ViewBag.Usuario" />
+
+          <div class="mb-2">
+            <label class="form-label">Usuario</label>
+            <input type="text" class="form-control form-control-sm" value="@ViewBag.Usuario" readonly />
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Nombre y Apellido</label>
+            <input type="text" class="form-control form-control-sm" value="@ViewBag.NombreyApellido" readonly />
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Rol</label>
+            <input type="text" class="form-control form-control-sm" value="@ViewBag.Rol" readonly />
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Nueva Contraseña</label>
+            <input type="password" name="NuevaContrasena" class="form-control form-control-sm" />
+          </div>
+
+          <div class="modal-footer p-2">
+            <button type="submit" name="accion" value="guardarPerfil" class="btn btn-primary btn-sm">Guardar</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+
+    // 👉 Mostrar vista previa de la nueva foto seleccionada
+    window.mostrarVistaPrevia = function () {
+      const input = document.getElementById("inputFoto");
+      const img = document.getElementById("fotoPerfil");
+
+      if (input.files && input.files[0]) {
+        const lector = new FileReader();
+        lector.onload = function (e) {
+          img.src = e.target.result;
+        };
+        lector.readAsDataURL(input.files[0]);
+      }
+    }
+
+    // 👉 Abrir el modal automáticamente si viene en la URL con #modalPerfil
+    if (window.location.hash === "#modalPerfil") {
+      const modal = new bootstrap.Modal(document.getElementById("modalPerfil"));
+      modal.show();
+    }
+
+    // 👉 Función para cargar nueva foto
+    window.cargarFoto = function () {
+      const form = document.getElementById("formFoto");
+      if (!form) {
+        alert("No se encontró el formulario con id 'formFoto'");
+        return;
+      }
+
+      const formData = new FormData(form);
+      formData.append("accion", "cargar");
+      formData.append("Usuario", document.querySelector('input[name="Usuario"]').value);
+
+      fetch("/Usuarios/ActualizarPerfil", {
+        method: "POST",
+        body: formData
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.ok) {
+            document.getElementById("fotoPerfil").src = data.nuevaRuta + "?t=" + new Date().getTime();
+          } else {
+            alert("Error al cargar la foto: " + (data.error || "desconocido"));
+          }
+        })
+        .catch(error => {
+          console.error("Error al guardar la foto:", error);
+          alert("Error al guardar la foto: " + error);
+        });
+    }
+
+    // 👉 Función para eliminar la foto
+    window.eliminarFoto = function () {
+      const formData = new FormData();
+      formData.append('accion', 'eliminar');
+      formData.append('Usuario', '@ViewBag.Usuario');
+
+      fetch('/Usuarios/ActualizarPerfil', {
+        method: 'POST',
+        body: formData
+      })
+        .then(resp => resp.json())
+        .then(data => {
+          if (data.ok) {
+            document.getElementById('fotoPerfil').src = '/imagenes/usuarios/default.png';
+          }
+        });
+    }
+
+  });
+</script>
+}

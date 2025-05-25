@@ -1,0 +1,14 @@
+﻿@using (Html.BeginForm("Login", "Login", FormMethod.Post))
+{
+    <div class="mb-3">
+        <label class="form-label">Usuario</label>
+        @Html.TextBox("usuario", null, new { @class = "form-control", placeholder = "Ingrese su usuario" })
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Contraseña</label>
+        @Html.Password("contraseña", null, new { @class = "form-control", placeholder = "Ingrese su contraseña" })
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+}

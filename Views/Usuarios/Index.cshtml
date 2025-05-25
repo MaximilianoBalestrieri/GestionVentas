@@ -1,0 +1,56 @@
+@using GestionVentas.Models
+
+@model List<GestionVentas.Models.Usuario>
+<h2>Gestión de Usuarios</h2>
+
+<!-- Buscador -->
+<form method="get" asp-controller="Usuarios" asp-action="Index">
+    <input type="text" name="searchString" value="@ViewBag.SearchString" placeholder="Buscar por nombre y apellido" />
+    <button type="submit">Buscar</button>
+</form>
+
+<!-- Botón agregar -->
+<a href="@Url.Action("Create")" class="btn btn-success mt-2">Agregar Usuario</a>
+
+<!-- Tabla de usuarios -->
+<table class="table table-striped mt-3">
+    <thead>
+        <tr>
+            <th>Foto</th>
+            <th>
+                <a href="@Url.Action("Index", new { sortOrder = ViewBag.NameSortParm, searchString = ViewBag.SearchString })">
+                    Nombre y Apellido
+                </a>
+            </th>
+            <th>Usuario</th>
+            <th>
+                <a href="@Url.Action("Index", new { sortOrder = ViewBag.RolSortParm, searchString = ViewBag.SearchString })">
+                    Rol
+                </a>
+            </th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var u in Model)
+        {
+            <tr>
+                <td>
+                    <img src="@(!string.IsNullOrEmpty(u.FotoPerfil) ? u.FotoPerfil : "/imagenes/usuarios/default.png")"
+                         class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover;" />
+                </td>
+                <td>@u.NombreyApellido</td>
+                <td>@u.UsuarioNombre</td>
+                <td>@u.Rol</td>
+                <td>
+                    <a href="@Url.Action("Edit", new { id = u.IdUsuario })" class="btn btn-warning btn-sm">Editar</a>
+                    <a href="@Url.Action("Delete", new { id = u.IdUsuario })" class="btn btn-danger btn-sm">Eliminar</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+
+

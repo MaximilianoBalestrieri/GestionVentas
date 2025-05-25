@@ -1,0 +1,180 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>@ViewData["Title"] - Sistema Gestión Ventas</title>
+
+    <!-- Bootstrap CSS desde CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet" />
+
+    <!-- Tu CSS personalizado -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        .body-content {
+            flex: 1 0 auto;
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px 0;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        .Bien {
+            color: #f0f0f0;
+             max-width: 300px;
+    margin: 0 auto;
+    text-align: center;
+    font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+  @{
+        var esLogin = string.Equals(ViewContext.RouteData.Values["controller"]?.ToString(), "Login", StringComparison.OrdinalIgnoreCase)
+                   && string.Equals(ViewContext.RouteData.Values["action"]?.ToString(), "Index", StringComparison.OrdinalIgnoreCase);
+
+        var usuario = HttpContextAccessor.HttpContext?.Session.GetString("Usuario");
+        var nombreyApellido = HttpContextAccessor.HttpContext?.Session.GetString("NombreyApellido");
+        var fotoPerfil = HttpContextAccessor.HttpContext?.Session.GetString("FotoPerfil");
+        var rol = HttpContextAccessor.HttpContext?.Session.GetString("Rol");  
+           
+        ViewBag.FotoPerfil = fotoPerfil;
+        ViewBag.Usuario=usuario;
+        ViewBag.Rol = rol;
+        ViewBag.NombreyApellido=nombreyApellido;
+
+    // Verificar en consola que los datos están llegando correctamente
+    //Console.WriteLine($"Usuario: {usuario}, Nombre y Apellido: {nombreyApellido}");
+    }
+
+
+
+    @if (!string.IsNullOrEmpty(usuario) && !esLogin)
+    {
+        <nav class="navbar navbar-expand-sm navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index"> </a>
+                <div class="d-flex align-items-center">
+            <img src="@(!string.IsNullOrEmpty(ViewBag.FotoPerfil) ? ViewBag.FotoPerfil : Url.Content("~/imagenes/usuarios/default.png"))"
+                 alt="Foto de perfil"
+                 style="width:50px; height:50px; object-fit:cover; border-radius:50%; border:1px solid #ccc; margin-right:10px;" />
+
+                    <div class="Bien">
+                        <p class="mb-0">
+                            <span style="font-size: 1.1rem;">¡Bienvenido, </span>
+                            <strong style="font-size: 1.2rem;">@ViewBag.NombreyApellido</strong>
+                            <span style="font-size: 1.1rem;">!</span>
+                        </p>
+                        <p class="mb-0">Tu rol es: @ViewBag.Rol</p>
+                    </div>
+
+        </div>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item dropdown">
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Inicio</a>
+                        </li>
+                       
+                           <a class="nav-link" href="@Url.Action("Index", "Productos")">
+                                Productos
+                           </a>
+
+
+                           @*  <ul class="dropdown-menu" aria-labelledby="navbarDropdownInicio">
+                                <li><a class="dropdown-item" asp-controller="Productos" asp-action="Index">Propietarios</a>
+                                </li>
+                                <li><a class="dropdown-item" asp-controller="Ventas" asp-action="Index">Inquilinos</a></li>
+                                <li><a class="dropdown-item" asp-controller="Inmuebles" asp-action="Index">Inmuebles</a>
+                                </li>
+                                <li><a class="dropdown-item" asp-controller="Contratos" asp-action="Index">Contratos</a>
+                                </li>
+                            </ul> *@
+                        </li>
+
+
+                        <li class="nav-item">
+                             <a class="nav-link" href="@Url.Action("Index", "Ventas")">
+                                Ventas
+                           </a>
+
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="About">Informes</a>
+                        </li>
+                        <li class="nav-item">
+                             @if (ViewBag.Rol == "Administrador")
+                                {
+                                    <a class="nav-link" asp-controller="Usuarios" asp-action="Index">Usuarios</a>
+                                }
+                            else if (ViewBag.Rol == "Usuario")
+                                {
+        
+                                    <a class="nav-link" href="/Home/Index#modalPerfil">Mi Perfil</a>
+                                }
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Contact">Acerca de...</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <!--    <span class="nav-link">Bienvenido, @nombreyApellido</span>  Aquí mostramos el nombre -->
+                            -->
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="@Url.Action("Logout", "Login")">Cerrar sesión</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    }
+
+    <div class="container body-content">
+        @RenderBody()
+    </div>
+
+    <hr />
+    <footer>
+        <p>&copy; @DateTime.Now.Year - Sistema Gestión de Ventas</p>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Tu JS personalizado -->
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+
+</body>
+</html>

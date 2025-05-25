@@ -1,0 +1,45 @@
+﻿@{
+    ViewBag.Title = "Iniciar Sesión";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<head>
+    <link rel="stylesheet" href="~/css/login.css" />
+</head>
+
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-image">
+          <img src="@Url.Content("~/imagenes/usuarios/loginUsuarios.jpg")" alt="Imagen" width="280px" />
+
+        </div>
+        <div class="login-divider"></div>
+        <div class="login-form">
+            <h1>Sistema Gestión de Ventas </h1>
+            <h2>Bienvenido</h2>
+
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert">@ViewBag.Error</div>
+            }
+
+            @using (Html.BeginForm("Login", "Login", FormMethod.Post))
+            {
+                <div class="form-group">
+                    <label for="usuario">Usuario</label>
+                    @Html.TextBox("usuario", ViewBag.Usuario as string, new { @class = "form-control", placeholder = "Tu usuario", required = "required", id = "usuario" })
+                </div>
+
+                <div class="form-group">
+                    <label for="contraseña">Contraseña</label>
+                    @Html.Password("contraseña", null, new { @class = "form-control", placeholder = "Tu contraseña", required = "required", id = "contraseña" })
+                </div>
+
+               
+                <button type="submit">Ingresar</button>
+            }
+
+            
+        </div>
+    </div>
+</div>

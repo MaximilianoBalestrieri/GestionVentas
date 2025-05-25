@@ -1,0 +1,42 @@
+@model GestionVentas.Models.Productos
+
+@{
+    ViewBag.Title = "Eliminar Producto";
+}
+
+<div class="container mt-5 d-flex justify-content-center">
+    <div class="card shadow-sm border-0" style="max-width: 700px; width: 100%;">
+        <div class="card-header bg-danger text-white">
+            <h4 class="mb-0">⚠️ Confirmación de Eliminación</h4>
+        </div>
+        <div class="card-body">
+            <p class="lead">¿Estás seguro que querés eliminar este producto?</p>
+
+            <div class="row mb-3">
+                <div class="col-md-4 text-center">
+                    <img src="@Url.Content(Model.Imagen)" class="img-fluid rounded border" style="max-height: 150px;" />
+                </div>
+                <div class="col-md-8">
+                    <h5 class="fw-bold text-primary">@Model.Nombre</h5>
+                    <p><strong>Código:</strong> @Model.Codigo</p>
+                    <p><strong>Categoría:</strong> @Model.Categoria</p>
+                    <p><strong>Proveedor:</strong> @Model.Proveedor</p>
+                </div>
+            </div>
+
+            <form asp-action="Delete" asp-controller="Productos" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="IdProducto" />
+
+                <div class="d-flex justify-content-end gap-3">
+                    <button type="submit" class="btn btn-danger">
+                        🗑️ Sí, eliminar
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        ↩️ Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,107 @@
+@model GestionVentas.Models.Usuario
+
+@{
+    ViewBag.Title = "Editar Usuario";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@{
+    var roles = new List<SelectListItem>
+    {
+        new SelectListItem { Text = "Usuario", Value = "Usuario", Selected = Model.Rol == "Usuario" },
+        new SelectListItem { Text = "Administrador", Value = "Administrador", Selected = Model.Rol == "Administrador" }
+    };
+}
+<h2 class="text-primary mb-4 d-flex justify-content-between align-items-center">
+    ✏️ Editar Usuario
+    <a href="@Url.Action("Index")" class="btn btn-close"></a>
+</h2>
+
+<div class="card p-4 shadow-lg rounded mx-auto" style="max-width: 500px;">
+    @using (Html.BeginForm("Edit", "Usuarios", FormMethod.Post, new { enctype = "multipart/form-data" }))
+    {
+        @Html.HiddenFor(model => model.IdUsuario)
+        @Html.HiddenFor(model => model.FotoPerfil) <!-- mantiene ruta anterior si no se sube una nueva -->
+
+        <div class="text-center mb-4">
+            <img id="previewImg" src="@(!string.IsNullOrEmpty(Model.FotoPerfil) ? Model.FotoPerfil : "/imagenes/usuarios/default.png")"
+                 class="rounded-circle"
+                 style="width: 100px; height: 100px; object-fit: cover;" />
+        </div>
+
+        <div class="form-group mb-3">
+            <label for="FotoPerfil">Cambiar Foto</label>
+            <input type="file" name="FotoNueva" class="form-control" accept="image/*" onchange="mostrarPreview(this)" />
+        </div>
+
+        <div class="form-group mb-3">
+            <label class="form-label">Usuario</label>
+            @Html.TextBoxFor(model => model.UsuarioNombre, new { @class = "form-control", required = "required" })
+        </div>
+
+        <div class="form-group mb-3">
+            <label class="form-label">Nombre y Apellido</label>
+            @Html.TextBoxFor(model => model.NombreyApellido, new { @class = "form-control", required = "required" })
+        </div>
+
+        <div class="form-group mb-3">
+            <label class="form-label">Contraseña</label>
+            @Html.PasswordFor(model => model.Contraseña, new { @class = "form-control", value = Model.Contraseña })
+        </div>
+
+        <div class="form-group mb-4">
+    <label class="form-label">Rol</label>
+    @Html.DropDownListFor(model => model.Rol, roles, new { @class = "form-control", required = "required" })
+</div>
+
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-success">💾 Guardar</button>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">Cancelar</a>
+        </div>
+    }
+</div>
+@if (TempData["DebugData"] != null)
+{
+    <div class="alert alert-info">
+        <strong>Datos recibidos:</strong><br />
+        @TempData["DebugData"]
+    </div>
+}
+
+
+@section Scripts {
+    <script>
+        function mostrarPreview(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById("previewImg").src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+
+
+        document.querySelector("form").addEventListener("submit", function (e) {
+            // Evita que se envíe inmediatamente
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            let datos = "";
+            for (let [clave, valor] of formData.entries()) {
+                if (valor instanceof File) {
+                    datos += `${clave}: ${valor.name}\n`;
+                } else {
+                    datos += `${clave}: ${valor}\n`;
+                }
+            }
+
+          //---------------------------------  alert("Datos que se enviarán:\n\n" + datos); -------------------
+
+            // Si querés continuar con el envío después de ver el alert:
+            this.submit();
+        });
+
+
+    </script>
+}

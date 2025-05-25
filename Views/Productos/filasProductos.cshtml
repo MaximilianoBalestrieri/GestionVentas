@@ -1,0 +1,25 @@
+@model List<GestionVentas.Models.Productos>
+
+@foreach (var prod in Model)
+{
+     <tr data-idproducto="@prod.IdProducto">
+        <td>@prod.Codigo</td>
+        <td>@prod.Nombre</td>
+        <td class="stockDisponible @(prod.StockActual == 0 ? "text-danger fw-bold" : "") text-center">
+            @prod.StockActual
+        </td>
+        <td class="text-end">
+            @prod.PrecioVenta.ToString("F2")
+        </td>
+        <td>
+            <button class="btn btn-success btn-sm seleccionarProducto"
+                data-idproducto="@prod.IdProducto"
+                data-codigo="@prod.Codigo"
+                data-nombre="@prod.Nombre"
+                data-stock="@prod.StockActual"
+                data-precio="@prod.PrecioVenta">
+                Seleccionar
+            </button>
+        </td>
+    </tr>
+}

@@ -1,0 +1,110 @@
+@model GestionVentas.Models.Productos
+
+
+<div class="container mt-5 d-flex justify-content-center">
+    <div class="card shadow-sm border-0 w-100" style="max-width: 800px;">
+        <div class="card-header bg-warning text-white">
+            <h4 class="mb-0">✏️ Editar producto</h4>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Edit", "Productos", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.IdProducto)
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.Codigo)
+                        @Html.TextBoxFor(m => m.Codigo, new { @class = "form-control", required = "required" })
+                    </div>
+
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.Nombre)
+                        @Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", required = "required" })
+                    </div>
+
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.Categoria, "Marca")
+                        @Html.TextBoxFor(m => m.Categoria, new { @class = "form-control" })
+                    </div>
+
+                    <div class="col-md-12">
+                        @Html.LabelFor(m => m.Descripcion)
+                        @Html.TextAreaFor(m => m.Descripcion, new { @class = "form-control", rows = "3" })
+                    </div>
+
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.PrecioCosto)
+                        @Html.TextBoxFor(m => m.PrecioCosto, new { @class = "form-control", type = "number", step = "0.01" })
+                    </div>
+
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.RecargoPorcentaje)
+                        @Html.TextBoxFor(m => m.RecargoPorcentaje, new { @class = "form-control", type = "number", step = "1" })
+                    </div>
+
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.PrecioVenta)
+                        @Html.TextBoxFor(m => m.PrecioVenta, new { @class = "form-control", type = "number", step = "0.01", @readonly = "readonly" })
+                    </div>
+
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.StockActual)
+                        @Html.TextBoxFor(m => m.StockActual, new { @class = "form-control", type = "number" })
+                    </div>
+
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.StockMinimo)
+                        @Html.TextBoxFor(m => m.StockMinimo, new { @class = "form-control", type = "number" })
+                    </div>
+
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.Proveedor)
+                        @Html.TextBoxFor(m => m.Proveedor, new { @class = "form-control" })
+                    </div>
+
+                    <!-- Imagen y Vista Previa -->
+                    <div class="col-md-6">
+                        <label>Imagen</label>
+                        <input type="file" name="imagen" class="form-control" accept="image/*" onchange="mostrarVistaPrevia(this)" />
+                    </div>
+
+                    <div class="col-md-6 text-center">
+                        <label>Vista previa:</label><br />
+                        <img id="imgPreview" src="@Url.Content(Model?.Imagen ?? "~/imagenes/productos/no-disponible.png")"
+                             class="img-thumbnail mt-2"
+                             style="max-height: 120px;" />
+                    </div>
+
+                    <div class="col-12 text-end mt-3">
+                        <button type="submit" class="btn btn-warning">💾 Guardar cambios</button>
+                        <a href="@Url.Action("Index", "Productos")" class="btn btn-secondary">↩️ Cancelar</a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function mostrarVistaPrevia(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('imgPreview').src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        document.querySelectorAll('input[name="PrecioCosto"], input[name="RecargoPorcentaje"]').forEach(input => {
+            input.addEventListener('input', () => {
+                const costo = parseFloat(document.querySelector('input[name="PrecioCosto"]').value) || 0;
+                const recargo = parseFloat(document.querySelector('input[name="RecargoPorcentaje"]').value) || 0;
+                const precioVentaInput = document.querySelector('input[name="PrecioVenta"]');
+                precioVentaInput.value = (costo + (costo * recargo / 100)).toFixed(2);
+            });
+        });
+    </script>
+}

@@ -1,0 +1,581 @@
+@model List<GestionVentas.Models.Productos>
+@{
+    ViewBag.Title = "Facturación";
+    var fechaHoy = DateTime.Now.ToString("dd/MM/yyyy");
+}
+
+
+
+<head>
+<link rel="stylesheet" href="/css/ventas.css" />
+
+</head>
+<!--  TÍTULO Y BOTÓN FUERA DEL RECUADRO, CON MARGEN SUPERIOR -->
+<div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 900px; margin: 20px auto 10px auto;">
+    <h4 class="mb-0">Factura</h4>
+    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalProductos">Agregar Producto</button>
+</div>
+
+<!--  CONTENEDOR DE FACTURA -->
+
+<div id="facturaImprimible" class="card p-3 shadow-sm" style="max-width: 900px; margin: auto; font-size: 14px;">
+
+ <!-- Logo -->
+    <div class="d-flex align-items-center mb-3" id="facturaEncabezado">
+        <img src="/imagenes/logo.png" alt="Logo" style="height: 50px; margin-right: 15px;">
+    <div>
+    <h5 style="margin: 0;">Ferreteria Santiago</h5>
+    <small class="text-muted">La Paz - Córdoba</small>
+  </div>
+ </div>
+ <hr style="margin-top: 0; margin-bottom: 15px;">
+ <div class="mb-2 d-flex justify-content-between align-items-center">
+  <div>
+    <strong>Factura N°:</strong>
+    <span id="nroFacturaPrincipal">0001-00000001</span>
+  </div>
+  <small class="text-end" style="font-size: 1rem;">Fecha: @fechaHoy</small>
+</div>
+
+<div class="mb-2">
+  <strong>Cliente:</strong>
+  <input type="text" id="nombreCliente" class="form-control form-control-sm d-inline-block" style="width: 250px;" placeholder="Nombre del cliente">
+</div>
+
+
+ <hr style="margin-top: 0; margin-bottom: 15px;">
+
+
+
+    <table class="table table-sm table-bordered" id="tablaFactura">
+        <thead class="table-light">
+    <tr>
+        <th class="col-codigo">Código</th>
+        <th class="col-nombre">Nombre</th>
+        <th class="col-precio">Precio</th>
+        <th class="col-cantidad">Cantidad</th>
+        <th class="col-subtotal">Subtotal</th>
+        <th class="col-quitar">Quitar</th>
+    </tr>
+ </thead>
+
+        <tbody>
+           
+            <!-- Se agregan productos dinámicamente -->
+        </tbody>
+    </table>
+
+  <div class="text-end mt-3">
+    <p style="margin-bottom: 2px;">
+        <strong>Subtotal:</strong>
+        <span id="subtotalFactura" style="font-size: 16px;">$0.00</span>
+    </p>
+    
+   <div class="mb-2">
+    <label for="descuento" class="form-label" style="font-size: 14px;"><strong>Descuento (%):</strong></label>
+    <input type="number" id="descuento" class="form-control form-control-sm d-inline-block text-end" style="width: 100px;" value="0" min="0" max="100">
+  </div>
+
+
+    <p style="margin-bottom: 2px;">
+        <strong>Total:</strong>
+        <span id="totalFactura" style="font-size: 18px; color: #155724;">$0.00</span>
+    </p>
+    <!-- Botón abonar alineado a la derecha -->
+ <div class="text-end mt-2 no-print">
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAbonar">
+        Abonar
+    </button>
+</div>
+
+ </div>
+</div>
+ <div class="text-end mt-2  no-print">
+     <button onclick="window.print()" class="btn btn-primary">Imprimir PDF</button>
+  
+    <button class="btn btn-danger me-2" id="btnNuevaFactura">
+        Nueva Factura
+    </button>
+ </div>
+
+
+<!-- -----------------MODAL PARA EL VUELTO  ---------------->
+<div class="modal fade" id="modalAbonar" tabindex="-1" aria-labelledby="modalAbonarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-4">
+      <div class="modal-header">
+        <h2 class="modal-title w-100 text-center" id="modalAbonarLabel">Abonar</h2>
+      </div>
+      <div class="modal-body text-center">
+
+        <!-- ✅ Mostrar número de factura -->
+        <div class="mb-3">
+          <strong>Factura N°:</strong>
+          <span id="nroFactura">Cargando...</span>
+        </div>
+
+        <h3>Total a pagar: $<span id="modalTotal">0.00</span></h3>
+        <div class="form-group mt-3">
+          <label for="montoAbonado" class="form-label fs-5">¿Con cuánto abona?</label>
+          <input type="number" 
+            class="form-control form-control-lg text-center" 
+            id="montoAbonado" 
+            placeholder="Ingrese el monto"
+            style="color: #155724; font-size: 1.5rem;">
+        </div>
+        <h4 class="mt-4">Vuelto: $<span id="vuelto">0.00</span></h4>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-success" id="confirmarCompra">Confirmar compra</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 🌟 MODAL DE PRODUCTOS -->
+<div class="modal fade" id="modalProductos" tabindex="-1" aria-labelledby="modalProductosLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Seleccionar producto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="buscarProducto" class="form-control form-control-sm mb-3" placeholder="Buscar por nombre o código">
+
+        <table class="table table-sm table-bordered" id="tablaProductos">
+            <thead class="table-light">
+                <tr>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>Stock</th>
+                    <th>Precio Venta</th>
+                    <th>Accion</th>
+                </tr>
+            </thead>
+           <tbody>
+    @foreach (var prod in Model)
+    {
+        <tr>
+            <td>@prod.Codigo</td>
+            <td>@prod.Nombre</td>
+            <td class="text-center">@prod.StockActual</td>
+            <td class="text-end">@prod.PrecioVenta.ToString("F2")</td>
+            <td>
+                <button class="btn btn-success btn-sm seleccionarProducto"
+        data-idproducto="@prod.IdProducto"
+        data-codigo="@prod.Codigo"
+        data-nombre="@prod.Nombre"
+        data-stock="@prod.StockActual"
+        data-precio="@prod.PrecioVenta"
+       >
+    Seleccionar
+</button>
+
+            </td>
+        </tr>
+    }
+    
+</tbody>
+
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-----------  VISTA PREVIA DE LA FACTURA ---------------- ----------->
+
+<div id="vistaPreviaFactura" class="card p-4 shadow mt-4" style="display: none; background-color: white;">
+  <h4 class="text-center mb-3">Vista Previa de la Factura</h4>
+  <p><strong>Cliente:</strong> <span id="clienteVista"></span></p>
+  <p><strong>Fecha:</strong> <span id="fechaVista"></span></p>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light">
+      <tr>
+        <th>Código</th>
+        <th>Nombre</th>
+        <th>Precio</th>
+        <th>Cantidad</th>
+        <th>Subtotal</th>
+      </tr>
+    </thead>
+    <tbody id="detalleVista">
+      <!-- Se llenará desde JS -->
+    </tbody>
+  </table>
+  <p class="text-end"><strong>Total:</strong> <span id="totalVista"></span></p>
+
+  <div class="text-end mt-3">
+    <button onclick="window.print()" class="btn btn-primary">Imprimir</button>
+  </div>
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+@section Scripts {
+<script>
+//-------------------------- CONFIRMAR COMPRA -------------------------- 
+document.getElementById("confirmarCompra").addEventListener("click", function () {
+    const filas = document.querySelectorAll("#tablaFactura tbody tr");
+    const productos = [];
+
+    filas.forEach(fila => {
+        const id = parseInt(fila.getAttribute("data-idproducto"));
+        const cantidad = parseInt(fila.querySelector(".cantidad").value);
+
+        // Solo agregar productos con cantidad válida (> 0)
+        if (cantidad > 0) {
+            productos.push({
+                IdProducto: id,
+                CantidadVendida: cantidad
+            });
+        }
+    });
+
+    const totalFactura = parseFloat(document.getElementById("totalFactura").textContent || "0");
+
+    // Validar que haya productos y total positivo
+    if (totalFactura <= 0 || productos.length === 0) {
+        alert("No hay productos cargados para comprar.");
+        return; // Salir sin hacer la petición
+    }
+
+    fetch("/Ventas/RestarStock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            productos: productos,
+            montoVenta: totalFactura
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("¡Compra confirmada! Factura " + data.nroFactura + " guardada 💖");
+
+            // Limpiar factura
+            document.querySelector("#tablaFactura tbody").innerHTML = "";
+            actualizarTotales();
+
+            // Actualizar número de factura
+            fetch('/Ventas/ObtenerProximoNroFactura')
+                .then(response => response.json())
+                .then(res => {
+                    if (res.success) {
+                        const nroFacturaSpan = document.getElementById("nroFacturaPrincipal");
+                        if (nroFacturaSpan) nroFacturaSpan.textContent = res.nroFactura;
+                    } else {
+                        console.error("Error al obtener número de factura:", res.message);
+                    }
+                });
+
+            // Cerrar modal de abonar si está abierto
+            const modalAbonar = bootstrap.Modal.getInstance(document.getElementById("modalAbonar"));
+            if (modalAbonar) modalAbonar.hide();
+
+            // Refrescar tabla de productos del modal
+            fetch('/Productos/ObtenerProductos')
+                .then(r => r.text())
+                .then(html => {
+                    document.querySelector('#tablaProductos tbody').innerHTML = html;
+
+                    // Aplicar estilos a los que tienen stock 0
+                    document.querySelectorAll('#tablaProductos tbody tr').forEach(tr => {
+                        const stockTd = tr.querySelector('td:nth-child(3)');
+                        if (stockTd && parseInt(stockTd.textContent) === 0) {
+                            stockTd.classList.add('text-danger', 'fw-bold');
+                        } else {
+                            stockTd.classList.remove('text-danger', 'fw-bold');
+                        }
+                    });
+                });
+
+            // Cerrar modal de productos si estuviera abierto
+            const modalProductos = bootstrap.Modal.getInstance(document.getElementById("modalProductos"));
+            if (modalProductos) modalProductos.hide();
+
+        } else {
+            alert("Error al actualizar el stock: " + data.message);
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Error de conexión con el servidor.");
+    });
+});
+
+
+
+// Función para obtener y mostrar el próximo nro de factura
+function cargarNroFactura() {
+    fetch('/Ventas/ObtenerProximoNroFactura')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById("nroFacturaPrincipal").textContent = data.nroFactura;
+            } else {
+                document.getElementById("nroFacturaPrincipal").textContent = "Error";
+                console.error("Error en respuesta:", data.message);
+            }
+        })
+        .catch(err => {
+            console.error("Error al obtener número de factura:", err);
+            document.getElementById("nroFacturaPrincipal").textContent = "Error";
+        });
+}
+
+document.addEventListener("DOMContentLoaded", cargarNroFactura);
+
+// Ejecutar al cargar la página
+document.addEventListener("DOMContentLoaded", function() {
+    cargarNroFactura();
+});
+
+
+
+//-------------------- IMPRIME FACTURA ----------------
+ function imprimirFactura() {
+    // Elegimos el contenedor de la factura
+    const factura = document.querySelector('.card');
+
+    // Opciones para el PDF
+    const opciones = {
+      margin:       10,
+      filename:     'Factura.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Generamos el PDF
+    html2pdf().set(opciones).from(factura).save();
+  }
+
+//-------------------- VISTA PREVIA DE LA FACTURA 
+function generarVistaPrevia() {
+  const nombre = document.getElementById("nombreCliente").value || "Cliente sin nombre";
+  const fecha = new Date().toLocaleDateString();
+  const total = document.getElementById("totalFactura").textContent;
+
+  const tablaOriginal = document.querySelectorAll("#tablaFactura tbody tr");
+  const tbodyVista = document.getElementById("detalleVista");
+  tbodyVista.innerHTML = ""; // Limpiar por si hay datos previos
+
+  tablaOriginal.forEach(fila => {
+    const celdas = fila.querySelectorAll("td");
+    const codigo = celdas[0].textContent;
+    const nombreProd = celdas[1].textContent;
+    const precio = celdas[2].textContent;
+    const cantidad = celdas[3].querySelector("input")?.value || "";
+    const subtotal = celdas[4].textContent;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${codigo}</td>
+      <td>${nombreProd}</td>
+      <td class="text-end">${precio}</td>
+      <td class="text-center">${cantidad}</td>
+      <td class="text-end">${subtotal}</td>
+    `;
+    tbodyVista.appendChild(tr);
+  });
+
+  document.getElementById("clienteVista").textContent = nombre;
+  document.getElementById("fechaVista").textContent = fecha;
+  document.getElementById("totalVista").textContent = total;
+
+  document.getElementById("vistaPreviaFactura").style.display = "block";
+}
+
+// --------LIMPIA FACTURA ----------------
+document.getElementById('btnNuevaFactura').addEventListener('click', function () {
+  // Vaciar tabla
+  document.querySelector('#tablaFactura tbody').innerHTML = "";
+
+  // Reiniciar valores
+  document.getElementById('subtotalFactura').textContent = "$0.00";
+  document.getElementById('totalFactura').textContent = "$0.00";
+  document.getElementById('descuento').value = 0;
+
+
+});
+
+
+// ----------- STOCK --------------------
+
+function verificarStock() {
+    const filas = document.querySelectorAll("#tablaProductos tbody tr");
+
+    filas.forEach(fila => {
+        const tdCodigo = fila.children[0];
+        const tdNombre = fila.children[1];
+        const tdStock = fila.children[2];
+        const tdPrecio = fila.children[3];
+
+        const stock = parseInt(tdStock.textContent);
+
+        if (stock <= 0) {
+            fila.classList.add("sin-stock");
+            [tdCodigo, tdNombre, tdStock, tdPrecio].forEach(td => {
+                td.style.color = "red";
+                // td.style.fontWeight = "bold";
+            });
+        } else {
+            fila.classList.remove("sin-stock");
+            [tdCodigo, tdNombre, tdStock, tdPrecio].forEach(td => {
+                td.style.color = "";
+                td.style.fontWeight = "";
+            });
+        }
+    });
+}
+
+
+  // Llamamos a la función al cargar el modal
+  document.addEventListener('DOMContentLoaded', verificarStock);
+
+  // También cada vez que se abre el modal (por si actualizás los datos dinámicamente)
+  const modalProductos = document.getElementById('modalProductos');
+  modalProductos.addEventListener('shown.bs.modal', verificarStock);
+
+
+
+// Al abrir el modal, cargar el total actual
+document.getElementById("modalAbonar").addEventListener("shown.bs.modal", function () {
+    // Total
+    const totalTexto = document.getElementById("totalFactura").innerText.replace("$", "").replace(",", ".");
+    const total = parseFloat(totalTexto);
+    document.getElementById("modalTotal").innerText = total.toFixed(2);
+    document.getElementById("montoAbonado").value = "";
+    document.getElementById("vuelto").innerText = "0.00";
+    document.getElementById("montoAbonado").focus();
+
+    // 👉 Copiar número de factura desde el principal
+    const nro = document.getElementById("nroFacturaPrincipal").textContent;
+    document.getElementById("nroFactura").textContent = nro;
+});
+
+
+
+// Calcular vuelto en tiempo real
+document.getElementById("montoAbonado").addEventListener("input", function () {
+    const total = parseFloat(document.getElementById("modalTotal").innerText);
+    const abonado = parseFloat(this.value);
+    let vuelto = 0;
+
+    if (!isNaN(abonado) && abonado >= total) {
+        vuelto = abonado - total;
+    }
+
+    document.getElementById("vuelto").innerText = vuelto.toFixed(2);
+});
+
+// Filtrar productos
+document.getElementById("buscarProducto").addEventListener("input", function () {
+    const filtro = this.value.toLowerCase();
+    const filas = document.querySelectorAll("#tablaProductos tbody tr");
+
+    filas.forEach(fila => {
+        const texto = fila.innerText.toLowerCase();
+        fila.style.display = texto.includes(filtro) ? "" : "none";
+    });
+});
+
+document.querySelector('#tablaProductos tbody').addEventListener('click', function (e) {
+  if (e.target.classList.contains('seleccionarProducto')) {
+    const btn = e.target;
+    const idproducto = btn.dataset.idproducto;
+    const codigo = btn.dataset.codigo;
+    const nombre = btn.dataset.nombre;
+    const precio = parseFloat(btn.dataset.precio);
+    const stock = parseInt(btn.dataset.stock);
+    const cantidad = 1;
+    const subtotal = precio * cantidad;
+
+    const fila = document.createElement("tr");
+    fila.setAttribute("data-stock", stock);
+    fila.setAttribute("data-idproducto", idproducto);
+
+    fila.innerHTML = `
+      <td class="col-codigo text-center">${codigo}</td>
+      <td class="col-nombre">${nombre}</td>
+      <td class="col-precio text-end">$${precio.toFixed(2)}</td>
+      <td class="col-stock text-center">${stock}</td>
+      <td class="col-cantidad">
+        <div class="d-flex justify-content-center">
+          <input type="number" class="form-control form-control-sm text-center cantidad" value="${cantidad}" min="1" style="width:60px"/>
+        </div>
+      </td>
+      <td class="subtotal text-end">$${subtotal.toFixed(2)}</td>
+      <td class="col-quitar text-center">
+        <button class="btn btn-danger btn-sm btn-quitar">X</button>
+      </td>
+    `;
+
+    document.querySelector("#tablaFactura tbody").appendChild(fila);
+    actualizarTotales();
+    verificarStock();
+
+    const modalElement = document.getElementById("modalProductos");
+    const modal = bootstrap.Modal.getInstance(modalElement);
+    if (modal) modal.hide();
+  }
+});
+
+// Eventos dinámicos
+document.addEventListener("input", function (e) {
+    if (e.target.classList.contains("cantidad")) {
+        const fila = e.target.closest("tr");
+        const precio = parseFloat(fila.querySelector(".col-precio").innerText.replace("$", ""));
+        const cantidad = parseInt(e.target.value);
+        const subtotal = precio * cantidad;
+        fila.querySelector(".subtotal").innerText = `$${subtotal.toFixed(2)}`;
+        actualizarTotales();
+        verificarStock(); // 💡 Verificamos si el stock quedó en cero
+    }
+});
+
+document.addEventListener("click", function (e) {
+    if (e.target.classList.contains("btn-quitar")) {
+        e.target.closest("tr").remove();
+        actualizarTotales();
+        verificarStock();
+    }
+});
+
+
+// Actualizar totales
+function actualizarTotales() {
+    let subtotal = 0;
+
+    document.querySelectorAll(".subtotal").forEach(sub => {
+        subtotal += parseFloat(sub.innerText.replace("$", ""));
+    });
+
+    document.getElementById("subtotalFactura").innerText = subtotal.toFixed(2);
+
+    const descuentoInput = document.getElementById("descuento");
+    let porcentajeDescuento = parseFloat(descuentoInput.value);
+    if (isNaN(porcentajeDescuento) || porcentajeDescuento < 0) porcentajeDescuento = 0;
+    if (porcentajeDescuento > 100) porcentajeDescuento = 100;
+
+    let descuentoCalculado = subtotal * (porcentajeDescuento / 100);
+    let totalConDescuento = subtotal - descuentoCalculado;
+
+    document.getElementById("totalFactura").innerText = totalConDescuento.toFixed(2);
+}
+
+// Escuchar descuento
+document.getElementById("descuento").addEventListener("input", actualizarTotales);
+
+
+
+</script>
+
+}
