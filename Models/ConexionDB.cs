@@ -44,6 +44,245 @@ namespace GestionVentas.Models
         }
 
 
+        //--------------------- PRESUPUESTO -------------------------------------
+
+public List<Presupuesto> ObtenerPresupuestos()
+{
+    var lista = new List<Presupuesto>();
+
+    using (var conn = ObtenerConexion())
+    {
+        conn.Open();
+        var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT * FROM Presupuesto ORDER BY Fecha DESC";
+
+        using (var reader = cmd.ExecuteReader())
+        {
+            while (reader.Read())
+            {
+                lista.Add(new Presupuesto
+                {
+                    IdPresupuesto = Convert.ToInt32(reader["IdPresupuesto"]),
+                    NombreCliente = reader["NombreCliente"].ToString(),
+                    TelefonoCliente = reader["TelefonoCliente"].ToString(),
+                    Fecha = Convert.ToDateTime(reader["Fecha"])
+                });
+            }
+        }
+    }
+
+    return lista;
+}
+
+public void EliminarPresupuesto(int id)
+{
+    using (var conn = ObtenerConexion())
+    {
+        conn.Open();
+        var cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM Presupuesto WHERE IdPresupuesto = @id";
+        cmd.Parameters.AddWithValue("@id", id);
+        cmd.ExecuteNonQuery();
+    }
+}
+
+        public Presupuesto ObtenerPresupuestoPorId(int id)
+        {
+            Presupuesto presupuesto = null;
+
+            using (var conn = ObtenerConexion())
+            {
+                conn.Open();
+                var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT * FROM Presupuesto WHERE IdPresupuesto = @id";
+                cmd.Parameters.AddWithValue("@id", id);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        presupuesto = new Presupuesto
+                        {
+                            IdPresupuesto = Convert.ToInt32(reader["IdPresupuesto"]),
+                            NombreCliente = reader["NombreCliente"].ToString(),
+                            TelefonoCliente = reader["TelefonoCliente"].ToString(),
+                            Fecha = Convert.ToDateTime(reader["Fecha"])
+                        };
+                    }
+                }
+
+                if (presupuesto != null)
+                {
+                    presupuesto.Items = new List<PresupuestoItem>();
+                    cmd = conn.CreateCommand();
+                    cmd.CommandText = "SELECT * FROM PresupuestoItem WHERE IdPresupuesto = @id";
+                    cmd.Parameters.AddWithValue("@id", id);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            presupuesto.Items.Add(new PresupuestoItem
+                            {
+                                IdItem = Convert.ToInt32(reader["IdItem"]),
+                                IdPresupuesto = id,
+                                Descripcion = reader["Descripcion"].ToString(),
+                                Cantidad = Convert.ToInt32(reader["Cantidad"]),
+                                PrecioUnitario = Convert.ToDecimal(reader["PrecioUnitario"])
+                            });
+                        }
+                    }
+                }
+            }
+
+            return presupuesto;
+        }
+
+      
+
+
+
+
+public void AgregarPresupuesto(Presupuesto presupuesto)
+{
+    using (var conn = ObtenerConexion())
+    {
+        conn.Open();
+
+        using (var tran = conn.BeginTransaction())
+        {
+            try
+            {
+                var cmd = conn.CreateCommand();
+                cmd.Transaction = tran;
+                cmd.CommandText = "INSERT INTO Presupuesto (NombreCliente, TelefonoCliente, Fecha) VALUES (@nombre, @telefono, @fecha)";
+                cmd.Parameters.AddWithValue("@nombre", presupuesto.NombreCliente);
+                cmd.Parameters.AddWithValue("@telefono", presupuesto.TelefonoCliente);
+                cmd.Parameters.AddWithValue("@fecha", presupuesto.Fecha);
+                cmd.ExecuteNonQuery();
+
+                cmd.CommandText = "SELECT LAST_INSERT_ID()";
+                presupuesto.IdPresupuesto = Convert.ToInt32(cmd.ExecuteScalar());
+
+                foreach (var item in presupuesto.Items)
+                {
+                    cmd = conn.CreateCommand();
+                    cmd.Transaction = tran;
+                    cmd.CommandText = @"INSERT INTO PresupuestoItem (IdPresupuesto, Descripcion, Cantidad, PrecioUnitario) 
+                                        VALUES (@idPresupuesto, @descripcion, @cantidad, @precio)";
+                    cmd.Parameters.AddWithValue("@idPresupuesto", presupuesto.IdPresupuesto);
+                    cmd.Parameters.AddWithValue("@descripcion", item.Descripcion);
+                    cmd.Parameters.AddWithValue("@cantidad", item.Cantidad);
+                    cmd.Parameters.AddWithValue("@precio", item.PrecioUnitario);
+                    cmd.ExecuteNonQuery();
+                }
+
+                tran.Commit();
+            }
+            catch
+            {
+                tran.Rollback();
+                throw;
+            }
+        }
+    }
+}
+
+
+        //---------------------------- VENTAS POR FECHA ---------------------
+        public List<object> ObtenerTotalVentasPorFecha(DateTime desde, DateTime hasta)
+        {
+            List<object> lista = new List<object>();
+            using (var conn = ObtenerConexion())
+            {
+                conn.Open();
+                var cmd = new MySqlCommand(@"
+            SELECT DATE(diaVenta) as fecha, SUM(montoVenta) as totalVendido
+            FROM ventas
+            WHERE diaVenta BETWEEN @desde AND @hasta
+            GROUP BY DATE(diaVenta)
+            ORDER BY diaVenta", conn);
+
+                cmd.Parameters.AddWithValue("@desde", desde);
+                cmd.Parameters.AddWithValue("@hasta", hasta);
+
+                var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    lista.Add(new
+                    {
+                        fecha = Convert.ToDateTime(reader["fecha"]),
+                        totalVendido = Convert.ToDecimal(reader["totalVendido"])
+                    });
+                }
+            }
+            return lista;
+        }
+
+
+public List<object> ObtenerTotalVentasPorMes(DateTime desde, DateTime hasta)
+{
+    List<object> lista = new List<object>();
+    using (var conn = ObtenerConexion())
+    {
+        conn.Open();
+        var cmd = new MySqlCommand(@"
+            SELECT YEAR(diaVenta) AS anio, MONTH(diaVenta) AS mes, SUM(montoVenta) AS totalVendido
+            FROM ventas
+            WHERE diaVenta BETWEEN @desde AND @hasta
+            GROUP BY anio, mes
+            ORDER BY anio, mes", conn);
+
+        cmd.Parameters.AddWithValue("@desde", desde);
+        cmd.Parameters.AddWithValue("@hasta", hasta);
+
+        var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            int anio = Convert.ToInt32(reader["anio"]);
+            int mes = Convert.ToInt32(reader["mes"]);
+            lista.Add(new
+            {
+                fecha = new DateTime(anio, mes, 1),
+                totalVendido = Convert.ToDecimal(reader["totalVendido"])
+            });
+        }
+    }
+    return lista;
+}
+
+public List<object> ObtenerTotalVentasPorAnio(DateTime desde, DateTime hasta)
+{
+    List<object> lista = new List<object>();
+    using (var conn = ObtenerConexion())
+    {
+        conn.Open();
+        var cmd = new MySqlCommand(@"
+            SELECT YEAR(diaVenta) AS anio, SUM(montoVenta) AS totalVendido
+            FROM ventas
+            WHERE diaVenta BETWEEN @desde AND @hasta
+            GROUP BY anio
+            ORDER BY anio", conn);
+
+        cmd.Parameters.AddWithValue("@desde", desde);
+        cmd.Parameters.AddWithValue("@hasta", hasta);
+
+        var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            int anio = Convert.ToInt32(reader["anio"]);
+            lista.Add(new
+            {
+                fecha = new DateTime(anio, 1, 1),
+                totalVendido = Convert.ToDecimal(reader["totalVendido"])
+            });
+        }
+    }
+    return lista;
+}
+
+
+
         //---- USUARIOS ------
 
         public Usuario ObtenerUsuarioPorNombre(string nombreUsuario)

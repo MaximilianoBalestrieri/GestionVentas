@@ -57,5 +57,13 @@ namespace GestionVentas.Controllers
             ViewBag.Message = "Descripción del Software.";
             return View();
         }
+
+
+public ActionResult Acercade()
+{
+    return View();
+}
+
+
     }
 }
