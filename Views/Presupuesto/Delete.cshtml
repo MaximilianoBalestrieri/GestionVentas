@@ -1,0 +1,26 @@
+@model GestionVentas.Models.Presupuesto
+
+
+<div class="card shadow p-4 border-0 mx-auto mt-5" style="max-width: 500px;">
+    <h3 class="mb-4 text-danger">
+        <i class="bi bi-exclamation-triangle-fill"></i> Confirmación de eliminación
+    </h3>
+
+    <p class="lead">
+        ¿Estás seguro que deseas eliminar el <strong>presupuesto n.º @Model.IdPresupuesto</strong>?
+    </p>
+
+    <form asp-action="Delete" method="post" class="mt-4">
+        <input type="hidden" asp-for="IdPresupuesto" />
+        
+        <div class="d-flex gap-3 justify-content-center">
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash-fill"></i> Sí, eliminar
+            </button>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left-circle"></i> Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+

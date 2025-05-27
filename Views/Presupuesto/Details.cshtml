@@ -1,49 +1,107 @@
 @model Presupuesto
 
 @{
-    ViewBag.Title = "Detalle de Presupuesto";
+    ViewBag.Title = "Detalle del Presupuesto";
 }
 
+<head>
+<link rel="stylesheet" href="/css/presupuesto.css" />
+
+</head>
+
+
 <h2 class="mb-4">📄 Detalle del Presupuesto</h2>
+<!--  CONTENEDOR DE presupuesto -->
 
-<div class="mb-3">
-    <strong>Cliente:</strong> @Model.NombreCliente
-</div>
-<div class="mb-3">
-    <strong>Teléfono:</strong> @Model.TelefonoCliente
-</div>
-<div class="mb-3">
-    <strong>Fecha:</strong> @Model.Fecha.ToShortDateString()
-</div>
+<div id="facturaImprimible" class="card p-3 shadow-sm" style="max-width: 900px; margin: auto; font-size: 14px;">
+<div class="presupuesto-box">
+    <!-- ENCABEZADO CON LOGO -->
+    <div class="presupuesto-header d-flex align-items-center mb-4 border-bottom pb-3">
+        <img src="/imagenes/logo.png" alt="Logo" style="width: 80px; height: auto; margin-right: 15px;" />
+        <div>
+            <h2 class="fw-bold mb-0">Ferretería Santiago</h2>
+            <p class="text-muted mb-0">📍 La Paz, Córdoba</p>
+        </div>
+    </div>
 
-<h4 class="mt-4">🧾 Productos presupuestados</h4>
+    <!-- INFO GENERAL -->
+    <div class="row mb-3">
+         <div class="col-md-6">
+            <strong>Nro. Presupuesto:</strong> @Model.IdPresupuesto
+        </div>
+        <div class="col-md-6 text-end">
+           <strong>Fecha:</strong> @Model.Fecha.ToShortDateString()
+        </div>
+    </div>
 
-<table class="table table-bordered mt-3">
-    <thead class="table-light">
-        <tr>
-            <th>Descripción</th>
-            <th class="text-center">Cantidad</th>
-            <th class="text-end">Precio Unitario</th>
-            <th class="text-end">Subtotal</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model.Items)
-        {
+    <div class="row mb-3">
+    <div class="col-md-6">
+        <strong>Cliente:</strong> @Model.NombreCliente
+    </div>
+    <div class="col-md-6 text-end">
+        <strong>Teléfono:</strong> @Model.TelefonoCliente
+    </div>
+</div>
+    <hr style="border-top: 1px solid #999; margin: 20px 0;" />
+
+    <!-- DIVISOR -->
+    <div class="presupuesto-divider"></div>
+
+    <!-- PRODUCTOS -->
+       <table class="table table-bordered mt-3">
+        <thead class="table-light">
             <tr>
-                <td>@item.Descripcion</td>
-                <td class="text-center">@item.Cantidad</td>
-                <td class="text-end">$@item.PrecioUnitario.ToString("N2")</td>
-                <td class="text-end">$@item.Subtotal.ToString("N2")</td>
+                <th>Descripción</th>
+                <th class="text-center">Cantidad</th>
+                <th class="text-end">Precio Unitario</th>
+                <th class="text-end">Subtotal</th>
             </tr>
-        }
-        <tr class="fw-bold table-dark">
-            <td colspan="3" class="text-end">Total</td>
-            <td class="text-end">
-                $@Model.Items.Sum(i => i.Subtotal).ToString("N2")
-            </td>
-        </tr>
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>@item.Descripcion</td>
+                    <td class="text-center">@item.Cantidad</td>
+                    <td class="text-end">$@item.PrecioUnitario.ToString("N2")</td>
+                    <td class="text-end">$@item.Subtotal.ToString("N2")</td>
+                </tr>
+            }
+            <tr class="fw-bold table-dark">
+                <td colspan="3" class="text-end">Total</td>
+                <td class="text-end">
+                    $@Model.Items.Sum(i => i.Subtotal).ToString("N2")
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+    
 
-<a href="@Url.Action("Index")" class="btn btn-outline-secondary">Volver</a>
+</div>
+<div class="text-end mt-2 d-print-none">
+     <button onclick="window.print()" class="btn btn-primary">Imprimir</button>
+      <!-- BOTÓN VOLVER -->
+     <div class="d-flex justify-content-end mt-4">
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Volver</a>
+     </div>
+    </div>
+
+<script>
+    function imprimirFactura() {
+    // Elegimos el contenedor de la factura
+    const factura = document.querySelector('.card');
+
+    // Opciones para el PDF
+    const opciones = {
+      margin:       10,
+      filename:     'Presupuesto.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Generamos el PDF
+    html2pdf().set(opciones).from(factura).save();
+  }
+</script>

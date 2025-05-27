@@ -676,7 +676,27 @@ public List<object> ObtenerTotalVentasPorAnio(DateTime desde, DateTime hasta)
             }
         }
 
-        //----------------------------FIN DE PRODUCTOS---------------------------
+        //----------------------------OBTIENE EL ULTIMO NRO DE PRESUPUESTO---------------------------
+        
+public int ObtenerMaximoNroPresupuesto()
+{
+    int max = 0;
+    using (var connection = new MySqlConnection(_connectionString))
+    {
+        connection.Open();
+        var query = "SELECT MAX(idPresupuesto) FROM Presupuesto";
+        using (var cmd = new MySqlCommand(query, connection))
+        {
+            var result = cmd.ExecuteScalar();
+            if (result != DBNull.Value)
+            {
+                max = Convert.ToInt32(result);
+            }
+        }
+    }
+    return max;
+}
+
 
 
         //------------------------------ STOCK ---------------

@@ -2,74 +2,246 @@
 
 @{
     ViewBag.Title = "Nuevo Presupuesto";
+    var fechaActual = DateTime.Now.ToString("yyyy-MM-dd");
 }
 
-<h2 class="mb-4">➕ Crear Nuevo Presupuesto</h2>
+<style>
+    .presupuesto-box {
+        border: 2px solid #ccc;
+        border-radius: 12px;
+        padding: 30px;
+        background-color: #fdfdfd;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    .presupuesto-header {
+        text-align: left;
+        border-bottom: 3px solid #007bff;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+    }
+    .presupuesto-header img {
+        max-height: 90px;
+        margin-bottom: 10px;
+    }
+    .presupuesto-divider {
+        border-top: 2px dashed #007bff;
+        margin: 20px 0;
+    }
+</style>
 
-@using (Html.BeginForm()) 
+<h2 class="mb-4">🧾 Crear Presupuesto</h2>
+
+@using (Html.BeginForm())
 {
-    <div class="mb-3">
-        @Html.LabelFor(m => m.NombreCliente)
-        @Html.TextBoxFor(m => m.NombreCliente, new { @class = "form-control" })
-        @Html.ValidationMessageFor(m => m.NombreCliente)
-    </div>
+    <div class="presupuesto-box">
 
-    <div class="mb-3">
-        @Html.LabelFor(m => m.TelefonoCliente)
-        @Html.TextBoxFor(m => m.TelefonoCliente, new { @class = "form-control" })
-        @Html.ValidationMessageFor(m => m.TelefonoCliente)
+       <!-- ENCABEZADO CON LOGO Y DATOS -->
+<div class="presupuesto-header d-flex align-items-center mb-4 border-bottom pb-3">
+    <img src="/imagenes/logo.png" alt="Logo" style="width: 80px; height: auto; margin-right: 15px;" />
+    <div>
+        <h2 class="fw-bold mb-0">Ferretería Santiago</h2>
+        <p class="text-muted mb-0">📍 La Paz, Córdoba</p>
     </div>
+</div>
 
-    <div class="mb-3">
-        @Html.LabelFor(m => m.Fecha)
-        @Html.TextBoxFor(m => m.Fecha, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+
+       <!-- INFO GENERAL -->
+<div class="row mb-3">
+    <div class="col-md-3">
+        <label><strong>Nro. Presupuesto</strong></label>
+        <input type="text" name="NroPresupuesto" id="NroPresupuesto" class="form-control form-control-sm" required />
+ 
+    </div>
+    <div class="col-md-3">
+        @Html.LabelFor(m => m.Fecha, new { @class = "fw-bold" })
+        @Html.TextBoxFor(m => m.Fecha, "{0:yyyy-MM-dd}", new { @class = "form-control form-control-sm", type = "date", @Value = fechaActual })
         @Html.ValidationMessageFor(m => m.Fecha)
     </div>
+</div>
 
-    <hr />
+<!-- DATOS DEL CLIENTE -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        @Html.LabelFor(m => m.NombreCliente, new { @class = "fw-bold" })
+        @Html.TextBoxFor(m => m.NombreCliente, new { @class = "form-control form-control-sm" })
+        @Html.ValidationMessageFor(m => m.NombreCliente)
+    </div>
+    <div class="col-md-3">
+        @Html.LabelFor(m => m.TelefonoCliente, new { @class = "fw-bold" })
+        @Html.TextBoxFor(m => m.TelefonoCliente, new { @class = "form-control form-control-sm" })
+        @Html.ValidationMessageFor(m => m.TelefonoCliente)
+    </div>
+</div>
 
-    <h4>🧾 Ítems del presupuesto</h4>
-    <div id="itemsContainer"></div>
 
-    <button type="button" class="btn btn-secondary my-2" onclick="agregarItem()">➕ Agregar ítem</button>
+        <!-- DIVISOR -->
+        <div class="presupuesto-divider"></div>
 
-    <hr />
+        <!-- PRODUCTOS SELECCIONADOS -->
+        <h4 class="mb-3">📦 Productos Seleccionados</h4>
 
-    <button type="submit" class="btn btn-primary">Guardar Presupuesto</button>
-    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Cancelar</a>
+        <button type="button" class="btn btn-outline-success mb-3" data-bs-toggle="modal" data-bs-target="#modalProductos">
+            ➕ Agregar producto
+        </button>
+
+        <div class="border rounded p-3" id="itemsWrapper">
+            <div class="row fw-bold mb-2">
+                <div class="col-md-4">Nombre</div>
+                <div class="col-md-2">Cantidad</div>
+                <div class="col-md-2">Precio Unitario</div>
+                <div class="col-md-2">Total</div>
+                <div class="col-md-2">Acción</div>
+            </div>
+            <div id="itemsContainer"></div>
+        </div>
+
+        <div class="mt-4 text-end">
+            <h5>Total General: $<span id="totalGeneral">0.00</span></h5>
+        </div>
+
+        <!-- BOTONES -->
+        <div class="presupuesto-divider"></div>
+
+        <div class="d-flex justify-content-between mt-3">
+            <button type="submit" class="btn btn-primary">💾 Guardar Presupuesto</button>
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </div>
 }
+
+<!-- 🪟 MODAL PRODUCTOS -->
+<div class="modal fade" id="modalProductos" tabindex="-1" aria-labelledby="modalProductosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalProductosLabel">Buscar producto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="buscarProducto" class="form-control mb-3" placeholder="Buscar por nombre..." oninput="filtrarProductos()" />
+
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Producto</th>
+                            <th>Precio</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaProductos">
+                        <tr>
+                            <td>Producto A</td>
+                            <td>100.00</td>
+                            <td><button type="button" class="btn btn-success btn-sm" onclick="seleccionarProducto('Producto A', 100)">✔</button></td>
+                        </tr>
+                        <tr>
+                            <td>Producto B</td>
+                            <td>250.50</td>
+                            <td><button type="button" class="btn btn-success btn-sm" onclick="seleccionarProducto('Producto B', 250.5)">✔</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 @section scripts {
 <script>
+fetch('/Presupuesto/ObtenerSiguienteNroPresupuesto')
+    .then(res => res.json())
+    .then(nro => {
+        document.getElementById("NroPresupuesto").value = nro;
+    });
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    fetch('/Presupuesto/ObtenerProductos')
+        .then(res => res.json())
+        .then(productos => {
+            const tabla = document.getElementById("tablaProductos");
+            tabla.innerHTML = "";
+
+            productos.forEach(p => {
+                const fila = document.createElement("tr");
+                fila.innerHTML = `
+                    <td>${p.nombre}</td>
+                    <td>${p.precio.toFixed(2)}</td>
+                    <td><button type="button" class="btn btn-success btn-sm" onclick="seleccionarProducto('${p.nombre}', ${p.precio})">✔</button></td>
+                `;
+                tabla.appendChild(fila);
+            });
+        });
+});
+
+
     let index = 0;
 
-    function agregarItem() {
+    function seleccionarProducto(nombre, precio) {
         const container = document.getElementById("itemsContainer");
 
-        const html = `
-            <div class="border rounded p-3 mb-3">
-                <div class="row">
-                    <div class="col-md-5">
-                        <label>Descripción</label>
-                        <input name="Items[${index}].Descripcion" class="form-control" />
-                    </div>
-                    <div class="col-md-2">
-                        <label>Cantidad</label>
-                        <input type="number" name="Items[${index}].Cantidad" class="form-control" min="1" />
-                    </div>
-                    <div class="col-md-3">
-                        <label>Precio Unitario</label>
-                        <input type="number" step="0.01" name="Items[${index}].PrecioUnitario" class="form-control" />
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="button" class="btn btn-danger w-100" onclick="this.parentElement.parentElement.parentElement.remove()">🗑 Quitar</button>
-                    </div>
-                </div>
-            </div>
-        `;
+      const html = `
+    <div class="row mb-2 align-items-end">
+        <div class="col-md-4">
+            <input name="Items[${index}].Nombre" class="form-control" value="${nombre}" readonly />
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="Items[${index}].Cantidad" class="form-control cantidad" min="1" value="1" oninput="calcularTotales()" />
+        </div>
+        <div class="col-md-2">
+            <input type="text" step="0.01" name="Items[${index}].PrecioUnitario" class="form-control precio" value="${precio.toFixed(2)}" readonly />
+        </div>
+        <div class="col-md-2">
+            <!-- Aquí cambiamos el punto por coma para mejor presentación -->
+            <input type="text" readonly class="form-control total-item" value="${precio.toFixed(2).replace('.', ',')}" />
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-danger w-100" onclick="quitarItem(this)">🗑 Quitar</button>
+        </div>
+    </div>
+`;
 
         container.insertAdjacentHTML("beforeend", html);
         index++;
+        calcularTotales();
+        var modal = bootstrap.Modal.getInstance(document.getElementById('modalProductos'));
+        modal.hide();
+    }
+
+   function quitarItem(boton) {
+    const fila = boton.closest(".row");
+    if (fila) {
+        fila.remove();
+        calcularTotales();
+    } else {
+        console.warn("No se encontró la fila contenedora para eliminar.");
+    }
+}
+
+
+
+    function calcularTotales() {
+    let totalGeneral = 0;
+    // Cambié selector de ".item" a ".row" dentro de #itemsContainer
+    document.querySelectorAll("#itemsContainer .row").forEach(item => {
+        const cantidad = parseFloat(item.querySelector(".cantidad")?.value || 0);
+        const precio = parseFloat(item.querySelector(".precio")?.value || 0);
+        const total = cantidad * precio;
+        item.querySelector(".total-item").value = total.toFixed(2);
+        totalGeneral += total;
+    });
+    document.getElementById("totalGeneral").textContent = totalGeneral.toFixed(2);
+}
+
+
+    function filtrarProductos() {
+        const filtro = document.getElementById("buscarProducto").value.toLowerCase();
+        const filas = document.querySelectorAll("#tablaProductos tr");
+        filas.forEach(fila => {
+            const texto = fila.children[0].textContent.toLowerCase();
+            fila.style.display = texto.includes(filtro) ? "" : "none";
+        });
     }
 </script>
 }

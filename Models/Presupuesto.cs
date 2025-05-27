@@ -5,7 +5,7 @@ namespace GestionVentas.Models
 {
     public int IdPresupuesto { get; set; }
     public string NombreCliente { get; set; }
-    public string TelefonoCliente { get; set; }
+    public string? TelefonoCliente { get; set; }
     public DateTime Fecha { get; set; }
 
     public List<PresupuestoItem> Items { get; set; } = new List<PresupuestoItem>();
