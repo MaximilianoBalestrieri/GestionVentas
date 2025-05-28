@@ -77,9 +77,10 @@
                     </div>
 
                     <div class="col-md-4">
-                        @Html.LabelFor(m => m.Proveedor)
-                        @Html.TextBoxFor(m => m.Proveedor, new { @class = "form-control" })
+                        @Html.LabelFor(m => m.NombreProveedor, "Proveedor")
+                        @Html.DropDownListFor(m => m.NombreProveedor, Model.Proveedores, "Seleccione un proveedor", new { @class = "form-control" })
                     </div>
+
 
                     <!-- Imagen y Vista Previa -->
                     <div class="col-md-6">

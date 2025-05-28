@@ -39,26 +39,22 @@ public ActionResult Create()
 
 
         // POST: Presupuesto/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create(Presupuesto presupuesto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(presupuesto);
-            }
+       [HttpPost]
+public ActionResult Create(Presupuesto presupuesto)
+{
+    try
+    {
+        presupuesto.Fecha = DateTime.Now;
+        db.AgregarPresupuesto(presupuesto);
+        return RedirectToAction("Index"); // o a una vista de confirmación
+    }
+    catch (Exception ex)
+    {
+        ViewBag.Error = "Ocurrió un error al guardar el presupuesto: " + ex.Message;
+        return View(presupuesto);
+    }
+}
 
-            try
-            {
-                db.AgregarPresupuesto(presupuesto);
-                return RedirectToAction("Index");
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("", "Error al guardar el presupuesto: " + ex.Message);
-                return View(presupuesto);
-            }
-        }
 
 [HttpGet]
 public IActionResult ObtenerSiguienteNroPresupuesto()

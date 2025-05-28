@@ -2,15 +2,19 @@
 
 
 <div class="container mt-5 d-flex justify-content-center">
+    
     <div class="card shadow-sm border-0 w-100" style="max-width: 800px;">
         <div class="card-header bg-warning text-white">
             <h4 class="mb-0">✏️ Editar producto</h4>
         </div>
         <div class="card-body">
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
             @using (Html.BeginForm("Edit", "Productos", FormMethod.Post, new { enctype = "multipart/form-data" }))
             {
                 @Html.AntiForgeryToken()
                 @Html.HiddenFor(m => m.IdProducto)
+                @Html.HiddenFor(model => model.Imagen)
 
                 <div class="row g-3">
                     <div class="col-md-4">
@@ -59,8 +63,9 @@
                     </div>
 
                     <div class="col-md-4">
-                        @Html.LabelFor(m => m.Proveedor)
-                        @Html.TextBoxFor(m => m.Proveedor, new { @class = "form-control" })
+                       @Html.LabelFor(m => m.NombreProveedor, "Proveedor")
+                      @Html.DropDownListFor(m => m.NombreProveedor, Model.Proveedores, new { @class = "form-control", required = "required" })
+
                     </div>
 
                     <!-- Imagen y Vista Previa -->
@@ -88,6 +93,16 @@
 
 @section Scripts {
     <script>
+
+document.querySelector('form').addEventListener('submit', function (e) {
+        const btn = this.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerText = '⏳ Guardando...';
+
+        // Podés también agregar un alert para debug (quitar después)
+        // alert('Enviando formulario...');
+    });
+
         function mostrarVistaPrevia(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();

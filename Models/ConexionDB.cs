@@ -45,6 +45,7 @@ namespace GestionVentas.Models
 
 
         //--------------------- PRESUPUESTO -------------------------------------
+        //--------------------- PRESUPUESTO -------------------------------------
 
 public List<Presupuesto> ObtenerPresupuestos()
 {
@@ -126,7 +127,7 @@ public void EliminarPresupuesto(int id)
                             {
                                 IdItem = Convert.ToInt32(reader["IdItem"]),
                                 IdPresupuesto = id,
-                                Descripcion = reader["Descripcion"].ToString(),
+                                Nombre = reader["Nombre"].ToString(),
                                 Cantidad = Convert.ToInt32(reader["Cantidad"]),
                                 PrecioUnitario = Convert.ToDecimal(reader["PrecioUnitario"])
                             });
@@ -145,48 +146,51 @@ public void EliminarPresupuesto(int id)
 
 public void AgregarPresupuesto(Presupuesto presupuesto)
 {
-    using (var conn = ObtenerConexion())
+    using (var conexion = ObtenerConexion())
     {
-        conn.Open();
-
-        using (var tran = conn.BeginTransaction())
+        conexion.Open();
+        using (var transaccion = conexion.BeginTransaction())
         {
             try
             {
-                var cmd = conn.CreateCommand();
-                cmd.Transaction = tran;
-                cmd.CommandText = "INSERT INTO Presupuesto (NombreCliente, TelefonoCliente, Fecha) VALUES (@nombre, @telefono, @fecha)";
-                cmd.Parameters.AddWithValue("@nombre", presupuesto.NombreCliente);
-                cmd.Parameters.AddWithValue("@telefono", presupuesto.TelefonoCliente);
-                cmd.Parameters.AddWithValue("@fecha", presupuesto.Fecha);
-                cmd.ExecuteNonQuery();
-
-                cmd.CommandText = "SELECT LAST_INSERT_ID()";
-                presupuesto.IdPresupuesto = Convert.ToInt32(cmd.ExecuteScalar());
-
-                foreach (var item in presupuesto.Items)
+                // Insertar presupuesto
+                var queryPresupuesto = "INSERT INTO Presupuesto (NombreCliente, TelefonoCliente, Fecha) VALUES (@nombre, @telefono, @fecha); SELECT LAST_INSERT_ID();";
+                using (var comando = new MySqlCommand(queryPresupuesto, conexion, transaccion))
                 {
-                    cmd = conn.CreateCommand();
-                    cmd.Transaction = tran;
-                    cmd.CommandText = @"INSERT INTO PresupuestoItem (IdPresupuesto, Descripcion, Cantidad, PrecioUnitario) 
-                                        VALUES (@idPresupuesto, @descripcion, @cantidad, @precio)";
-                    cmd.Parameters.AddWithValue("@idPresupuesto", presupuesto.IdPresupuesto);
-                    cmd.Parameters.AddWithValue("@descripcion", item.Descripcion);
-                    cmd.Parameters.AddWithValue("@cantidad", item.Cantidad);
-                    cmd.Parameters.AddWithValue("@precio", item.PrecioUnitario);
-                    cmd.ExecuteNonQuery();
+                    comando.Parameters.AddWithValue("@nombre", presupuesto.NombreCliente);
+                    comando.Parameters.AddWithValue("@telefono", presupuesto.TelefonoCliente);
+                    comando.Parameters.AddWithValue("@fecha", presupuesto.Fecha);
+
+                    presupuesto.IdPresupuesto = Convert.ToInt32(comando.ExecuteScalar());
                 }
 
-                tran.Commit();
+                // Insertar items
+                foreach (var item in presupuesto.Items)
+                {
+                    var queryItem = "INSERT INTO PresupuestoItem (IdPresupuesto, Nombre, Cantidad, PrecioUnitario) VALUES (@idPresupuesto, @nombre, @cantidad, @precio);";
+                    using (var cmdItem = new MySqlCommand(queryItem, conexion, transaccion))
+                    {
+                        cmdItem.Parameters.AddWithValue("@idPresupuesto", presupuesto.IdPresupuesto);
+                        cmdItem.Parameters.AddWithValue("@nombre", item.Nombre);
+                        cmdItem.Parameters.AddWithValue("@cantidad", item.Cantidad);
+                        cmdItem.Parameters.AddWithValue("@precio", item.PrecioUnitario);
+
+                        cmdItem.ExecuteNonQuery();
+                    }
+                }
+
+                transaccion.Commit();
             }
-            catch
+            catch (Exception)
             {
-                tran.Rollback();
+                transaccion.Rollback();
                 throw;
             }
         }
     }
 }
+
+
 
 
         //---------------------------- VENTAS POR FECHA ---------------------
@@ -524,67 +528,72 @@ public List<object> ObtenerTotalVentasPorAnio(DateTime desde, DateTime hasta)
         //-------------------------------PRODUCTOS-----------------------------
 
         public List<Productos> ObtenerProductos()
+{
+    List<Productos> productos = new List<Productos>();
+
+    using (MySqlConnection conn = ObtenerConexion())
+    {
+        conn.Open();
+        string sql = @"SELECT * 
+                       FROM Productos ";
+
+        using (MySqlCommand cmd = new MySqlCommand(sql, conn))
+        using (MySqlDataReader reader = cmd.ExecuteReader())
         {
-            List<Productos> productos = new List<Productos>();
-
-            using (MySqlConnection conn = ObtenerConexion())
+            while (reader.Read())
             {
-                conn.Open();
-                string sql = "SELECT * FROM Productos";
-
-                using (MySqlCommand cmd = new MySqlCommand(sql, conn))
-                using (MySqlDataReader reader = cmd.ExecuteReader())
+                productos.Add(new Productos
                 {
-                    while (reader.Read())
-                    {
-                        productos.Add(new Productos
-                        {
-                            IdProducto = Convert.ToInt32(reader["IdProducto"]),
-                            Nombre = reader["Nombre"].ToString(),
-                            Codigo = reader["Codigo"].ToString(),
-                            PrecioCosto = Convert.ToDecimal(reader["PrecioCosto"]),
-                            RecargoPorcentaje = Convert.ToDecimal(reader["RecargoPorcentaje"]),
-                            Proveedor = reader["Proveedor"].ToString(),
-                            Imagen = reader["Imagen"].ToString(),
-                            Descripcion = reader["Descripcion"].ToString(),
-                            StockActual = Convert.ToInt32(reader["StockActual"])
-                        });
-                    }
-                }
+                    IdProducto = Convert.ToInt32(reader["IdProducto"]),
+                    Codigo = reader["Codigo"].ToString(),
+                    Nombre = reader["Nombre"].ToString(),
+                    Descripcion = reader["Descripcion"].ToString(),
+                    Categoria = reader["Categoria"].ToString(),
+                    PrecioCosto = Convert.ToDecimal(reader["PrecioCosto"]),
+                    RecargoPorcentaje = Convert.ToDecimal(reader["RecargoPorcentaje"]),
+                  //  PrecioVenta = Convert.ToDecimal(reader["PrecioVenta"]),
+                    StockActual = Convert.ToInt32(reader["StockActual"]),
+                    StockMinimo = Convert.ToInt32(reader["StockMinimo"]),
+                    NombreProveedor = reader["NombreProveedor"].ToString(),
+                    Imagen = reader["Imagen"].ToString()
+                });
             }
-
-            return productos;
         }
+    }
+
+    return productos;
+}
+
         //-------------------CREAR PRODUCTOS-------------------
         public void AgregarProducto(Productos p)
-        {
-            using (var con = ObtenerConexion())
-            {
-                con.Open();
-                string query = @"INSERT INTO Productos 
-        (codigo, nombre, descripcion, categoria, precioCosto, recargoPorcentaje, precioVenta, stockActual, stockMinimo, proveedor, imagen) 
+{
+    using (var con = ObtenerConexion())
+    {
+        con.Open();
+        string query = @"INSERT INTO Productos 
+        (codigo, nombre, descripcion, categoria, precioCosto, recargoPorcentaje, precioVenta, stockActual, stockMinimo, nombreProveedor, imagen) 
         VALUES 
-        (@codigo, @nombre, @descripcion, @categoria, @precioCosto, @recargoPorcentaje, @precioVenta, @stockActual, @stockMinimo, @proveedor, @imagen)";
+        (@codigo, @nombre, @descripcion, @categoria, @precioCosto, @recargoPorcentaje, @precioVenta, @stockActual, @stockMinimo, @nombreProveedor, @imagen)";
 
-                using (var cmd = new MySqlCommand(query, con))
-                {
-                    cmd.Parameters.AddWithValue("@codigo", p.Codigo);
-                    cmd.Parameters.AddWithValue("@nombre", p.Nombre);
-                    cmd.Parameters.AddWithValue("@descripcion", p.Descripcion);
-                    cmd.Parameters.AddWithValue("@categoria", p.Categoria);
-                    cmd.Parameters.AddWithValue("@precioCosto", p.PrecioCosto);
-                    cmd.Parameters.AddWithValue("@recargoPorcentaje", p.RecargoPorcentaje);
-                    cmd.Parameters.AddWithValue("@precioVenta", p.PrecioVenta);
-                    cmd.Parameters.AddWithValue("@stockActual", p.StockActual);
-                    cmd.Parameters.AddWithValue("@stockMinimo", p.StockMinimo);
-                    cmd.Parameters.AddWithValue("@proveedor", p.Proveedor);
-                    cmd.Parameters.AddWithValue("@imagen", p.Imagen ?? "");
+        using (var cmd = new MySqlCommand(query, con))
+        {
+            cmd.Parameters.AddWithValue("@codigo", p.Codigo);
+            cmd.Parameters.AddWithValue("@nombre", p.Nombre);
+            cmd.Parameters.AddWithValue("@descripcion", p.Descripcion);
+            cmd.Parameters.AddWithValue("@categoria", p.Categoria);
+            cmd.Parameters.AddWithValue("@precioCosto", p.PrecioCosto);
+            cmd.Parameters.AddWithValue("@recargoPorcentaje", p.RecargoPorcentaje);
+            cmd.Parameters.AddWithValue("@precioVenta", p.PrecioVenta);
+            cmd.Parameters.AddWithValue("@stockActual", p.StockActual);
+            cmd.Parameters.AddWithValue("@stockMinimo", p.StockMinimo);
+            cmd.Parameters.AddWithValue("@nombreProveedor", p.NombreProveedor);
+            cmd.Parameters.AddWithValue("@imagen", p.Imagen ?? "");
 
-
-                    cmd.ExecuteNonQuery();
-                }
-            }
+            cmd.ExecuteNonQuery();
         }
+    }
+}
+
 
         public void EliminarProducto(int idProducto)
         {
@@ -604,47 +613,54 @@ public List<object> ObtenerTotalVentasPorAnio(DateTime desde, DateTime hasta)
 
 
         public Productos ObtenerProductoPorId(int id)
-        {
-            Productos prod = null;
+{
+    Productos prod = null;
 
-            using (var conexion = new MySqlConnection(_connectionString))
+    using (var conexion = new MySqlConnection(_connectionString))
+    {
+        conexion.Open();
+        string sql = @"SELECT * 
+                       FROM Productos p
+                       WHERE p.IdProducto = @id";
+
+        using (var comando = new MySqlCommand(sql, conexion))
+        {
+            comando.Parameters.AddWithValue("@id", id);
+            using (var lector = comando.ExecuteReader())
             {
-                conexion.Open();
-                string sql = "SELECT * FROM Productos WHERE IdProducto = @id";
-                using (var comando = new MySqlCommand(sql, conexion))
+                if (lector.Read())
                 {
-                    comando.Parameters.AddWithValue("@id", id);
-                    using (var lector = comando.ExecuteReader())
+                    prod = new Productos
                     {
-                        if (lector.Read())
-                        {
-                            prod = new Productos();
-                            prod.IdProducto = Convert.ToInt32(lector["IdProducto"]);
-                            prod.Codigo = lector["Codigo"].ToString();
-                            prod.Nombre = lector["Nombre"].ToString();
-                            prod.Categoria = lector["Categoria"].ToString();
-                            prod.Descripcion = lector["Descripcion"].ToString();
-                            prod.PrecioCosto = Convert.ToDecimal(lector["PrecioCosto"]);
-                            prod.RecargoPorcentaje = Convert.ToDecimal(lector["RecargoPorcentaje"]);
-                            // prod.PrecioVenta = Convert.ToDecimal(lector["PrecioVenta"]);
-                            prod.StockActual = Convert.ToInt32(lector["StockActual"]);
-                            prod.StockMinimo = Convert.ToInt32(lector["StockMinimo"]);
-                            prod.Proveedor = lector["Proveedor"].ToString();
-                            prod.Imagen = lector["Imagen"].ToString();
-                        }
-                    }
+                        IdProducto = Convert.ToInt32(lector["IdProducto"]),
+                        Codigo = lector["Codigo"].ToString(),
+                        Nombre = lector["Nombre"].ToString(),
+                        Categoria = lector["Categoria"].ToString(),
+                        Descripcion = lector["Descripcion"].ToString(),
+                        PrecioCosto = Convert.ToDecimal(lector["PrecioCosto"]),
+                        RecargoPorcentaje = Convert.ToDecimal(lector["RecargoPorcentaje"]),
+                       // PrecioVenta = Convert.ToDecimal(lector["PrecioVenta"]),
+                        StockActual = Convert.ToInt32(lector["StockActual"]),
+                        StockMinimo = Convert.ToInt32(lector["StockMinimo"]),
+                      
+                        NombreProveedor = lector["NombreProveedor"].ToString(),
+                        Imagen = lector["Imagen"].ToString()
+                    };
                 }
             }
-
-            return prod;
         }
+    }
+
+    return prod;
+}
+
 
         public void ActualizarProducto(Productos producto)
-        {
-            using (var conexion = new MySqlConnection(_connectionString))
-            {
-                conexion.Open();
-                string sql = @"UPDATE Productos SET 
+{
+    using (var conexion = new MySqlConnection(_connectionString))
+    {
+        conexion.Open();
+        string sql = @"UPDATE Productos SET 
                         Codigo = @Codigo,
                         Nombre = @Nombre,
                         Categoria = @Categoria,
@@ -653,49 +669,75 @@ public List<object> ObtenerTotalVentasPorAnio(DateTime desde, DateTime hasta)
                         RecargoPorcentaje = @RecargoPorcentaje,
                         StockActual = @StockActual,
                         StockMinimo = @StockMinimo,
-                        Proveedor = @Proveedor,
+                        nombreProveedor = @nombreProveedor,
                         Imagen = @Imagen
                       WHERE IdProducto = @IdProducto";
 
-                using (var comando = new MySqlCommand(sql, conexion))
-                {
-                    comando.Parameters.AddWithValue("@Codigo", producto.Codigo);
-                    comando.Parameters.AddWithValue("@Nombre", producto.Nombre);
-                    comando.Parameters.AddWithValue("@Categoria", producto.Categoria);
-                    comando.Parameters.AddWithValue("@Descripcion", producto.Descripcion);
-                    comando.Parameters.AddWithValue("@PrecioCosto", producto.PrecioCosto);
-                    comando.Parameters.AddWithValue("@RecargoPorcentaje", producto.RecargoPorcentaje);
-                    comando.Parameters.AddWithValue("@StockActual", producto.StockActual);
-                    comando.Parameters.AddWithValue("@StockMinimo", producto.StockMinimo);
-                    comando.Parameters.AddWithValue("@Proveedor", producto.Proveedor);
-                    comando.Parameters.AddWithValue("@Imagen", producto.Imagen ?? (object)DBNull.Value);
-                    comando.Parameters.AddWithValue("@IdProducto", producto.IdProducto);
+        using (var comando = new MySqlCommand(sql, conexion))
+        {
+            comando.Parameters.AddWithValue("@Codigo", producto.Codigo);
+            comando.Parameters.AddWithValue("@Nombre", producto.Nombre);
+            comando.Parameters.AddWithValue("@Categoria", producto.Categoria);
+            comando.Parameters.AddWithValue("@Descripcion", producto.Descripcion);
+            comando.Parameters.AddWithValue("@PrecioCosto", producto.PrecioCosto);
+            comando.Parameters.AddWithValue("@RecargoPorcentaje", producto.RecargoPorcentaje);
+           // comando.Parameters.AddWithValue("@PrecioVenta", producto.PrecioVenta);
+            comando.Parameters.AddWithValue("@StockActual", producto.StockActual);
+            comando.Parameters.AddWithValue("@StockMinimo", producto.StockMinimo);
+            comando.Parameters.AddWithValue("@nombreProveedor", producto.NombreProveedor);
+            comando.Parameters.AddWithValue("@Imagen", producto.Imagen ?? (object)DBNull.Value);
+            comando.Parameters.AddWithValue("@IdProducto", producto.IdProducto);
 
-                    comando.ExecuteNonQuery();
+            comando.ExecuteNonQuery();
+        }
+    }
+}
+
+public List<Proveedor> ObtenerProveedores()
+{
+    var lista = new List<Proveedor>();
+    using (var conexion = new MySqlConnection(_connectionString))
+    {
+        conexion.Open();
+        var sql = "SELECT IdProv, Nombre FROM Proveedor";
+        using (var comando = new MySqlCommand(sql, conexion))
+        {
+            using (var reader = comando.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    lista.Add(new Proveedor
+                    {
+                        IdProveedor = reader.GetInt32(0),
+                        NombreProveedor = reader.GetString(1)
+                    });
                 }
             }
         }
+    }
+    return lista;
+}
 
         //----------------------------OBTIENE EL ULTIMO NRO DE PRESUPUESTO---------------------------
-        
-public int ObtenerMaximoNroPresupuesto()
-{
-    int max = 0;
-    using (var connection = new MySqlConnection(_connectionString))
-    {
-        connection.Open();
-        var query = "SELECT MAX(idPresupuesto) FROM Presupuesto";
-        using (var cmd = new MySqlCommand(query, connection))
+
+        public int ObtenerMaximoNroPresupuesto()
         {
-            var result = cmd.ExecuteScalar();
-            if (result != DBNull.Value)
+            int max = 0;
+            using (var connection = new MySqlConnection(_connectionString))
             {
-                max = Convert.ToInt32(result);
+                connection.Open();
+                var query = "SELECT MAX(idPresupuesto) FROM Presupuesto";
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    var result = cmd.ExecuteScalar();
+                    if (result != DBNull.Value)
+                    {
+                        max = Convert.ToInt32(result);
+                    }
+                }
             }
+            return max;
         }
-    }
-    return max;
-}
 
 
 

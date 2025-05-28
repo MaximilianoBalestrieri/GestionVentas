@@ -4,6 +4,7 @@ using MySql.Data.MySqlClient;
 using Microsoft.AspNetCore.Http;
 using System.Web;
 using System.IO;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace GestionVentas.Controllers
 {
@@ -15,18 +16,20 @@ namespace GestionVentas.Controllers
         {
             var fotoPerfil = HttpContext.Session.GetString("FotoPerfil");
             ViewBag.FotoPerfil = fotoPerfil;
+
             List<Productos> productos = new List<Productos>();
-            ConexionDB db = new ConexionDB(); // Usa tu clase de conexión
+            ConexionDB db = new ConexionDB();
 
             using (MySqlConnection conn = new MySqlConnection(db.CadenaConexion))
             {
                 conn.Open();
 
-                string consulta = "SELECT * FROM productos";
+                string consulta = @"SELECT * 
+                                FROM productos ";
 
                 if (!string.IsNullOrEmpty(busqueda))
                 {
-                    consulta += " WHERE nombre LIKE @busqueda OR codigo LIKE @busqueda";
+                    consulta += " WHERE p.nombre LIKE @busqueda OR p.codigo LIKE @busqueda";
                 }
 
                 consulta += " LIMIT @inicio, @tamanio";
@@ -53,12 +56,11 @@ namespace GestionVentas.Controllers
                                 Codigo = reader["Codigo"].ToString(),
                                 PrecioCosto = Convert.ToDecimal(reader["PrecioCosto"]),
                                 RecargoPorcentaje = Convert.ToDecimal(reader["RecargoPorcentaje"]),
-                                Proveedor = reader["Proveedor"].ToString(),
+                                NombreProveedor = reader["NombreProveedor"].ToString(), // Cambio importante
                                 StockActual = Convert.ToInt32(reader["StockActual"]),
                                 Imagen = reader["Imagen"].ToString(),
                                 Descripcion = reader["Descripcion"].ToString(),
-                                // PrecioVenta = Convert.ToDecimal(reader["PrecioVenta"]),
-                                // Otros campos que tengas
+                                // Si tenés campo PrecioVenta, lo agregás acá
                             });
                         }
                     }
@@ -77,7 +79,7 @@ namespace GestionVentas.Controllers
         [HttpGet]
         public JsonResult Buscar(string term)
         {
-            
+
             var db = new ConexionDB();
             var productos = db.ObtenerProductos();
 
@@ -92,11 +94,11 @@ namespace GestionVentas.Controllers
             return Json(productos);
         }
 
-public ActionResult ObtenerProductos()
-{
-    var productos = new ConexionDB().ObtenerProductos();
-    return PartialView("filasProductos", productos);
-}
+        public ActionResult ObtenerProductos()
+        {
+            var productos = new ConexionDB().ObtenerProductos();
+            return PartialView("filasProductos", productos);
+        }
 
 
 
@@ -109,11 +111,21 @@ public ActionResult ObtenerProductos()
             conexionDB = new ConexionDB();  // Acá creamos la instancia para usarla luego
         }
 
+[HttpGet]
+public IActionResult Create()
+{
+    var modelo = new Productos();
 
-        public ActionResult Create()
+    modelo.Proveedores = conexionDB.ObtenerProveedores()
+        .Select(p => new SelectListItem
         {
-            return View();
-        }
+            Value = p.NombreProveedor,
+            Text = p.NombreProveedor
+        }).ToList();
+
+    return View(modelo);
+}
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create([FromForm] Productos prod, IFormFile? imagen)
@@ -121,10 +133,20 @@ public ActionResult ObtenerProductos()
         {
             var fotoPerfil = HttpContext.Session.GetString("FotoPerfil");
             ViewBag.FotoPerfil = fotoPerfil;
+            var model = new Productos();
             try
             {
                 if (ModelState.IsValid)
                 {
+
+                    model.Proveedores = conexionDB.ObtenerProveedores()
+    .Select(p => new SelectListItem
+    {
+        Value = p.NombreProveedor,
+        Text = p.NombreProveedor
+    }).ToList();
+
+
                     if (imagen != null && imagen.Length > 0)
                     {
                         string nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(imagen.FileName);
@@ -214,41 +236,66 @@ public ActionResult ObtenerProductos()
         }
 
         //--------------------------------EDIT --------------------------------------------
-    
-  
 
-    [HttpGet]
-public IActionResult Edit(int id)
+
+
+   [HttpGet]
+public ActionResult Edit(int id)
 {
     var producto = conexionDB.ObtenerProductoPorId(id);
+
     if (producto == null)
     {
-        return NotFound();
+        TempData["Error"] = "No se encontró el producto con ID " + id;
+        return RedirectToAction("Index");
     }
+
+    var proveedores = conexionDB.ObtenerProveedores();
+
+    producto.Proveedores = proveedores.Select(p => new SelectListItem
+    {
+        Value = p.NombreProveedor.ToString(),
+        Text = p.NombreProveedor
+    }).ToList();
 
     return View(producto);
 }
 
 
-    [HttpPost]
+
+
+[HttpPost]
 [ValidateAntiForgeryToken]
 public IActionResult Edit(Productos model, IFormFile? imagen)
 {
+    // Recuperar foto de sesión
     var fotoPerfil = HttpContext.Session.GetString("FotoPerfil");
-            ViewBag.FotoPerfil = fotoPerfil;
-    if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
+    ViewBag.FotoPerfil = fotoPerfil;
 
-    // Traemos el producto original de la base de datos
+    // Verificar si el ModelState es válido
+    if (!ModelState.IsValid)
+    {
+        
+
+        // Volver a cargar los proveedores en caso de error
+                model.Proveedores = conexionDB.ObtenerProveedores()
+            .Select(p => new SelectListItem
+            {
+                Value = p.NombreProveedor.ToString(),
+                Text = p.NombreProveedor
+            }).ToList();
+
+        return View(model);
+    }
+
+    // Obtener el producto original de la BD
     var producto = conexionDB.ObtenerProductoPorId(model.IdProducto);
     if (producto == null)
     {
         return NotFound();
     }
 
-    // Actualizamos los campos
+    // Actualizar campos
     producto.Codigo = model.Codigo;
     producto.Nombre = model.Nombre;
     producto.Categoria = model.Categoria;
@@ -257,9 +304,11 @@ public IActionResult Edit(Productos model, IFormFile? imagen)
     producto.RecargoPorcentaje = model.RecargoPorcentaje;
     producto.StockActual = model.StockActual;
     producto.StockMinimo = model.StockMinimo;
-    producto.Proveedor = model.Proveedor;
+    producto.NombreProveedor = model.NombreProveedor;
 
-    // Manejo de imagen nueva (si se cargó)
+    // Guardar nombre del proveedor (opcional)
+    
+    // Guardar imagen nueva si se cargó
     if (imagen != null && imagen.Length > 0)
     {
         string nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(imagen.FileName);
@@ -269,7 +318,6 @@ public IActionResult Edit(Productos model, IFormFile? imagen)
             Directory.CreateDirectory(rutaCarpeta);
 
         string rutaCompleta = Path.Combine(rutaCarpeta, nombreArchivo);
-
         using (var stream = new FileStream(rutaCompleta, FileMode.Create))
         {
             imagen.CopyTo(stream);
@@ -277,15 +325,40 @@ public IActionResult Edit(Productos model, IFormFile? imagen)
 
         producto.Imagen = "/imagenes/productos/" + nombreArchivo;
     }
+    else if (!string.IsNullOrEmpty(model.Imagen))
+    {
+        producto.Imagen = model.Imagen; // conservar la imagen anterior
+    }
 
-    // Actualizamos en la base de datos
-    conexionDB.ActualizarProducto(producto);
+    try
+    {
+        conexionDB.ActualizarProducto(producto);
+    }
+    catch (Exception ex)
+    {
+        ModelState.AddModelError("", "Ocurrió un error al guardar el producto: " + ex.Message);
+
+        // Volver a cargar proveedores si hay error al guardar
+        model.Proveedores = conexionDB.ObtenerProveedores()
+            .Select(p => new SelectListItem
+            {
+                Value = p.IdProveedor.ToString(),
+                Text = p.NombreProveedor
+            }).ToList();
+
+        return View(model);
+    }
 
     return RedirectToAction("Index");
 }
 
 
+
+
         //---------------------------------------------------------------------------------
+        
+
+        
     }
 }
 

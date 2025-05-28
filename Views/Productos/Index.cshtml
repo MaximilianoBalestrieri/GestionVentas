@@ -53,7 +53,7 @@
                 <td class="text-end"><strong>$@prod.PrecioVenta.ToString("0.00")</strong></td>
                <td class="text-center @stockClass">@prod.StockActual</td>
 
-                <td>@prod.Proveedor</td>
+                <td>@prod.NombreProveedor</td>
                 <td>
                     <a href="@Url.Action("Edit", "Productos", new { id = prod.IdProducto })" class="btn btn-sm btn-warning">✏️</a>
                     <a href="@Url.Action("Delete", "Productos", new { id = prod.IdProducto })" class="btn btn-sm btn-danger">🗑️</a>

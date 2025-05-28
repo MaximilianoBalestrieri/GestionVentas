@@ -31,8 +31,11 @@
 
 <h2 class="mb-4">🧾 Crear Presupuesto</h2>
 
-@using (Html.BeginForm())
+@using (Html.BeginForm("Create", "Presupuesto", FormMethod.Post))
+
 {
+    @Html.HiddenFor(m => m.IdPresupuesto)
+
     <div class="presupuesto-box">
 
        <!-- ENCABEZADO CON LOGO Y DATOS -->
@@ -164,14 +167,15 @@ document.addEventListener("DOMContentLoaded", () => {
             tabla.innerHTML = "";
 
             productos.forEach(p => {
-                const fila = document.createElement("tr");
-                fila.innerHTML = `
-                    <td>${p.nombre}</td>
-                    <td>${p.precio.toFixed(2)}</td>
-                    <td><button type="button" class="btn btn-success btn-sm" onclick="seleccionarProducto('${p.nombre}', ${p.precio})">✔</button></td>
-                `;
-                tabla.appendChild(fila);
-            });
+    const fila = document.createElement("tr");
+    fila.innerHTML = `
+        <td>${p.nombre}</td>
+        <td>${p.precio.toFixed(2)}</td>
+        <td><button type="button" class="btn btn-success btn-sm" onclick="seleccionarProducto('${p.nombre}', ${p.precio})">✔</button></td>
+    `;
+    tabla.appendChild(fila);
+});
+
         });
 });
 

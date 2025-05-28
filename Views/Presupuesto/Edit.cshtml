@@ -1,0 +1,198 @@
+@model Presupuesto
+
+@{
+    ViewBag.Title = "Editar Presupuesto";
+}
+
+<head>
+    <link rel="stylesheet" href="/css/presupuesto.css" />
+    <style>
+        /* Solo para esta vista, ajusto el estilo de la tabla para filas sin bordes en los inputs */
+        .table td input {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            height: auto !important;
+            min-height: 1.5rem;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+
+        .datos-linea {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 15px;
+        }
+
+        .datos-linea .izquierda,
+        .datos-linea .derecha {
+            width: 48%;
+        }
+
+        .datos-linea label {
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+            display: block;
+            color: #444;
+        }
+
+        .datos-linea input[readonly] {
+            background: #f8f9fa;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 6px 8px;
+            width: 100%;
+            color: #333;
+        }
+    </style>
+</head>
+
+<h2 class="mb-4">✏️ Editar Presupuesto</h2>
+
+@using (Html.BeginForm())
+{
+    @Html.HiddenFor(m => m.IdPresupuesto)
+
+    @Html.AntiForgeryToken()
+
+    <div class="presupuesto-box card p-3 shadow-sm" style="max-width: 900px; margin: auto; font-size: 14px;">
+
+        <!-- Línea 1: Nro presupuesto a la izquierda, Fecha a la derecha -->
+        <div class="datos-linea">
+            <div class="izquierda">
+                @Html.LabelFor(m => m.IdPresupuesto, "N° Presupuesto")
+                @Html.TextBoxFor(m => m.IdPresupuesto, new { @class = "form-control", @readonly = "readonly" })
+            </div>
+            <div class="derecha">
+                @Html.LabelFor(m => m.Fecha, "Fecha")
+                @Html.TextBoxFor(m => m.Fecha, "{0:yyyy-MM-dd}", new { type = "date", @class = "form-control", @readonly = "readonly" })
+            </div>
+        </div>
+
+        <!-- Línea 2: Nombre cliente a la izquierda, Teléfono a la derecha -->
+        <div class="datos-linea">
+            <div class="izquierda">
+                @Html.LabelFor(m => m.NombreCliente, "Nombre Cliente")
+                @Html.TextBoxFor(m => m.NombreCliente, new { @class = "form-control" })
+                @Html.ValidationMessageFor(m => m.NombreCliente, "", new { @class = "text-danger" })
+            </div>
+            <div class="derecha">
+                @Html.LabelFor(m => m.TelefonoCliente, "Teléfono Cliente")
+                @Html.TextBoxFor(m => m.TelefonoCliente, new { @class = "form-control" })
+                @Html.ValidationMessageFor(m => m.TelefonoCliente, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <h4 class="mt-4">Productos / Items</h4>
+
+        <table class="table mt-3">
+            <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th class="text-center">Cantidad</th>
+                    <th class="text-end">Precio Unitario</th>
+                    <th class="text-end">Subtotal</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="itemsBody">
+                @for (int i = 0; i < Model.Items.Count; i++)
+                {
+                    var subtotal = Model.Items[i].Cantidad * Model.Items[i].PrecioUnitario;
+                    <tr>
+                        <td>
+                            @Html.TextBoxFor(m => m.Items[i].Nombre, new { @class = "form-control", style="border:none; background:transparent; padding:0;" })
+                        </td>
+                        <td class="text-center">
+                            @Html.TextBoxFor(m => m.Items[i].Cantidad, new { @class = "form-control text-center", type = "number", min = "1", oninput = "actualizarTotales()", style="border:none; background:transparent; padding:0;" })
+                        </td>
+                        <td class="text-end">
+                            @Html.TextBoxFor(m => m.Items[i].PrecioUnitario, new { @class = "form-control text-end", type = "number", step = "0.01", min = "0", oninput = "actualizarTotales()", style="border:none; background:transparent; padding:0;" })
+                        </td>
+                        <td class="text-end subtotal">$@subtotal.ToString("N2")</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-danger btn-sm" onclick="eliminarFila(this)">Eliminar</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr class="fw-bold table-dark">
+                    <td colspan="3" class="text-end">Total</td>
+                    <td id="total" class="text-end">$@Model.Items.Sum(i => i.Cantidad * i.PrecioUnitario).ToString("N2")</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <button type="button" class="btn btn-success mb-3" onclick="agregarFila()">➕ Agregar Producto</button>
+
+        <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            <a href="@Url.Action("Index")" class="btn btn-secondary ms-2">Cancelar</a>
+        </div>
+    </div>
+}
+@section Scripts {
+    <script>
+        function eliminarFila(btn) {
+            const row = btn.closest('tr');
+            row.remove();
+            actualizarTotales();
+        }
+
+        function agregarFila() {
+            const tbody = document.getElementById('itemsBody');
+            const index = tbody.children.length;
+
+            const nuevaFila = document.createElement('tr');
+            nuevaFila.innerHTML = `
+                <td>
+                    <input class="form-control" name="Items[${index}].Nombre" type="text" style="border:none; background:transparent; padding:0;" />
+                </td>
+                <td class="text-center">
+                    <input class="form-control text-center" name="Items[${index}].Cantidad" type="number" min="1" value="1" oninput="actualizarTotales()" style="border:none; background:transparent; padding:0;" />
+                </td>
+                <td class="text-end">
+                    <input class="form-control text-end" name="Items[${index}].PrecioUnitario" type="number" step="0.01" min="0" value="0.00" oninput="actualizarTotales()" style="border:none; background:transparent; padding:0;" />
+                </td>
+                <td class="text-end subtotal">$0.00</td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="eliminarFila(this)">Eliminar</button>
+                </td>
+            `;
+            tbody.appendChild(nuevaFila);
+        }
+
+        function actualizarTotales() {
+            const tbody = document.getElementById('itemsBody');
+            let total = 0;
+
+            [...tbody.rows].forEach(row => {
+                const cantidadInput = row.querySelector('input[name$=".Cantidad"]');
+                const precioInput = row.querySelector('input[name$=".PrecioUnitario"]');
+                const subtotalCell = row.querySelector('.subtotal');
+
+                const cantidad = parseFloat(cantidadInput?.value) || 0;
+                const precio = parseFloat(precioInput?.value) || 0;
+                const subtotal = cantidad * precio;
+
+                if (subtotalCell) {
+                    subtotalCell.textContent = '$' + subtotal.toFixed(2);
+                }
+
+                total += subtotal;
+            });
+
+            document.getElementById('total').textContent = '$' + total.toFixed(2);
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            actualizarTotales();
+        });
+    </script>
+}
