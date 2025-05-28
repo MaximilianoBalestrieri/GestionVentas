@@ -44,36 +44,127 @@ namespace GestionVentas.Models
         }
 
 
-        //--------------------- PRESUPUESTO -------------------------------------
-        //--------------------- PRESUPUESTO -------------------------------------
-
-public List<Presupuesto> ObtenerPresupuestos()
-{
-    var lista = new List<Presupuesto>();
-
-    using (var conn = ObtenerConexion())
+        //--------------------- CLIENTES -------------------------------------
+        
+public List<Cliente> ObtenerClientes()
     {
-        conn.Open();
-        var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT * FROM Presupuesto ORDER BY Fecha DESC";
-
-        using (var reader = cmd.ExecuteReader())
+        var lista = new List<Cliente>();
+        using (var conn = new MySqlConnection(_connectionString))
         {
+            conn.Open();
+            var cmd = new MySqlCommand("SELECT * FROM Clientes", conn);
+            var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
-                lista.Add(new Presupuesto
+                lista.Add(new Cliente
                 {
-                    IdPresupuesto = Convert.ToInt32(reader["IdPresupuesto"]),
-                    NombreCliente = reader["NombreCliente"].ToString(),
-                    TelefonoCliente = reader["TelefonoCliente"].ToString(),
-                    Fecha = Convert.ToDateTime(reader["Fecha"])
+                    IdCliente = Convert.ToInt32(reader["idCliente"]),
+                    DniCliente = reader["dniCliente"].ToString(),
+                    NombreCliente = reader["nombreCliente"].ToString(),
+                    Domicilio = reader["domicilio"].ToString(),
+                    Localidad = reader["localidad"].ToString()
                 });
             }
         }
+        return lista;
     }
 
-    return lista;
-}
+    public Cliente ObtenerClientePorId(int id)
+    {
+        Cliente cliente = null;
+        using (var conn = new MySqlConnection(_connectionString))
+        {
+            conn.Open();
+            var cmd = new MySqlCommand("SELECT * FROM Clientes WHERE idCliente = @id", conn);
+            cmd.Parameters.AddWithValue("@id", id);
+            var reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                cliente = new Cliente
+                {
+                    IdCliente = Convert.ToInt32(reader["idCliente"]),
+                    DniCliente = reader["dniCliente"].ToString(),
+                    NombreCliente = reader["nombreCliente"].ToString(),
+                    Domicilio = reader["domicilio"].ToString(),
+                    Localidad = reader["localidad"].ToString()
+                };
+            }
+        }
+        return cliente;
+    }
+
+    public void AgregarCliente(Cliente cliente)
+    {
+        using (var conn = new MySqlConnection(_connectionString))
+        {
+            conn.Open();
+            var cmd = new MySqlCommand("INSERT INTO Clientes (dniCliente, nombreCliente, domicilio, localidad) VALUES (@dni, @nombre, @domicilio, @localidad)", conn);
+            cmd.Parameters.AddWithValue("@dni", cliente.DniCliente);
+            cmd.Parameters.AddWithValue("@nombre", cliente.NombreCliente);
+            cmd.Parameters.AddWithValue("@domicilio", cliente.Domicilio);
+            cmd.Parameters.AddWithValue("@localidad", cliente.Localidad);
+            cmd.ExecuteNonQuery();
+        }
+    }
+
+    public void ActualizarCliente(Cliente cliente)
+    {
+        using (var conn = new MySqlConnection(_connectionString))
+        {
+            conn.Open();
+            var cmd = new MySqlCommand("UPDATE Clientes SET dniCliente=@dni, nombreCliente=@nombre, domicilio=@domicilio, localidad=@localidad WHERE idCliente=@id", conn);
+            cmd.Parameters.AddWithValue("@dni", cliente.DniCliente);
+            cmd.Parameters.AddWithValue("@nombre", cliente.NombreCliente);
+            cmd.Parameters.AddWithValue("@domicilio", cliente.Domicilio);
+            cmd.Parameters.AddWithValue("@localidad", cliente.Localidad);
+            cmd.Parameters.AddWithValue("@id", cliente.IdCliente);
+            cmd.ExecuteNonQuery();
+        }
+    }
+
+    public void EliminarCliente(int id)
+    {
+        using (var conn = new MySqlConnection(_connectionString))
+        {
+            conn.Open();
+            var cmd = new MySqlCommand("DELETE FROM Clientes WHERE idCliente=@id", conn);
+            cmd.Parameters.AddWithValue("@id", id);
+            cmd.ExecuteNonQuery();
+        }
+    }
+
+
+
+
+        //--------------------- PRESUPUESTO -------------------------------------
+
+        public List<Presupuesto> ObtenerPresupuestos()
+        {
+            var lista = new List<Presupuesto>();
+
+            using (var conn = ObtenerConexion())
+            {
+                conn.Open();
+                var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT * FROM Presupuesto ORDER BY Fecha DESC";
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        lista.Add(new Presupuesto
+                        {
+                            IdPresupuesto = Convert.ToInt32(reader["IdPresupuesto"]),
+                            NombreCliente = reader["NombreCliente"].ToString(),
+                            TelefonoCliente = reader["TelefonoCliente"].ToString(),
+                            Fecha = Convert.ToDateTime(reader["Fecha"])
+                        });
+                    }
+                }
+            }
+
+            return lista;
+        }
 
 public void EliminarPresupuesto(int id)
 {

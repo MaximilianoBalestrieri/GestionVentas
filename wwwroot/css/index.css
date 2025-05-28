@@ -5,31 +5,32 @@ body {
   }
 
   .seccion-cards {
-    padding: 70px 20px;
-  
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 30px;
-    max-width: 1200px;
-    margin: auto;
-    margin-top: -50px;
-    display: flex;
+  padding: 70px 20px;
+  max-width: 1200px;
+  margin: auto;
+  margin-top: -50px;
+  display: flex;
   flex-wrap: wrap;
-  gap: 1.5rem;
   justify-content: center;
-  
-  }
+  gap: 1rem; /* menos espacio entre cards */
+}
 
-  .card-servicio {
-  width: 220px; /* más angosta */
-  padding: 1rem; /* menos padding */
+ .card-servicio {
+  width: 22% !important; /* Aproximadamente 4 por fila con margen */
+  min-width: 150px;
+  max-width: 150px;
+  padding: 0.8rem;
   border-radius: 1rem;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   background-color: #fff;
   text-align: center;
-   transition: all 0.3s ease;
+  transition: all 0.3s ease;
   border: 2px solid transparent;
-  height: 285px;
-  cursor: pointer; 
+  height: 250px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
  .card-servicio:hover {
@@ -40,14 +41,11 @@ body {
 }
 
  .card-servicio img {
-  width: 100%;
-  max-width: 180px;
-  height: auto; /* se ajusta proporcionalmente */
-  object-fit: contain; /* o "cover", depende si querés que se recorte o no */
-  display: block;
-  margin: 0 auto; /* centrado si querés */
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin: 0 auto;
 }
-
 
  .card-servicio h5 {
   font-size: 1rem; /* más chico */

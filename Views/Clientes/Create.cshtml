@@ -1,0 +1,27 @@
+@model Cliente
+@{
+    ViewData["Title"] = "Agregar Cliente";
+}
+
+<h2>Agregar Cliente</h2>
+
+<form asp-action="Create">
+    <div class="mb-3">
+        <label asp-for="DniCliente" class="form-label"></label>
+        <input asp-for="DniCliente" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="NombreCliente" class="form-label"></label>
+        <input asp-for="NombreCliente" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Domicilio" class="form-label"></label>
+        <input asp-for="Domicilio" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Localidad" class="form-label"></label>
+        <input asp-for="Localidad" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>
