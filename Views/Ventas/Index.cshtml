@@ -6,10 +6,9 @@
 
 
 
-<head>
+
 <link rel="stylesheet" href="/css/ventas.css" />
 
-</head>
 <!--  TÍTULO Y BOTÓN FUERA DEL RECUADRO, CON MARGEN SUPERIOR -->
 <div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 900px; margin: 20px auto 10px auto;">
     <h4 class="mb-0">Factura</h4>
@@ -21,31 +20,100 @@
 <div id="facturaImprimible" class="card p-3 shadow-sm" style="max-width: 900px; margin: auto; font-size: 14px;">
 
  <!-- Logo -->
-    <div class="d-flex align-items-center mb-3" id="facturaEncabezado">
-        <img src="/imagenes/logo.png" alt="Logo" style="height: 50px; margin-right: 15px;">
+<div class="d-flex align-items-center mb-3" id="facturaEncabezado">
+    <img src="/imagenes/logo.png" alt="Logo" style="height: 50px; margin-right: 15px;">
     <div>
-    <h5 style="margin: 0;">Ferreteria Santiago</h5>
-    <small class="text-muted">La Paz - Córdoba</small>
-  </div>
- </div>
- <hr style="margin-top: 0; margin-bottom: 15px;">
- <div class="mb-2 d-flex justify-content-between align-items-center">
-  <div>
-    <strong>Factura N°:</strong>
-    <span id="nroFacturaPrincipal">0001-00000001</span>
-  </div>
-  <small class="text-end" style="font-size: 1rem;">Fecha: @fechaHoy</small>
+        <h5 style="margin: 0;">Ferreteria Santiago</h5>
+        <small class="text-muted">La Paz - Córdoba</small>
+    </div>
+</div>
+<hr style="margin-top: 0; margin-bottom: 15px;">
+<div class="mb-2 d-flex justify-content-between align-items-center">
+    <div>
+        <strong>Factura N°:</strong>
+        <span id="nroFacturaPrincipal">0001-00000001</span>
+    </div>
+    <small class="text-end" style="font-size: 1rem;">Fecha: @fechaHoy</small>
 </div>
 
-<div class="mb-2">
-  <strong>Cliente:</strong>
-  <input type="text" id="nombreCliente" class="form-control form-control-sm d-inline-block" style="width: 250px;" placeholder="Nombre del cliente">
+<div class="mb-3">
+    <div class="row g-2 align-items-center"> <div class="col-md-2">
+            <strong>DNI:</strong>
+        </div>
+        <div class="col-md-3">
+            <input type="text" id="dniCliente" class="form-control form-control-sm" placeholder="DNI del cliente" readonly>
+        </div>
+        <div class="col-md-2 text-md-end"> <strong>Cliente:</strong>
+        </div>
+        <div class="col-md-3">
+            <input type="text" id="nombreCliente" class="form-control form-control-sm" placeholder="Nombre del cliente" readonly>
+            <input type="hidden" id="idCliente"> </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-sm btn-primary w-100" data-bs-toggle="modal" data-bs-target="#clientesModal">
+                Clientes
+            </button>
+        </div>
+    </div>
+    <div class="row g-2 mt-2"> <div class="col-md-2">
+            <strong>Dirección:</strong>
+        </div>
+        <div class="col-md-4">
+            <input type="text" id="direccionCliente" class="form-control form-control-sm" placeholder="Dirección del cliente" readonly>
+        </div>
+        <div class="col-md-2 text-md-end">
+            <strong>Localidad:</strong>
+        </div>
+        <div class="col-md-4">
+            <input type="text" id="localidadCliente" class="form-control form-control-sm" placeholder="Localidad del cliente" readonly>
+        </div>
+    </div>
+    <div class="row g-2 mt-2"> <div class="col-md-2">
+            <strong>Teléfono:</strong>
+        </div>
+        <div class="col-md-4">
+            <input type="text" id="telefonoCliente" class="form-control form-control-sm" placeholder="Teléfono del cliente" readonly>
+        </div>
+    </div>
 </div>
 
 
  <hr style="margin-top: 0; margin-bottom: 15px;">
 
+<!-------------------- MODAL CLIENTES -------------------------->
 
+<div class="modal fade" id="clientesModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Buscar Cliente</h5>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="filtroCliente" class="form-control mb-3" placeholder="Buscar por nombre o DNI">
+
+        <table class="table table-hover">
+          <thead>
+          <tr>
+            <th>DNI</th>
+            <th>Nombre</th>
+            <th>Domicilio</th>
+            <th>Localidad</th>
+            <th>Teléfono</th>
+            <th>Seleccionar</th>
+          </tr>
+        </thead>
+
+          <tbody id="tablaClientes">
+            <!-- Se llena con JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-------------------------------------------------------------->
 
     <table class="table table-sm table-bordered" id="tablaFactura">
         <thead class="table-light">
@@ -220,6 +288,100 @@
 
 @section Scripts {
 <script>
+//--------------------------CLIENTES --------------------------
+
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("clientesModal");
+
+    // Cargar todos los clientes cuando se abre el modal
+    modal.addEventListener("show.bs.modal", function () {
+        fetch("/Clientes/ObtenerClientes")
+            .then(response => response.json())
+            .then(clientes => {
+                const tbody = document.getElementById("tablaClientes");
+                tbody.innerHTML = "";
+
+                clientes.forEach(cliente => {
+                    const tr = document.createElement("tr");
+
+                    tr.dataset.id = cliente.idCliente;
+                    tr.dataset.nombre = cliente.nombreCliente;
+                    tr.dataset.dni = cliente.dniCliente;
+                    tr.dataset.domicilio = cliente.domicilio;
+                    tr.dataset.localidad = cliente.localidad;
+                    tr.dataset.telefono = cliente.telefonoCliente;
+
+                    tr.innerHTML = `
+                        <td>${cliente.dniCliente}</td>
+                        <td>${cliente.nombreCliente}</td>
+                        <td>${cliente.domicilio}</td>
+                        <td>${cliente.localidad}</td>
+                        <td>${cliente.telefonoCliente}</td>
+                        <td><button type="button" class="btn btn-sm btn-success seleccionar-cliente">Seleccionar</button></td>
+                    `;
+
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(error => {
+                console.error("Error cargando clientes:", error);
+            });
+    });
+
+    // Filtro de búsqueda
+    document.getElementById("filtroCliente").addEventListener("input", function () {
+        const filtro = this.value;
+
+        fetch("/Clientes/BuscarClientes?filtro=" + encodeURIComponent(filtro))
+            .then(response => response.json())
+            .then(clientes => {
+                const tbody = document.getElementById("tablaClientes");
+                tbody.innerHTML = "";
+
+                clientes.forEach(c => {
+                    const fila = document.createElement("tr");
+
+                    fila.dataset.id = c.idCliente;
+                    fila.dataset.nombre = c.nombreCliente;
+                    fila.dataset.dni = c.dniCliente;
+                    fila.dataset.domicilio = c.domicilio;
+                    fila.dataset.localidad = c.localidad;
+                    fila.dataset.telefono = c.telefonoCliente;
+
+                    fila.innerHTML = `
+                        <td>${c.dniCliente}</td>
+                        <td>${c.nombreCliente}</td>
+                        <td>${c.domicilio}</td>
+                        <td>${c.localidad}</td>
+                        <td>${c.telefonoCliente}</td>
+                        <td><button type="button" class="btn btn-sm btn-success seleccionar-cliente">Seleccionar</button></td>
+                    `;
+
+                    tbody.appendChild(fila);
+                });
+            });
+    });
+
+    // Selección del cliente
+    document.addEventListener("click", function (e) {
+        if (e.target.classList.contains("seleccionar-cliente")) {
+            const tr = e.target.closest("tr");
+
+            document.getElementById("idCliente").value = tr.dataset.id;
+            document.getElementById("nombreCliente").value = tr.dataset.nombre;
+            document.getElementById("dniCliente").value = tr.dataset.dni;
+           document.getElementById("direccionCliente").value = tr.dataset.domicilio;
+            document.getElementById("localidadCliente").value = tr.dataset.localidad;
+            document.getElementById("telefonoCliente").value = tr.dataset.telefono;
+
+            const modalBootstrap = bootstrap.Modal.getInstance(modal);
+            modalBootstrap.hide();
+        }
+    });
+});
+
+
+
 //-------------------------- CONFIRMAR COMPRA -------------------------- 
 document.getElementById("confirmarCompra").addEventListener("click", function () {
     const filas = document.querySelectorAll("#tablaFactura tbody tr");
@@ -229,7 +391,6 @@ document.getElementById("confirmarCompra").addEventListener("click", function ()
         const id = parseInt(fila.getAttribute("data-idproducto"));
         const cantidad = parseInt(fila.querySelector(".cantidad").value);
 
-        // Solo agregar productos con cantidad válida (> 0)
         if (cantidad > 0) {
             productos.push({
                 IdProducto: id,
@@ -240,10 +401,9 @@ document.getElementById("confirmarCompra").addEventListener("click", function ()
 
     const totalFactura = parseFloat(document.getElementById("totalFactura").textContent || "0");
 
-    // Validar que haya productos y total positivo
     if (totalFactura <= 0 || productos.length === 0) {
         alert("No hay productos cargados para comprar.");
-        return; // Salir sin hacer la petición
+        return;
     }
 
     fetch("/Ventas/RestarStock", {
@@ -263,6 +423,14 @@ document.getElementById("confirmarCompra").addEventListener("click", function ()
             document.querySelector("#tablaFactura tbody").innerHTML = "";
             actualizarTotales();
 
+            // Limpiar datos del cliente 💘
+            document.getElementById("dniCliente").value = "";
+            document.getElementById("nombreCliente").value = "";
+            document.getElementById("direccionCliente").value = "";
+            document.getElementById("localidadCliente").value = "";
+            document.getElementById("telefonoCliente").value = "";
+            document.getElementById("idCliente").value = "";
+
             // Actualizar número de factura
             fetch('/Ventas/ObtenerProximoNroFactura')
                 .then(response => response.json())
@@ -279,13 +447,12 @@ document.getElementById("confirmarCompra").addEventListener("click", function ()
             const modalAbonar = bootstrap.Modal.getInstance(document.getElementById("modalAbonar"));
             if (modalAbonar) modalAbonar.hide();
 
-            // Refrescar tabla de productos del modal
+            // Refrescar productos
             fetch('/Productos/ObtenerProductos')
                 .then(r => r.text())
                 .then(html => {
                     document.querySelector('#tablaProductos tbody').innerHTML = html;
 
-                    // Aplicar estilos a los que tienen stock 0
                     document.querySelectorAll('#tablaProductos tbody tr').forEach(tr => {
                         const stockTd = tr.querySelector('td:nth-child(3)');
                         if (stockTd && parseInt(stockTd.textContent) === 0) {
@@ -296,7 +463,6 @@ document.getElementById("confirmarCompra").addEventListener("click", function ()
                     });
                 });
 
-            // Cerrar modal de productos si estuviera abierto
             const modalProductos = bootstrap.Modal.getInstance(document.getElementById("modalProductos"));
             if (modalProductos) modalProductos.hide();
 

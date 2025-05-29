@@ -6,7 +6,7 @@
 <a href="/Clientes/Create" class="btn btn-success mb-3">Agregar Cliente</a>
 <table class="table table-bordered">
     <tr>
-        <th>DNI</th><th>Nombre</th><th>Domicilio</th><th>Localidad</th><th>Acciones</th>
+        <th>DNI</th><th>Nombre</th><th>Domicilio</th><th>Localidad</th><th>Telefono</th><th>Acciones</th>
     </tr>
     @foreach (var c in Model)
     {
@@ -15,6 +15,7 @@
             <td>@c.NombreCliente</td>
             <td>@c.Domicilio</td>
             <td>@c.Localidad</td>
+            <td>@c.TelefonoCliente</td>
             <td>
                 
                 <a href="/Clientes/Edit/@c.IdCliente" class="btn btn-warning btn-sm">Editar</a>

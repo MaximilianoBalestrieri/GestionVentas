@@ -8,5 +8,7 @@ namespace GestionVentas.Models
         public string NombreCliente { get; set; }
         public string Domicilio { get; set; }
         public string Localidad { get; set; }
+        public string TelefonoCliente { get; set; }
+
     }
 }
