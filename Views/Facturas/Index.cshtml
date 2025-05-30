@@ -1,0 +1,56 @@
+@model List<Factura>
+
+
+@{
+    ViewData["Title"] = "Listado de Facturas";
+}
+
+<h2 class="text-center mb-4">Listado de Facturas</h2>
+
+<div class="d-flex justify-content-end mb-3">
+    <input type="text" id="buscador" class="form-control w-25" placeholder="Buscar cliente..." onkeyup="filtrarFacturas()" />
+</div>
+
+<table class="table table-bordered table-striped" id="tablaFacturas">
+    <thead class="table-dark">
+        <tr>
+            <th>N° Factura</th>
+            <th>Fecha</th>
+            <th>Cliente</th>
+            <th>Vendedor</th>
+            <th>Monto</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var factura in Model)
+        {
+            <tr>
+                <td>@factura.IdFactura</td>
+                <td>@factura.DiaVenta.ToString("dd/MM/yyyy")</td>
+                <td>@factura.NombreCliente</td>
+                <td>@factura.Vendedor</td>
+                <td>$@factura.MontoVenta.ToString("N2")</td>
+                <td>
+                    <a class="btn btn-primary btn-sm" href="@Url.Action("Detalles", "Facturas", new { id = factura.IdFactura })">
+                        Ver
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        function filtrarFacturas() {
+            let input = document.getElementById("buscador").value.toLowerCase();
+            let filas = document.querySelectorAll("#tablaFacturas tbody tr");
+
+            filas.forEach(fila => {
+                let cliente = fila.cells[2].textContent.toLowerCase();
+                fila.style.display = cliente.includes(input) ? "" : "none";
+            });
+        }
+    </script>
+}

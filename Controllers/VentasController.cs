@@ -6,7 +6,7 @@ namespace GestionVentas.Controllers
 
     public class VentasController : Controller
     {
-        public ActionResult Index()
+        public ActionResult Create()
         {
             ConexionDB db = new ConexionDB();
             var productos = db.ObtenerProductos(); // este método debe devolver List<Productos>
@@ -16,7 +16,7 @@ namespace GestionVentas.Controllers
             {
                 productos = new List<Productos>();
             }
-
+            ViewBag.Vendedor = User.Identity.Name ?? "Usuario Desconocido";
             return View(productos);
         }
 
@@ -40,11 +40,12 @@ public JsonResult Abonar([FromBody] List<ProductoVenta> productos)
     }
 }
 
-public class ProductoVenta
-{
-    public int idProducto { get; set; }
-    public int cantidad { get; set; }
-}
+        public class ProductoVenta
+        {
+            public int idProducto { get; set; }
+            public int cantidad { get; set; }
+        }
+
 [HttpPost]
 public JsonResult RestarStock([FromBody] VentaConProductos datos)
 {
@@ -63,7 +64,7 @@ public JsonResult RestarStock([FromBody] VentaConProductos datos)
             if (p == null)
                 throw new Exception("Uno de los productos es nulo");
 
-            conexion.RestarStock(p.IdProducto, p.CantidadVendida);
+            conexion.RestarStock(p.IdProducto, p.Cantidad);
 
             // Obtener stock actualizado después de restar
             int stockActual = conexion.ObtenerStockActual(p.IdProducto);
@@ -100,6 +101,79 @@ public JsonResult RestarStock([FromBody] VentaConProductos datos)
     }
 }
 
+[HttpPost]
+public JsonResult GuardarVentaCompleta([FromBody] VentaCompleta venta)
+{
+    if (venta == null || venta.Productos == null || venta.Productos.Count == 0)
+        return Json(new { success = false, message = "Datos incompletos" });
+
+    try
+    {
+        ConexionDB conexion = new ConexionDB();
+        var resultado = conexion.RegistrarVenta(venta);
+
+        if (resultado.success)
+        {
+            string nroFactura = "0001-" + resultado.idFactura.ToString("D8");
+            return Json(new
+            {
+                success = true,
+                idFactura = resultado.idFactura,
+                nroFactura = nroFactura,
+                message = "Venta guardada correctamente"
+            });
+        }
+        else
+        {
+            return Json(new { success = false, message = resultado.error });
+        }
+    }
+    catch (Exception ex)
+    {
+        return Json(new { success = false, message = "Error inesperado: " + ex.Message });
+    }
+}
+
+
+       [HttpPost]
+public JsonResult RegistrarVenta([FromBody] VentaCompleta datos)
+{
+    try
+    {
+        if (datos == null || datos.Productos == null || datos.Productos.Count == 0)
+            throw new Exception("Datos incompletos");
+
+        Console.WriteLine("Llamando al método RegistrarVenta de ConexionDB...");
+        Console.WriteLine("Vendedor: " + datos.Vendedor + " - Cliente: " + datos.IdCliente);
+        Console.WriteLine("Productos recibidos: " + datos.Productos.Count);
+
+        ConexionDB conexion = new ConexionDB();
+
+        // Llamamos al método que hace todo (factura + ítems + stock) dentro de una transacción
+        var resultado = conexion.RegistrarVenta(datos);
+
+        if (!resultado.success)
+        {
+            Console.WriteLine("❌ Error en la base de datos: " + resultado.error);
+            return Json(new { success = false, message = resultado.error });
+        }
+
+        string nroFacturaFormateado = "0001-" + resultado.idFactura.ToString("D8");
+
+        return Json(new
+        {
+            success = true,
+            idFactura = resultado.idFactura,
+            nroFactura = nroFacturaFormateado
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("💥 Excepción en el controlador: " + ex.Message);
+        return Json(new { success = false, message = ex.Message });
+    }
+}
+
 
 [HttpGet]
 public JsonResult ObtenerProximoNroFactura()
@@ -107,8 +181,10 @@ public JsonResult ObtenerProximoNroFactura()
     try
     {
         ConexionDB conexion = new ConexionDB();
-        int ultimoId = conexion.ObtenerUltimaFactura();
-        string nroFormateado = "0001-" + (ultimoId + 1).ToString("D8");
+        int proximoId = conexion.ObtenerProximoAutoIncremento("facturas", "gestionventas");
+
+        string nroFormateado = "0001-" + proximoId.ToString("D8");
+
         return Json(new { success = true, nroFactura = nroFormateado });
     }
     catch (Exception ex)

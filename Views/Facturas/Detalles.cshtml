@@ -1,0 +1,103 @@
+@model GestionVentas.Models.Factura
+
+@{
+    ViewData["Title"] = "Detalle de Factura";
+}
+
+<link rel="stylesheet" href="/css/factura.css" />
+
+<div id="facturaParaImprimir" style="max-width: 800px; margin: auto; font-family: Arial, sans-serif;">
+    <br>
+<div class="p-3 border rounded bg-white shadow-sm">
+    <!-- Encabezado con logo -->
+    <div class="d-flex align-items-center mb-3" id="facturaEncabezado">
+        <img src="/imagenes/logo.png" alt="Logo" style="height: 50px; margin-right: 15px;">
+        <div>
+            <h2 style="margin: 0;">Ferretería Santiago</h2>
+            <small class="text-muted">La Paz - Córdoba</small>
+        </div>
+    </div>
+    <hr style="margin-top: 0; margin-bottom: 15px;">
+
+<h2 class="mb-4">Factura N° @Model.IdFactura</h2>
+<div class="mb-3">
+    <strong>Fecha:</strong> @Model.DiaVenta.ToString("dd/MM/yyyy")<br />
+    <strong>Vendedor:</strong> @Model.Vendedor<br />
+</div>
+<hr>
+ 
+    <div class="card mb-0 border-0">
+        <div class="card-body pb-2">
+            <h5 class="card-title">Datos del Cliente</h5>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <p class="mb-1"><strong>Nombre:</strong> @Model.NombreCliente</p>
+                </div>
+                <div class="col-md-4">
+                    <p class="mb-1"><strong>DNI:</strong> @Model.DniCliente</p>
+                </div>
+                <div class="col-md-4">
+                    <p class="mb-1"><strong>Teléfono:</strong> @Model.TelefonoCliente</p>
+                </div>
+            </div>
+
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <p class="mb-1"><strong>Domicilio:</strong> @Model.Domicilio</p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-1"><strong>Localidad:</strong> @Model.Localidad</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+<table style="width: 100%; border-collapse: collapse;" border="1">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="padding: 8px;">Producto</th>
+                <th style="padding: 8px;">Cantidad</th>
+                <th style="padding: 8px;">Precio Unitario</th>
+                <th style="padding: 8px;">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td style="padding: 8px;">@item.NombreProd</td>
+                    <td style="padding: 8px;">@item.Cantidad</td>
+                    <td style="padding: 8px;">$@item.Precio.ToString("N2")</td>
+                    <td style="padding: 8px;">$@((item.Cantidad * item.Precio).ToString("N2"))</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <hr>
+
+    <!-- Total -->
+    <div style="text-align: right; margin-top: 10px;">
+        <h4>Total: $@Model.MontoVenta.ToString("N2")</h4>
+    </div>
+</div>
+</div>
+<!-- Botón de imprimir -->
+<div class="text-center mt-4">
+    <button onclick="imprimirFactura()" class="btn btn-primary">🖨️ Imprimir Factura</button>
+    <button onclick="location.href='@Url.Action("Index")'" class="btn btn-secondary">Volver</button>
+
+</div>
+
+
+<script>
+   function imprimirFactura() {
+        window.print();
+    }
+</script>
+
