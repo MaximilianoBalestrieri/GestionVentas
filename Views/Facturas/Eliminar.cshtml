@@ -1,0 +1,23 @@
+@model GestionVentas.Models.Factura
+
+<div class="container mt-5" style="max-width: 600px;">
+    <div class="card border-danger shadow-sm rounded">
+        <div class="card-header bg-danger text-white">
+            <h4 class="mb-0">Eliminar Factura</h4>
+        </div>
+        <div class="card-body">
+            <p class="mb-4 text-danger"><strong>¿Estás seguro que querés eliminar esta factura? Esta acción no se puede deshacer.</strong></p>
+
+            <p><strong>Factura N°:</strong> @Model.IdFactura</p>
+            <p><strong>Cliente:</strong> @Model.NombreCliente</p>
+
+            <form asp-action="Eliminar">
+                <input type="hidden" asp-for="IdFactura" />
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="submit" class="btn btn-danger">🗑️ Eliminar</button>
+                    <a asp-action="Index" class="btn btn-secondary">↩️ Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

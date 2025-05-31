@@ -1,0 +1,73 @@
+@model List<GestionVentas.Models.Productos>
+
+@{
+    ViewData["Title"] = "Inventario";
+    decimal sumaTotal = 0;
+}
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+<!-- jQuery y DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+
+<h2 class="mb-4">Inventario de Productos</h2>
+
+<table id="tablaInventario" class="table table-bordered table-striped table-sm">
+
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Stock Actual</th>
+            <th>Precio Costo</th>
+            <th>Subtotal</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var producto in Model)
+        {
+            var subtotal = producto.StockActual * producto.PrecioCosto;
+            sumaTotal += subtotal;
+            <tr>
+                <td>@producto.IdProducto</td>
+                <td>@producto.Codigo</td>
+                <td>@producto.Nombre</td>
+                <td>@producto.StockActual</td>
+                <td>$@producto.PrecioCosto.ToString("N2")</td>
+                <td>$@subtotal.ToString("N2")</td>
+            </tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="5" class="text-end"><strong>Total General:</strong></td>
+            <td><strong>$@sumaTotal.ToString("N2")</strong></td>
+        </tr>
+    </tfoot>
+</table>
+
+<script>
+    $(document).ready(function () {
+        $('#tablaInventario').DataTable({
+            "language": {
+                "lengthMenu": "Mostrar _MENU_ registros por página",
+                "zeroRecords": "No se encontraron resultados",
+                "info": "Mostrando página _PAGE_ de _PAGES_",
+                "infoEmpty": "No hay registros disponibles",
+                "infoFiltered": "(filtrado de _MAX_ registros totales)",
+                "search": "Buscar:",
+                "paginate": {
+                    "first": "Primera",
+                    "last": "Última",
+                    "next": "Siguiente",
+                    "previous": "Anterior"
+                }
+            },
+            "order": [[0, "asc"]]
+        });
+    });
+</script>

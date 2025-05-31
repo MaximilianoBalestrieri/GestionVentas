@@ -1137,71 +1137,94 @@ namespace GestionVentas.Models
         }
 
 
-public Factura ObtenerFacturaConItems(int idFactura)
-{
-    Factura factura = null;
+        public Factura ObtenerFacturaConItems(int idFactura)
+        {
+            Factura factura = null;
 
-    using (var conn = ObtenerConexion())
-    {
-        conn.Open();
+            using (var conn = ObtenerConexion())
+            {
+                conn.Open();
 
-        string queryFactura = @"
+                string queryFactura = @"
             SELECT f.idFactura, f.diaVenta, f.montoVenta, f.vendedor, c.nombreCliente, c.dniCliente, c.domicilio, c.localidad, c.telefonoCliente
             FROM facturas f
             JOIN clientes c ON f.idCliente = c.idCliente
             WHERE f.idFactura = @id";
 
-        using (var cmd = new MySqlCommand(queryFactura, conn))
-        {
-            cmd.Parameters.AddWithValue("@id", idFactura);
-            using (var reader = cmd.ExecuteReader())
-            {
-                if (reader.Read())
+                using (var cmd = new MySqlCommand(queryFactura, conn))
                 {
-                    factura = new Factura
+                    cmd.Parameters.AddWithValue("@id", idFactura);
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        IdFactura = Convert.ToInt32(reader["idFactura"]),
-                        DiaVenta = Convert.ToDateTime(reader["diaVenta"]),
-                        MontoVenta = Convert.ToDecimal(reader["montoVenta"]),
-                        Vendedor = reader["vendedor"].ToString(),
-                        NombreCliente = reader["nombreCliente"].ToString(),
-                        DniCliente = reader["dniCliente"].ToString(),
-                        Domicilio = reader["domicilio"].ToString(),
-                        Localidad = reader["localidad"].ToString(),
-                        TelefonoCliente = reader["telefonoCliente"].ToString(),
-                        Items = new List<FacturaItem>()
-                    };
+                        if (reader.Read())
+                        {
+                            factura = new Factura
+                            {
+                                IdFactura = Convert.ToInt32(reader["idFactura"]),
+                                DiaVenta = Convert.ToDateTime(reader["diaVenta"]),
+                                MontoVenta = Convert.ToDecimal(reader["montoVenta"]),
+                                Vendedor = reader["vendedor"].ToString(),
+                                NombreCliente = reader["nombreCliente"].ToString(),
+                                DniCliente = reader["dniCliente"].ToString(),
+                                Domicilio = reader["domicilio"].ToString(),
+                                Localidad = reader["localidad"].ToString(),
+                                TelefonoCliente = reader["telefonoCliente"].ToString(),
+                                Items = new List<FacturaItem>()
+                            };
+                        }
+                    }
                 }
-            }
-        }
 
-        if (factura != null)
-        {
-            string queryItems = @"
+                if (factura != null)
+                {
+                    string queryItems = @"
                 SELECT fi.nombreProd, fi.cantidad, fi.precio
                 FROM facturaitem fi
                 WHERE fi.idFactura = @id";
 
-            using (var cmd = new MySqlCommand(queryItems, conn))
-            {
-                cmd.Parameters.AddWithValue("@id", idFactura);
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
+                    using (var cmd = new MySqlCommand(queryItems, conn))
                     {
-                        factura.Items.Add(new FacturaItem
+                        cmd.Parameters.AddWithValue("@id", idFactura);
+                        using (var reader = cmd.ExecuteReader())
                         {
-                           NombreProd = reader["nombreProd"].ToString(),
-    Cantidad = Convert.ToInt32(reader["cantidad"]),
-    Precio = Convert.ToDecimal(reader["precio"])
-                        });
+                            while (reader.Read())
+                            {
+                                factura.Items.Add(new FacturaItem
+                                {
+                                    NombreProd = reader["nombreProd"].ToString(),
+                                    Cantidad = Convert.ToInt32(reader["cantidad"]),
+                                    Precio = Convert.ToDecimal(reader["precio"])
+                                });
+                            }
+                        }
                     }
                 }
             }
+
+            return factura;
+        }
+
+
+public void EliminarFactura(int idFactura)
+{
+    using (var conexion = ObtenerConexion())
+    {
+        conexion.Open();
+
+        // Primero eliminamos los items asociados
+        using (var cmd = new MySqlCommand("DELETE FROM facturaitem WHERE idFactura = @id", conexion))
+        {
+            cmd.Parameters.AddWithValue("@id", idFactura);
+            cmd.ExecuteNonQuery();
+        }
+
+        // Luego eliminamos la factura
+        using (var cmd = new MySqlCommand("DELETE FROM facturas WHERE idFactura = @id", conexion))
+        {
+            cmd.Parameters.AddWithValue("@id", idFactura);
+            cmd.ExecuteNonQuery();
         }
     }
-
-    return factura;
 }
 
 
