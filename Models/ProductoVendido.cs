@@ -6,4 +6,6 @@ namespace GestionVentas.Models
         public int IdProducto { get; set; }
         public int CantidadVendida { get; set; }
     }
+
+
 }

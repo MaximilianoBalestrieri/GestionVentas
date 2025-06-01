@@ -1,0 +1,60 @@
+@model List<GestionVentas.Models.ProductoVendidoViewModel>
+@{
+    ViewData["Title"] = "Productos Vendidos";
+    decimal totalGeneral = 0;
+}
+
+<h2 class="text-center">🛒 Productos Vendidos</h2>
+
+<form method="get" class="mb-3 d-flex justify-content-center">
+    <div class="form-group mx-2">
+        <label>Desde:</label>
+        <input type="date" name="desde" value="@ViewBag.Desde" class="form-control" />
+    </div>
+    <div class="form-group mx-2">
+        <label>Hasta:</label>
+        <input type="date" name="hasta" value="@ViewBag.Hasta" class="form-control" />
+    </div>
+    <div class="form-group mx-2 align-self-end">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+    </div>
+</form>
+
+@if (Model != null && Model.Count > 0)
+{
+    <table class="table table-bordered table-striped text-center">
+        <thead class="thead-dark">
+            <tr>
+                <th> Producto</th>
+                <th> Total Vendido</th>
+                <th> Precio Unitario</th>
+                <th> Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                var subtotal = item.Cantidad * item.PrecioUnitario;
+                totalGeneral += subtotal;
+
+                <tr>
+                    <td>@item.Nombre</td>
+                    <td>@item.Cantidad</td>
+                    <td>@item.PrecioUnitario.ToString("C")</td>
+                    <td>@subtotal.ToString("C")</td>
+                </tr>
+            }
+
+            <tr class="table-success font-weight-bold">
+                <td colspan="3" class="text-right"><strong>Total General:</strong></td>
+                <td><strong>@totalGeneral.ToString("C")</strong></td>
+            </tr>
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-warning text-center">
+        No se encontraron productos vendidos en el período seleccionado.
+    </div>
+}

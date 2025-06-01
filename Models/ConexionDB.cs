@@ -9,6 +9,7 @@ using System.Security.Policy;
 using System.Web;
 using MySql.Data.MySqlClient;
 using GestionVentas.Models;
+using Microsoft.AspNetCore.Mvc;
 
 
 namespace GestionVentas.Models
@@ -1205,27 +1206,30 @@ namespace GestionVentas.Models
         }
 
 
-public void EliminarFactura(int idFactura)
-{
-    using (var conexion = ObtenerConexion())
-    {
-        conexion.Open();
-
-        // Primero eliminamos los items asociados
-        using (var cmd = new MySqlCommand("DELETE FROM facturaitem WHERE idFactura = @id", conexion))
+        public void EliminarFactura(int idFactura)
         {
-            cmd.Parameters.AddWithValue("@id", idFactura);
-            cmd.ExecuteNonQuery();
+            using (var conexion = ObtenerConexion())
+            {
+                conexion.Open();
+
+                // Primero eliminamos los items asociados
+                using (var cmd = new MySqlCommand("DELETE FROM facturaitem WHERE idFactura = @id", conexion))
+                {
+                    cmd.Parameters.AddWithValue("@id", idFactura);
+                    cmd.ExecuteNonQuery();
+                }
+
+                // Luego eliminamos la factura
+                using (var cmd = new MySqlCommand("DELETE FROM facturas WHERE idFactura = @id", conexion))
+                {
+                    cmd.Parameters.AddWithValue("@id", idFactura);
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
 
-        // Luego eliminamos la factura
-        using (var cmd = new MySqlCommand("DELETE FROM facturas WHERE idFactura = @id", conexion))
-        {
-            cmd.Parameters.AddWithValue("@id", idFactura);
-            cmd.ExecuteNonQuery();
-        }
-    }
-}
+
+       
 
 
     }
