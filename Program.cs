@@ -27,11 +27,10 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
-
-app.UseSession(); // Antes de Authorization
-
+app.UseSession();
 app.UseAuthorization();
 
+// ✅ Estilo moderno recomendado para registrar rutas
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

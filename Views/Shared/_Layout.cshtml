@@ -62,7 +62,7 @@
         ViewBag.Rol = rol;
         ViewBag.NombreyApellido=nombreyApellido;
 
-    // Verificar en consola que los datos están llegando correctamente
+    // Verifica en consola que los datos están llegando correctamente
     //Console.WriteLine($"Usuario: {usuario}, Nombre y Apellido: {nombreyApellido}");
     }
 
@@ -139,7 +139,9 @@
                                     <a class="nav-link" href="/Home/Index#modalPerfil">Mi Perfil</a>
                                 }
                         </li>
-
+                    <li class="nav-item">
+                            <a class="nav-link" asp-controller="Proveedores" asp-action="Index">Proveedores</a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Home" asp-action="Acercade">Acerca de...</a>
                         </li>

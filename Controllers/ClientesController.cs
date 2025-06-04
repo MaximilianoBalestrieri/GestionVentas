@@ -7,12 +7,22 @@ public class ClientesController : Controller
 {
     private readonly ConexionDB conexion = new ConexionDB();
 
-    // Página principal de clientes (si la usás)
+    // Página principal de clientes 
+ 
     public IActionResult Index()
-    {
-        var clientes = conexion.ObtenerClientes();
-        return View(clientes);
-    }
+{
+    var clientes = conexion.ObtenerClientes();
+
+    int registrosPorPagina = 5;
+    var clientesPagina = clientes.Take(registrosPorPagina).ToList();
+
+    ViewBag.PaginaActual = 1;
+    ViewBag.TotalPaginas = (int)Math.Ceiling((double)clientes.Count / registrosPorPagina);
+    ViewBag.Filtro = "";
+
+    return View(clientesPagina);
+}
+
 
     public IActionResult Create()
     {
@@ -66,20 +76,36 @@ public class ClientesController : Controller
         return Json(clientes);
     }
 
-    // Método para buscar clientes por filtro en JSON (para el input de búsqueda)
+    // Método para buscar clientes via Ajax como dijo el Profe
     [HttpGet]
-    public JsonResult BuscarClientes(string filtro)
+  public IActionResult Buscar(string filtro, int pagina = 1)
+{
+    int registrosPorPagina = 5;
+    var clientes = conexion.ObtenerClientes();
+
+    if (!string.IsNullOrEmpty(filtro))
     {
-        var clientes = conexion.ObtenerClientes();
-
-        if (!string.IsNullOrEmpty(filtro))
-        {
-            clientes = clientes
-                .Where(c => c.NombreCliente.Contains(filtro, StringComparison.OrdinalIgnoreCase)
-                         || c.DniCliente.Contains(filtro))
-                .ToList();
-        }
-
-        return Json(clientes);
+        filtro = filtro.ToLower();
+        clientes = clientes.Where(c =>
+            (c.NombreCliente != null && c.NombreCliente.ToLower().Contains(filtro)) ||
+            (c.DniCliente != null && c.DniCliente.Contains(filtro))
+        ).ToList();
     }
+
+    var totalClientes = clientes.Count;
+    var totalPaginas = (int)Math.Ceiling((double)totalClientes / registrosPorPagina);
+
+    var clientesPagina = clientes
+        .Skip((pagina - 1) * registrosPorPagina)
+        .Take(registrosPorPagina)
+        .ToList();
+
+    ViewBag.PaginaActual = pagina;
+    ViewBag.TotalPaginas = totalPaginas;
+    ViewBag.Filtro = filtro;
+
+    return PartialView("_TablaClientes", clientesPagina);
+}
+
+
 }

@@ -1,0 +1,133 @@
+@{
+    ViewData["Title"] = "Proveedores";
+}
+
+<h2>Proveedores</h2>
+
+<div id="app">
+    <button class="btn btn-success mb-3" v-on:click="nuevo">Agregar Proveedor</button>
+
+    <input type="text" class="form-control mb-3" placeholder="Buscar por nombre o localidad..." v-model="busqueda" />
+
+    <!-- Tabla -->
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Teléfono</th>
+                <th>Domicilio</th>
+                <th>Localidad</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr v-for="p in proveedoresFiltrados" :key="p.idProv">
+                <td>{{ p.nombre }}</td>
+                <td>{{ p.telefono }}</td>
+                <td>{{ p.domicilio }}</td>
+                <td>{{ p.localidad }}</td>
+                <td>
+                    <button class="btn btn-warning btn-sm" v-on:click="seleccionar(p)">Editar</button>
+                    <button class="btn btn-danger btn-sm" v-on:click="eliminar(p.idProv)">Eliminar</button>
+                </td>
+            </tr>
+            <tr v-if="proveedoresFiltrados.length === 0">
+                <td colspan="5" class="text-center">No hay proveedores para mostrar.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Formulario -->
+    <div class="card mt-4" v-if="proveedorEditando">
+        <div class="card-body">
+            <h5 class="card-title">{{ proveedorEditando.idProv === 0 ? 'Nuevo Proveedor' : 'Editar Proveedor' }}</h5>
+            <form v-on:submit.prevent="guardar">
+                <div class="mb-3">
+                    <label>Nombre</label>
+                    <input type="text" class="form-control" v-model="proveedorEditando.nombre" required />
+                </div>
+                <div class="mb-3">
+                    <label>Teléfono</label>
+                    <input type="text" class="form-control" v-model="proveedorEditando.telefono" required />
+                </div>
+                <div class="mb-3">
+                    <label>Domicilio</label>
+                    <input type="text" class="form-control" v-model="proveedorEditando.domicilio" required />
+                </div>
+                <div class="mb-3">
+                    <label>Localidad</label>
+                    <input type="text" class="form-control" v-model="proveedorEditando.localidad" required />
+                </div>
+                <button type="submit" class="btn btn-primary">{{ proveedorEditando.idProv === 0 ? 'Crear' : 'Actualizar' }}</button>
+                <button type="button" class="btn btn-secondary ms-2" v-on:click="cancelar">Cancelar</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                proveedores: [],
+                proveedorEditando: null,
+                busqueda: '',
+            },
+            computed: {
+                proveedoresFiltrados() {
+                    const filtro = this.busqueda.toLowerCase();
+                    return this.proveedores.filter(p =>
+                        p.nombre.toLowerCase().includes(filtro) ||
+                        p.localidad.toLowerCase().includes(filtro)
+                    );
+                }
+            },
+            methods: {
+                cargar() {
+                    fetch('/Proveedores/Obtener')
+                        .then(r => r.json())
+                        .then(data => this.proveedores = data);
+                },
+                nuevo() {
+                    this.proveedorEditando = { idProv: 0, nombre: '', telefono: '', domicilio: '', localidad: '' };
+                },
+                guardar() {
+                    const esNuevo = this.proveedorEditando.idProv === 0;
+                    const url = esNuevo ? '/Proveedores/Crear' : '/Proveedores/Editar';
+                    console.log(this.proveedorEditando);
+                    fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.proveedorEditando)
+                    })
+                    .then(() => {
+                        this.cargar();
+                        this.cancelar();
+                    });
+                },
+                eliminar(id) {
+                    if (confirm("¿Seguro que querés eliminar este proveedor?")) {
+                        fetch('/Proveedores/Eliminar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(id)
+                        })
+                        .then(() => this.cargar());
+                    }
+                },
+                seleccionar(p) {
+                    this.proveedorEditando = Object.assign({}, p);
+                },
+                cancelar() {
+                    this.proveedorEditando = null;
+                }
+            },
+            mounted() {
+                this.cargar();
+                // No llamamos a cancelar() para que no se muestre el formulario al cargar
+            }
+        });
+    </script>
+}

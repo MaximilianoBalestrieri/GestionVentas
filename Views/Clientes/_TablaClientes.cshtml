@@ -1,0 +1,37 @@
+@model List<Cliente>
+@{
+    int paginaActual = ViewBag.PaginaActual ?? 1;
+    int totalPaginas = ViewBag.TotalPaginas ?? 1;
+    string filtro = ViewBag.Filtro ?? "";
+}
+
+<table class="table table-bordered">
+    <tr>
+        <th>DNI</th><th>Nombre</th><th>Domicilio</th><th>Localidad</th><th>Telefono</th><th>Acciones</th>
+    </tr>
+    @foreach (var c in Model)
+    {
+        <tr>
+            <td>@c.DniCliente</td>
+            <td>@c.NombreCliente</td>
+            <td>@c.Domicilio</td>
+            <td>@c.Localidad</td>
+            <td>@c.TelefonoCliente</td>
+            <td>
+                <a href="/Clientes/Edit/@c.IdCliente" class="btn btn-warning btn-sm">Editar</a>
+                <a href="/Clientes/Delete/@c.IdCliente" class="btn btn-danger btn-sm">Eliminar</a>
+            </td>
+        </tr>
+    }
+</table>
+
+<nav>
+    <ul class="pagination">
+        @for (int i = 1; i <= totalPaginas; i++)
+        {
+            <li class="page-item @(i == paginaActual ? "active" : "")">
+                <a href="#" class="page-link" onclick="cargarClientes(@i)">@(i)</a>
+            </li>
+        }
+    </ul>
+</nav>

@@ -43,7 +43,77 @@ namespace GestionVentas.Models
         {
             return new MySqlConnection(_connectionString);
         }
+        //--------------------------PROVEEDORES --------------------------------
+ public List<Proveedor> ObtenerProveedores()
+    {
+        var lista = new List<Proveedor>();
 
+        using (var conexion = new MySqlConnection(_connectionString))
+        {
+            conexion.Open();
+            var comando = new MySqlCommand("SELECT * FROM Proveedor", conexion);
+            var reader = comando.ExecuteReader();
+
+            while (reader.Read())
+            {
+                lista.Add(new Proveedor
+                {
+                    IdProv = Convert.ToInt32(reader["idProv"]),
+                    Nombre = reader["nombre"].ToString(),
+                    Telefono = reader["telefono"].ToString(),
+                    Domicilio = reader["domicilio"].ToString(),
+                    Localidad = reader["localidad"].ToString()
+                });
+            }
+        }
+
+        return lista;
+    }
+
+    // Agregar proveedor
+    public void AgregarProveedor(Proveedor prov)
+    {
+        using (var conexion = new MySqlConnection(_connectionString))
+        {
+            conexion.Open();
+            var query = "INSERT INTO Proveedor (nombre, telefono, domicilio, localidad) VALUES (@nombre, @telefono, @domicilio, @localidad)";
+            var comando = new MySqlCommand(query, conexion);
+            comando.Parameters.AddWithValue("@nombre", prov.Nombre);
+            comando.Parameters.AddWithValue("@telefono", prov.Telefono);
+            comando.Parameters.AddWithValue("@domicilio", prov.Domicilio);
+            comando.Parameters.AddWithValue("@localidad", prov.Localidad);
+            comando.ExecuteNonQuery();
+        }
+    }
+
+    // Actualizar proveedor
+    public void ActualizarProveedor(Proveedor prov)
+    {
+        using (var conexion = new MySqlConnection(_connectionString))
+        {
+            conexion.Open();
+            var query = "UPDATE Proveedor SET nombre = @nombre, telefono = @telefono, domicilio = @domicilio, localidad = @localidad WHERE idProv = @id";
+            var comando = new MySqlCommand(query, conexion);
+            comando.Parameters.AddWithValue("@id", prov.IdProv);
+            comando.Parameters.AddWithValue("@nombre", prov.Nombre);
+            comando.Parameters.AddWithValue("@telefono", prov.Telefono);
+            comando.Parameters.AddWithValue("@domicilio", prov.Domicilio);
+            comando.Parameters.AddWithValue("@localidad", prov.Localidad);
+            comando.ExecuteNonQuery();
+        }
+    }
+
+    // Eliminar proveedor
+    public void EliminarProveedor(int id)
+    {
+        using (var conexion = new MySqlConnection(_connectionString))
+        {
+            conexion.Open();
+            var comando = new MySqlCommand("DELETE FROM Proveedor WHERE idProv = @id", conexion);
+            comando.Parameters.AddWithValue("@id", id);
+            comando.ExecuteNonQuery();
+        }
+    }
 
         //--------------------- CLIENTES -------------------------------------
 
@@ -824,30 +894,7 @@ namespace GestionVentas.Models
             }
         }
 
-        public List<Proveedor> ObtenerProveedores()
-        {
-            var lista = new List<Proveedor>();
-            using (var conexion = new MySqlConnection(_connectionString))
-            {
-                conexion.Open();
-                var sql = "SELECT IdProv, Nombre FROM Proveedor";
-                using (var comando = new MySqlCommand(sql, conexion))
-                {
-                    using (var reader = comando.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            lista.Add(new Proveedor
-                            {
-                                IdProveedor = reader.GetInt32(0),
-                                NombreProveedor = reader.GetString(1)
-                            });
-                        }
-                    }
-                }
-            }
-            return lista;
-        }
+       
 
         //----------------------------OBTIENE EL ULTIMO NRO DE PRESUPUESTO---------------------------
 
