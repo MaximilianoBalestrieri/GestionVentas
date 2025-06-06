@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using GestionVentas.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 
 namespace GestionVentas.Controllers
 {
+    [Authorize] // A PEDIDO DEL PROFE VA EL AUTHORIZE !! 
     public class HomeController : Controller
     {
         private readonly ConexionDB db = new ConexionDB();
@@ -59,10 +61,10 @@ namespace GestionVentas.Controllers
         }
 
 
-public ActionResult Acercade()
-{
-    return View();
-}
+        public ActionResult Acercade()
+        {
+            return View();
+        }
 
 
     }

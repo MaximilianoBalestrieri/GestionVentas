@@ -1,0 +1,10 @@
+@{
+    ViewBag.Title = "Acceso Denegado";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="text-center mt-5">
+    <h1 class="text-danger">⛔ Acceso Denegado</h1>
+    <p class="lead">No tenés permiso para acceder a esta sección.</p>
+    <a class="btn btn-primary mt-3" href="@Url.Action("Index", "Home")">Volver al inicio</a>
+</div>

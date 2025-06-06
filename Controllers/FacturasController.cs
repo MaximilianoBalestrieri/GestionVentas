@@ -1,4 +1,5 @@
 using GestionVentas.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GestionVentas.Controllers
@@ -40,7 +41,7 @@ public ActionResult Eliminar(int id)
     }
     return View(factura);
 }
-
+    [Authorize(Roles = "Administrador")]  // ACA PONGO A PEDIDO DEL PROFE EL AUTHORIZE POR ROL. 
         // POST: Facturas/Eliminar/5
         [HttpPost, ActionName("Eliminar")]
         [ValidateAntiForgeryToken]

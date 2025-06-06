@@ -9,7 +9,7 @@ namespace GestionVentas.Controllers
         public ActionResult Create()
         {
             ConexionDB db = new ConexionDB();
-            var productos = db.ObtenerProductos(); // este método debe devolver List<Productos>
+            var productos = db.ObtenerProductos(); 
 
             // Asegurate de que no sea null
             if (productos == null)

@@ -43,32 +43,70 @@ namespace GestionVentas.Models
         {
             return new MySqlConnection(_connectionString);
         }
-        //--------------------------PROVEEDORES --------------------------------
- public List<Proveedor> ObtenerProveedores()
+        //-------------------------- 
+       public List<Venta> ObtenerVentasPorUsuario(string nombreUsuario)
+{
+    List<Venta> lista = new List<Venta>();
+
+    using (MySqlConnection conexion = ObtenerConexion())
     {
-        var lista = new List<Proveedor>();
+        conexion.Open();
+        string sql = "SELECT vendedor, montoVenta, diaVenta FROM facturas WHERE vendedor = @vendedor";
 
-        using (var conexion = new MySqlConnection(_connectionString))
+        using (MySqlCommand cmd = new MySqlCommand(sql, conexion))
         {
-            conexion.Open();
-            var comando = new MySqlCommand("SELECT * FROM Proveedor", conexion);
-            var reader = comando.ExecuteReader();
+            cmd.Parameters.AddWithValue("@vendedor", nombreUsuario);
 
-            while (reader.Read())
+            using (MySqlDataReader reader = cmd.ExecuteReader())
             {
-                lista.Add(new Proveedor
+                while (reader.Read())
                 {
-                    IdProv = Convert.ToInt32(reader["idProv"]),
-                    Nombre = reader["nombre"].ToString(),
-                    Telefono = reader["telefono"].ToString(),
-                    Domicilio = reader["domicilio"].ToString(),
-                    Localidad = reader["localidad"].ToString()
-                });
+                    Venta v = new Venta
+                    {
+                        Vendedor = reader.GetString("vendedor"),
+                        MontoVenta = reader.GetDecimal("montoVenta"),
+                        DiaVenta = reader.GetDateTime("diaVenta")
+                    };
+                    lista.Add(v);
+                }
             }
         }
-
-        return lista;
     }
+
+    return lista;
+}
+
+
+
+
+
+
+        //--------------------------PROVEEDORES --------------------------------
+        public List<Proveedor> ObtenerProveedores()
+        {
+            var lista = new List<Proveedor>();
+
+            using (var conexion = new MySqlConnection(_connectionString))
+            {
+                conexion.Open();
+                var comando = new MySqlCommand("SELECT * FROM Proveedor", conexion);
+                var reader = comando.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    lista.Add(new Proveedor
+                    {
+                        IdProv = Convert.ToInt32(reader["idProv"]),
+                        Nombre = reader["nombre"].ToString(),
+                        Telefono = reader["telefono"].ToString(),
+                        Domicilio = reader["domicilio"].ToString(),
+                        Localidad = reader["localidad"].ToString()
+                    });
+                }
+            }
+
+            return lista;
+        }
 
     // Agregar proveedor
     public void AgregarProveedor(Proveedor prov)

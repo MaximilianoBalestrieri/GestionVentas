@@ -43,7 +43,10 @@
                 <a class="btn btn-primary btn-sm" href="@Url.Action("Detalles", "Facturas", new { id = factura.IdFactura })">
                     Ver
                 </a>
-
+<a asp-action="Eliminar" asp-route-id="@factura.IdFactura" class="btn btn-danger btn-sm">
+                        Eliminar
+                    </a>
+<!------------------------------- DE TODOS MODOS TIENE EL AUTHORIZE EN FACTURASCONTROLLER   --------------------------------------------
                 @if (ViewBag.Rol == "Administrador")
                 {
                     <a asp-action="Eliminar" asp-route-id="@factura.IdFactura" class="btn btn-danger btn-sm">
@@ -56,6 +59,8 @@
                         Eliminar
                     </button>
                 }
+ -->
+
             </td>
         </tr>
     }
