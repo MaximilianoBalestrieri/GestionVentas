@@ -37,8 +37,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = "tu_app",
-        ValidAudience = "tu_app",
+        ValidIssuer = "GestionVentas",
+        ValidAudience = "GestionVentas",
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("clave_super_secreta_para_token123!"))
     };
 });

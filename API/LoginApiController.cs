@@ -23,7 +23,7 @@ namespace GestionVentas.API
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, user.UsuarioNombre),
+                new Claim(ClaimTypes.Name, user.NombreyApellido),
                 new Claim("NombreyApellido", user.NombreyApellido),
                 new Claim(ClaimTypes.Role, user.Rol)
             };
@@ -32,8 +32,8 @@ namespace GestionVentas.API
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: "tu_app",
-                audience: "tu_app",
+                issuer: "GestionVentas",
+                audience: "GestionVentas",
                 claims: claims,
                 expires: DateTime.Now.AddHours(1),
                 signingCredentials: creds

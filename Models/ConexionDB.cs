@@ -51,25 +51,29 @@ namespace GestionVentas.Models
     using (MySqlConnection conexion = ObtenerConexion())
     {
         conexion.Open();
-        string sql = "SELECT vendedor, montoVenta, diaVenta FROM facturas WHERE vendedor = @vendedor";
+        string sql = "SELECT idFactura, vendedor, montoVenta, diaVenta, idCliente FROM facturas WHERE vendedor = @vendedor";
 
         using (MySqlCommand cmd = new MySqlCommand(sql, conexion))
         {
             cmd.Parameters.AddWithValue("@vendedor", nombreUsuario);
+            
 
             using (MySqlDataReader reader = cmd.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    Venta v = new Venta
                     {
-                        Vendedor = reader.GetString("vendedor"),
-                        MontoVenta = reader.GetDecimal("montoVenta"),
-                        DiaVenta = reader.GetDateTime("diaVenta")
-                    };
-                    lista.Add(v);
-                }
-            }
+                        while (reader.Read())
+                        {
+                            Venta v = new Venta
+                            {
+                                
+                               IdFactura = reader.GetInt32("idFactura"),
+                               DiaVenta = reader.GetDateTime("diaVenta"),
+                               MontoVenta = reader.GetDecimal("montoVenta"),
+                               Vendedor = reader.GetString("vendedor"),
+                               IdCliente = reader.GetInt32("idCliente")
+                            };
+                            lista.Add(v);
+                        }
+                    }
         }
     }
 
