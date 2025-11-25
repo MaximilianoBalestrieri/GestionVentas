@@ -6,17 +6,23 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// MVC
+// --------------------------------------------------
+// Servicios MVC y HTTP Context
+// --------------------------------------------------
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddDistributedMemoryCache();
+
+// ConexionDB local
 builder.Services.AddSingleton<ConexionDB>(sp =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
-    return new ConexionDB(config);
+    return new ConexionDB(config); // Usa appsettings.json para localhost
 });
 
-
+// --------------------------------------------------
+// Sesión
+// --------------------------------------------------
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -24,7 +30,9 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// AUTENTICACIÓN: Cookies por defecto + JWT para API
+// --------------------------------------------------
+// Autenticación: Cookies + JWT
+// --------------------------------------------------
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = "MiCookieAuth";
@@ -56,17 +64,21 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// ⚠️ IMPORTANTE PARA RENDER: escuchar en el puerto asignado
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+// --------------------------------------------------
+// 🔹 Configuración de puerto
+// --------------------------------------------------
+// LOCALHOST: puerto 5000
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+builder.WebHost.UseUrls($"http://localhost:{port}");
 
-builder.WebHost.ConfigureKestrel(options =>
-{
-    options.ListenAnyIP(int.Parse(port));
-});
-
+// --------------------------------------------------
+// Build de la app
+// --------------------------------------------------
 var app = builder.Build();
 
-// Errores
+// --------------------------------------------------
+// Middlewares
+// --------------------------------------------------
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -82,10 +94,15 @@ app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Rutas
+// --------------------------------------------------
+// Rutas MVC
+// --------------------------------------------------
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}"
+     pattern: "{controller=Login}/{action=Index}/{id?}"
 );
 
+// --------------------------------------------------
+// Ejecutar
+// --------------------------------------------------
 app.Run();

@@ -8,55 +8,20 @@ namespace GestionVentas.Models
     {
         private readonly string _connectionString;
 
-        /// <summary>
-        /// Constructor que configura la conexión según entorno:
-        /// - Primero intenta usar la variable de entorno completa "CONNECTION_STRING" (para Render u otros hosts)
-        /// - Luego construye la cadena desde variables sueltas de entorno
-        /// - Finalmente usa appsettings.json para ejecución local
-        /// </summary>
         public ConexionDB(IConfiguration config)
         {
-            // 1️⃣ Intentar variable de entorno completa
-            var fullConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
-            if (!string.IsNullOrEmpty(fullConnectionString))
-            {
-                _connectionString = fullConnectionString;
-                return;
-            }
-
-            // 2️⃣ Intentar variables de entorno individuales
-            var host = Environment.GetEnvironmentVariable("MYSQL_HOST");
-            var user = Environment.GetEnvironmentVariable("MYSQL_USER");
-            var pass = Environment.GetEnvironmentVariable("MYSQL_PASSWORD");
-            var db   = Environment.GetEnvironmentVariable("MYSQL_DATABASE");
-            var port = Environment.GetEnvironmentVariable("MYSQL_PORT") ?? "3306"; // Default 3306
-
-            if (!string.IsNullOrEmpty(host) &&
-                !string.IsNullOrEmpty(user) &&
-                !string.IsNullOrEmpty(pass) &&
-                !string.IsNullOrEmpty(db))
-            {
-                _connectionString = $"server={host};uid={user};pwd={pass};database={db};port={port};";
-                return;
-            }
-
-            // 3️⃣ Por defecto, usar appsettings.json para local
+            // Conexión local usando appsettings.json
             _connectionString = config.GetConnectionString("DefaultConnection");
-
-            // Debug opcional: mostrar cadena de conexión (solo local, nunca en producción)
-            // Console.WriteLine("Connection string usada: " + _connectionString);
         }
 
-        /// <summary>
-        /// Retorna una nueva conexión MySQL
-        /// </summary>
+        // Devuelve una nueva conexión MySQL
         public MySqlConnection ObtenerConexion()
         {
             return new MySqlConnection(_connectionString);
         }
 
         /// <summary>
-        /// Alias para ObtenerConexion (opcional, por compatibilidad)
+        /// Alias opcional para compatibilidad
         /// </summary>
         public MySqlConnection GetConnection()
         {
