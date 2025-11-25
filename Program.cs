@@ -6,6 +6,12 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Render necesita escuchar en puerto 8080
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(8080);
+});
+
 // MVC
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
@@ -19,7 +25,7 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// AUTENTICACIÓN: Cookies por defecto + JWT para API
+// AUTENTICACIÓN
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = "MiCookieAuth";
@@ -34,7 +40,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer("Bearer", options =>
 {
-    options.RequireHttpsMetadata = false; // Para pruebas locales
+    options.RequireHttpsMetadata = false;
     options.SaveToken = true;
 
     options.TokenValidationParameters = new TokenValidationParameters
@@ -63,12 +69,10 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Sesión primero, luego autenticación
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Rutas
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
