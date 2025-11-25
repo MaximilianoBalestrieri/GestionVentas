@@ -16,13 +16,25 @@ namespace GestionVentas.Models
 {
     public class ConexionDB
     {
-        public string CadenaConexion => _connectionString;
+     //   public string CadenaConexion => _connectionString;
 
         private MySqlConnection conexion;
-        private string _connectionString;
+       // private string _connectionString;
+ private readonly string _connectionString;
 
+    public ConexionDB(IConfiguration config)
+    {
+        _connectionString =
+            Environment.GetEnvironmentVariable("CONNECTION_STRING")
+            ?? config.GetConnectionString("DefaultConnection");
+    }
+
+    public MySqlConnection GetConnection()
+    {
+        return new MySqlConnection(_connectionString);
+    }
         // Constructor donde inicializamos la conexión
-        public ConexionDB()
+   /*     public ConexionDB()
         {
             string servidor = "localhost";
             string baseDatos = "gestionventas";  // Nombre de tu base de datos
@@ -38,11 +50,11 @@ namespace GestionVentas.Models
             _connectionString = cadenaConexion;
             conexion = new MySqlConnection(_connectionString);
         }
-
+*/
         public MySqlConnection ObtenerConexion()
         {
             return new MySqlConnection(_connectionString);
-        }
+        } 
         //-------------------------- 
        public List<Venta> ObtenerVentasPorUsuario(string nombreUsuario)
 {

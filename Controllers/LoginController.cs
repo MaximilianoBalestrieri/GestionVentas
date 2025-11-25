@@ -4,10 +4,15 @@ using GestionVentas.Models;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 
-
 public class LoginController : Controller
 {
-    private ConexionDB conexionDB = new ConexionDB();
+    private readonly ConexionDB conexionDB;
+
+    // Constructor necesario para recibir la instancia de ConexionDB desde DI
+    public LoginController(ConexionDB conexionDB)
+    {
+        this.conexionDB = conexionDB;
+    }
 
     [HttpGet]
     public IActionResult Login()
@@ -22,22 +27,19 @@ public class LoginController : Controller
 
         if (user != null)
         {
-            // 1. Creamos la identidad con claims (datos del usuario)
             var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, user.UsuarioNombre),
-            new Claim(ClaimTypes.Role, user.Rol),
-            new Claim("NombreyApellido", user.NombreyApellido),
-            new Claim("FotoPerfil", user.FotoPerfil ?? "/imagenes/usuarios/default.png")
-        };
+            {
+                new Claim(ClaimTypes.Name, user.UsuarioNombre),
+                new Claim(ClaimTypes.Role, user.Rol),
+                new Claim("NombreyApellido", user.NombreyApellido),
+                new Claim("FotoPerfil", user.FotoPerfil ?? "/imagenes/usuarios/default.png")
+            };
 
             var identity = new ClaimsIdentity(claims, "MiCookieAuth");
             var principal = new ClaimsPrincipal(identity);
 
-            // 2. Creamos la cookie de autenticación
             await HttpContext.SignInAsync("MiCookieAuth", principal);
 
-            // 3. También guardamos en sesión (opcional si usás ViewBag/HttpContext.User)
             HttpContext.Session.SetString("Usuario", user.UsuarioNombre);
             HttpContext.Session.SetString("NombreyApellido", user.NombreyApellido);
             HttpContext.Session.SetString("Rol", user.Rol);
@@ -53,18 +55,12 @@ public class LoginController : Controller
         }
     }
 
-
-    public async Task<IActionResult> Logout() // Borra la cookie de autenticación y limpia toda la sesión
+    public async Task<IActionResult> Logout()
     {
-        // Limpiamos la cookie de autenticación
         await HttpContext.SignOutAsync("MiCookieAuth");
-
-        // Limpiamos la sesión
         HttpContext.Session.Clear();
-
         return RedirectToAction("Index", "Login");
     }
-
 
     [HttpGet]
     public IActionResult Index()
@@ -72,11 +68,9 @@ public class LoginController : Controller
         return View();
     }
 
-[HttpGet]
-public IActionResult AccesoDenegado()  // empezamos la pagina del acceso denegado para que no salga la pagina fea
-{
-    return View();
-}
-
-
+    [HttpGet]
+    public IActionResult AccesoDenegado()
+    {
+        return View();
+    }
 }

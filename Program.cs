@@ -1,3 +1,4 @@
+using GestionVentas.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -5,10 +6,12 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Agregamos servicios MVC
+// MVC
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSingleton<ConexionDB>();
+
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -16,7 +19,7 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Autenticación combinada: Cookies + JWT
+// AUTENTICACIÓN: Cookies por defecto + JWT para API
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = "MiCookieAuth";
@@ -31,6 +34,9 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer("Bearer", options =>
 {
+    options.RequireHttpsMetadata = false; // Para pruebas locales
+    options.SaveToken = true;
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -45,7 +51,7 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-// Manejo de errores
+// Errores
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -57,7 +63,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Middleware para sesión y autenticación
+// Sesión primero, luego autenticación
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();

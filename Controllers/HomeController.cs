@@ -12,7 +12,7 @@ namespace GestionVentas.Controllers
 
         public IActionResult Index()
         {
-            var usuario = HttpContext.Session.GetString("Usuario"); // ojo, debe ser igual a como guardás en LoginController
+            var usuario = HttpContext.Session.GetString("Usuario"); 
             var nombreyApellido = HttpContext.Session.GetString("NombreyApellido");
             var rol = HttpContext.Session.GetString("Rol");
             var fotoPerfil = HttpContext.Session.GetString("FotoPerfil");

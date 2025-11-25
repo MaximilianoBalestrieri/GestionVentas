@@ -11,12 +11,25 @@ namespace GestionVentas.API
     [ApiController]
     public class LoginApiController : ControllerBase
     {
-        private ConexionDB conexion = new ConexionDB();
+        private readonly ConexionDB _conexion;
+        private readonly string _jwtKey;
+
+        public LoginApiController(ConexionDB conexion, IConfiguration config)
+        {
+            _conexion = conexion;
+
+            // 1. Intentamos leer la clave desde variables de entorno (Render)
+            // 2. Si no existe, usamos una clave local para desarrollo
+            _jwtKey =
+                Environment.GetEnvironmentVariable("JWT_KEY") ??
+                config["Jwt:Key"] ??
+                "clave_local_para_desarrollo_999";
+        }
 
         [HttpPost]
         public IActionResult LoginApi([FromBody] UsuarioLogin login)
         {
-            var user = conexion.BuscarUsuario(login.Usuario, login.Contraseña);
+            var user = _conexion.BuscarUsuario(login.Usuario, login.Contraseña);
 
             if (user == null)
                 return Unauthorized("Usuario o contraseña incorrectos");
@@ -28,7 +41,8 @@ namespace GestionVentas.API
                 new Claim(ClaimTypes.Role, user.Rol)
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("clave_super_secreta_para_token123!"));
+            var keyBytes = Encoding.UTF8.GetBytes(_jwtKey);
+            var key = new SymmetricSecurityKey(keyBytes);
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
