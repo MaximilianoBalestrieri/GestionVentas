@@ -7,9 +7,9 @@ namespace GestionVentas.Controllers
     {
         private readonly ConexionDB conexion;
 
-        public InventarioController(IConfiguration config)
+        public InventarioController(ConexionDB conexion)
         {
-            conexion = new ConexionDB(config);
+            this.conexion = conexion;
         }
 
         public IActionResult Index()

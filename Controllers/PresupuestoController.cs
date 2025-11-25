@@ -7,10 +7,10 @@ namespace GestionVentas.Controllers
     {
         private readonly ConexionDB db;
 
-        // Constructor ajustado para DI + funcionamiento local y Render
-        public PresupuestoController(IConfiguration config)
+        // Constructor con DI correcto
+        public PresupuestoController(ConexionDB db)
         {
-            db = new ConexionDB(config);
+            this.db = db;
         }
 
         // GET: Presupuesto

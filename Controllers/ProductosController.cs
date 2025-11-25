@@ -13,32 +13,24 @@ namespace GestionVentas.Controllers
 
         public ProductosController(IConfiguration config, IWebHostEnvironment webHostEnvironment)
         {
-            db = new ConexionDB(config);            // ← AHORA sí usa DI
+            db = new ConexionDB(config);
             _webHostEnvironment = webHostEnvironment;
         }
 
-        //--------------------------------------------------------------------
-        // LISTAR CON BUSQUEDA Y PAGINACION
-        //--------------------------------------------------------------------
         public ActionResult Index(string busqueda, int pagina = 1, int tamanioPagina = 10)
         {
             ViewBag.FotoPerfil = HttpContext.Session.GetString("FotoPerfil");
 
             List<Productos> productos = new List<Productos>();
 
-            using (MySqlConnection conn = new MySqlConnection(db.CadenaConexion))
+            using (MySqlConnection conn = db.ObtenerConexion())
             {
                 conn.Open();
 
-                string consulta =
-                    "SELECT * FROM productos ";    // NO pongas alias si no los usás
-
+                string consulta = "SELECT * FROM productos";
                 if (!string.IsNullOrEmpty(busqueda))
-                {
-                    consulta += " WHERE nombre LIKE @busqueda OR codigo LIKE @busqueda ";
-                }
-
-                consulta += " LIMIT @inicio, @tamanio ";
+                    consulta += " WHERE nombre LIKE @busqueda OR codigo LIKE @busqueda";
+                consulta += " LIMIT @inicio, @tamanio";
 
                 using (MySqlCommand cmd = new MySqlCommand(consulta, conn))
                 {
@@ -49,7 +41,7 @@ namespace GestionVentas.Controllers
                     cmd.Parameters.AddWithValue("@inicio", inicio);
                     cmd.Parameters.AddWithValue("@tamanio", tamanioPagina);
 
-                    using (MySqlDataReader reader = cmd.ExecuteReader())
+                    using (var reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
@@ -77,14 +69,10 @@ namespace GestionVentas.Controllers
             return View(productos);
         }
 
-        //--------------------------------------------------------------------
-        // BUSCAR (AJAX)
-        //--------------------------------------------------------------------
         [HttpGet]
         public JsonResult Buscar(string term)
         {
             var productos = db.ObtenerProductos();
-
             if (!string.IsNullOrWhiteSpace(term))
             {
                 productos = productos.Where(p =>
@@ -92,34 +80,27 @@ namespace GestionVentas.Controllers
                     p.Codigo.Contains(term, StringComparison.OrdinalIgnoreCase)
                 ).ToList();
             }
-
             return Json(productos);
         }
 
-        //--------------------------------------------------------------------
-        // CARGAR TABLA PARCIAL
-        //--------------------------------------------------------------------
         public ActionResult ObtenerProductos()
         {
             var productos = db.ObtenerProductos();
             return PartialView("filasProductos", productos);
         }
 
-        //--------------------------------------------------------------------
-        // CREAR
-        //--------------------------------------------------------------------
         [HttpGet]
         public IActionResult Create()
         {
-            var modelo = new Productos();
-
-            modelo.Proveedores = db.ObtenerProveedores()
-                .Select(p => new SelectListItem
-                {
-                    Value = p.NombreProveedor,
-                    Text = p.NombreProveedor
-                }).ToList();
-
+            var modelo = new Productos
+            {
+                Proveedores = db.ObtenerProveedores()
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.NombreProveedor,
+                        Text = p.NombreProveedor
+                    }).ToList()
+            };
             return View(modelo);
         }
 
@@ -139,7 +120,6 @@ namespace GestionVentas.Controllers
                     {
                         nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(imagen.FileName);
                         string rutaCarpeta = Path.Combine(_webHostEnvironment.WebRootPath, "imagenes", "productos");
-
                         Directory.CreateDirectory(rutaCarpeta);
 
                         using (var stream = new FileStream(Path.Combine(rutaCarpeta, nombreArchivo), FileMode.Create))
@@ -174,17 +154,11 @@ namespace GestionVentas.Controllers
             return View(prod);
         }
 
-        //--------------------------------------------------------------------
-        // ELIMINAR
-        //--------------------------------------------------------------------
         public IActionResult Delete(int id)
         {
             ViewBag.FotoPerfil = HttpContext.Session.GetString("FotoPerfil");
-
             var producto = db.ObtenerProductoPorId(id);
-            if (producto == null)
-                return NotFound();
-
+            if (producto == null) return NotFound();
             return View(producto);
         }
 
@@ -193,34 +167,23 @@ namespace GestionVentas.Controllers
         public IActionResult DeleteConfirmed(int id)
         {
             var producto = db.ObtenerProductoPorId(id);
-            if (producto == null)
-                return NotFound();
+            if (producto == null) return NotFound();
 
-            if (!string.IsNullOrEmpty(producto.Imagen) &&
-                !producto.Imagen.Contains("no-disponible.png"))
+            if (!string.IsNullOrEmpty(producto.Imagen) && !producto.Imagen.Contains("no-disponible.png"))
             {
-                string ruta = Path.Combine(_webHostEnvironment.WebRootPath,
-                    producto.Imagen.TrimStart('/').Replace("/", "\\"));
-
-                if (System.IO.File.Exists(ruta))
-                    System.IO.File.Delete(ruta);
+                string ruta = Path.Combine(_webHostEnvironment.WebRootPath, producto.Imagen.TrimStart('/').Replace("/", "\\"));
+                if (System.IO.File.Exists(ruta)) System.IO.File.Delete(ruta);
             }
 
             db.EliminarProducto(id);
-
             return RedirectToAction("Index");
         }
 
-        //--------------------------------------------------------------------
-        // EDITAR
-        //--------------------------------------------------------------------
         [HttpGet]
         public ActionResult Edit(int id)
         {
             var producto = db.ObtenerProductoPorId(id);
-
-            if (producto == null)
-                return RedirectToAction("Index");
+            if (producto == null) return RedirectToAction("Index");
 
             producto.Proveedores = db.ObtenerProveedores()
                 .Select(p => new SelectListItem
@@ -237,7 +200,6 @@ namespace GestionVentas.Controllers
         public IActionResult Edit(Productos model, IFormFile? imagen)
         {
             ViewBag.FotoPerfil = HttpContext.Session.GetString("FotoPerfil");
-
             if (!ModelState.IsValid)
             {
                 model.Proveedores = db.ObtenerProveedores()
@@ -246,13 +208,11 @@ namespace GestionVentas.Controllers
                         Value = p.NombreProveedor,
                         Text = p.NombreProveedor
                     }).ToList();
-
                 return View(model);
             }
 
             var producto = db.ObtenerProductoPorId(model.IdProducto);
-            if (producto == null)
-                return NotFound();
+            if (producto == null) return NotFound();
 
             producto.Codigo = model.Codigo;
             producto.Nombre = model.Nombre;
@@ -279,7 +239,6 @@ namespace GestionVentas.Controllers
             }
 
             db.ActualizarProducto(producto);
-
             return RedirectToAction("Index");
         }
     }

@@ -1,48 +1,41 @@
-using GestionVentas.Models;
 using Microsoft.AspNetCore.Mvc;
+using GestionVentas.Models;
 
 namespace GestionVentas.Controllers
 {
     [Route("Proveedores")]
     public class ProveedoresController : Controller
     {
-        private readonly ConexionDB conexion;
-        public ProveedoresController(ConexionDB conexion)
-{
-    this.conexion = conexion;
-}
+        private readonly ConexionDB db;
 
-        public IActionResult Index()
-{
-    return View();
-}
+        public ProveedoresController(IConfiguration config)
+        {
+            db = new ConexionDB(config);
+        }
+
+        public IActionResult Index() => View();
 
         [HttpGet("Obtener")]
-        public JsonResult Obtener()
-        {
-            var lista = conexion.ObtenerProveedores();
-            return Json(lista);
-        }
+        public JsonResult Obtener() => Json(db.ObtenerProveedores());
 
         [HttpPost("Crear")]
         public JsonResult Crear([FromBody] Proveedor prov)
         {
-            Console.WriteLine($"Creando proveedor: {prov.Nombre}, {prov.Telefono}");
-            conexion.AgregarProveedor(prov);
+            db.AgregarProveedor(prov);
             return Json(new { ok = true });
         }
 
-        [HttpPost("Editar")] // 
+        [HttpPost("Editar")]
         public JsonResult Editar([FromBody] Proveedor prov)
         {
-            conexion.ActualizarProveedor(prov);
+            db.ActualizarProveedor(prov);
             return Json(new { ok = true });
         }
 
-        [HttpPost("Eliminar")]  
+        [HttpPost("Eliminar")]
         public JsonResult Eliminar([FromBody] int id)
         {
-            conexion.EliminarProveedor(id);
+            db.EliminarProveedor(id);
             return Json(new { ok = true });
         }
     }

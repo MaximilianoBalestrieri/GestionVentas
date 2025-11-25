@@ -8,9 +8,9 @@ namespace GestionVentas.Controllers
     {
         private readonly ConexionDB conexion;
 
-        public FacturasController(IConfiguration config)
+        public FacturasController(ConexionDB conexion)
         {
-            conexion = new ConexionDB(config);
+            this.conexion = conexion;
         }
 
         public IActionResult Index()
@@ -32,7 +32,6 @@ namespace GestionVentas.Controllers
             return View(factura);
         }
 
-        // GET: Facturas/Eliminar/5
         public ActionResult Eliminar(int id)
         {
             var factura = conexion.ObtenerFacturaConItems(id);

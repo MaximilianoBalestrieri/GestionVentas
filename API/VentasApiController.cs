@@ -8,16 +8,19 @@ namespace GestionVentas.API
     [ApiController]
     public class VentasApiController : ControllerBase
     {
-        private ConexionDB conexion = new ConexionDB();
+        private readonly ConexionDB conexion;
+
+        public VentasApiController(IConfiguration config)
+        {
+            conexion = new ConexionDB(config);
+        }
 
         [HttpGet]
         [Authorize(AuthenticationSchemes = "Bearer")]
         public IActionResult ObtenerVentas()
         {
             var usuario = User.Identity.Name;
-
             var ventas = conexion.ObtenerVentasPorUsuario(usuario);
-
             return Ok(ventas);
         }
     }

@@ -8,22 +8,30 @@ namespace GestionVentas.Controllers
 {
     public class ProductosVendidosController : Controller
     {
+        private readonly ConexionDB db;
+
+        public ProductosVendidosController(IConfiguration config)
+        {
+            db = new ConexionDB(config);
+        }
+
         public ActionResult Index(DateTime? desde, DateTime? hasta)
         {
             List<ProductoVendidoViewModel> lista = new List<ProductoVendidoViewModel>();
 
-            ConexionDB db = new ConexionDB();
-
-            using (MySqlConnection conn = new MySqlConnection(db.CadenaConexion))
+            using (MySqlConnection conn = db.ObtenerConexion())
             {
                 conn.Open();
 
-                    string consulta = @"
-                    SELECT fi.nombreProd, SUM(fi.Cantidad) AS TotalCantidad, fi.Precio
+                string consulta = @"
+                    SELECT 
+                        fi.nombreProd AS Nombre, 
+                        SUM(fi.Cantidad) AS TotalCantidad, 
+                        fi.Precio AS PrecioUnitario
                     FROM facturaitem fi
                     INNER JOIN facturas f ON fi.IdFactura = f.idFactura
                     WHERE (@desde IS NULL OR f.diaVenta >= @desde)
-                    AND (@hasta IS NULL OR f.diaVenta <= @hasta)
+                      AND (@hasta IS NULL OR f.diaVenta <= @hasta)
                     GROUP BY fi.nombreProd, fi.Precio;
                 ";
 
@@ -38,16 +46,13 @@ namespace GestionVentas.Controllers
                         {
                             lista.Add(new ProductoVendidoViewModel
                             {
-                                Nombre = reader["NombreProd"].ToString(),
+                                Nombre = reader["Nombre"].ToString(),
                                 Cantidad = Convert.ToInt32(reader["TotalCantidad"]),
-                                PrecioUnitario = Convert.ToDecimal(reader["Precio"]),
-                               
+                                PrecioUnitario = Convert.ToDecimal(reader["PrecioUnitario"])
                             });
                         }
                     }
                 }
-
-                conn.Close();
             }
 
             ViewBag.Desde = desde?.ToString("yyyy-MM-dd");

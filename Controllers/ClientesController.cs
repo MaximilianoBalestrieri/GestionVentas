@@ -7,10 +7,10 @@ public class ClientesController : Controller
 {
     private readonly ConexionDB conexion;
 
-    // AHORA RECIBIMOS IConfiguration DESDE EL PROYECTO
-    public ClientesController(IConfiguration config)
+    // Ahora recibimos directamente la instancia que inyecta el sistema
+    public ClientesController(ConexionDB conexion)
     {
-        conexion = new ConexionDB(config);
+        this.conexion = conexion;
     }
 
     // Página principal de clientes 

@@ -10,9 +10,9 @@ namespace GestionVentas.Controllers
     {
         private readonly ConexionDB db;
 
-        public HomeController(IConfiguration config)
+        public HomeController(ConexionDB db)
         {
-            db = new ConexionDB(config);
+            this.db = db;
         }
 
         public IActionResult Index()
