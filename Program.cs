@@ -6,12 +6,6 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Render necesita escuchar en puerto 8080
-builder.WebHost.ConfigureKestrel(options =>
-{
-    options.ListenAnyIP(8080);
-});
-
 // MVC
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
@@ -25,7 +19,7 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// AUTENTICACIÓN
+// AUTENTICACIÓN: Cookies por defecto + JWT para API
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = "MiCookieAuth";
@@ -51,8 +45,18 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = "GestionVentas",
         ValidAudience = "GestionVentas",
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("clave_super_secreta_para_token123!"))
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes("clave_super_secreta_para_token123!")
+        )
     };
+});
+
+// ⚠️ IMPORTANTE PARA RENDER: escuchar en el puerto asignado
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(int.Parse(port));
 });
 
 var app = builder.Build();
@@ -73,8 +77,10 @@ app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Rutas
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}"
+);
 
 app.Run();
