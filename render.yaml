@@ -3,8 +3,9 @@ services:
     name: gestion-ventas
     env: dotnet
     plan: free
-    buildCommand: "dotnet publish -c Release"
-    startCommand: "dotnet bin/Release/net8.0/TuProyecto.dll"
+    runtime: dotnet
+    buildCommand: "dotnet build"
+    startCommand: "dotnet GestionVentas.dll
     envVars:
       - key: CONNECTION_STRING
         value: "AQUÍ_LUEGO_PONES_LA_CADENA_DE_CONEXIÓN_DE_RENDER"

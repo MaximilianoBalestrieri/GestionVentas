@@ -1,60 +1,60 @@
 using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Diagnostics;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Security.Policy;
-using System.Web;
 using MySql.Data.MySqlClient;
-using GestionVentas.Models;
-using Microsoft.AspNetCore.Mvc;
-
+using Microsoft.Extensions.Configuration;
 
 namespace GestionVentas.Models
 {
     public class ConexionDB
     {
-     //   public string CadenaConexion => _connectionString;
+        private readonly string _connectionString;
 
-        private MySqlConnection conexion;
-       // private string _connectionString;
- private readonly string _connectionString;
-
-    public ConexionDB(IConfiguration config)
-    {
-        _connectionString =
-            Environment.GetEnvironmentVariable("CONNECTION_STRING")
-            ?? config.GetConnectionString("DefaultConnection");
-    }
-
-    public MySqlConnection GetConnection()
-    {
-        return new MySqlConnection(_connectionString);
-    }
-        // Constructor donde inicializamos la conexión
-   /*     public ConexionDB()
+        public ConexionDB(IConfiguration config)
         {
-            string servidor = "localhost";
-            string baseDatos = "gestionventas";  // Nombre de tu base de datos
-            string usuario = "root";  // Usuario por defecto en XAMPP
-            string contrasena = "";   // En XAMPP no suele tener contraseña por defecto
+            // Si Render tiene una cadena completa → úsala
+            var fullConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
 
-            _connectionString = $"Server={servidor}; database={baseDatos}; UID={usuario}; password={contrasena};";
-            conexion = new MySqlConnection(_connectionString);
+            if (!string.IsNullOrEmpty(fullConnectionString))
+            {
+                _connectionString = fullConnectionString;
+            }
+            else
+            {
+                // Si no existe la cadena completa, construimos una con variables sueltas
+                var host = Environment.GetEnvironmentVariable("MYSQL_HOST");
+                var user = Environment.GetEnvironmentVariable("MYSQL_USER");
+                var pass = Environment.GetEnvironmentVariable("MYSQL_PASSWORD");
+                var db   = Environment.GetEnvironmentVariable("MYSQL_DATABASE");
+                var port = Environment.GetEnvironmentVariable("MYSQL_PORT");
+
+                if (!string.IsNullOrEmpty(host) &&
+                    !string.IsNullOrEmpty(user) &&
+                    !string.IsNullOrEmpty(pass) &&
+                    !string.IsNullOrEmpty(db))
+                {
+                    _connectionString =
+                        $"server={host};uid={user};pwd={pass};database={db};port={port};";
+                }
+                else
+                {
+                    // Última opción: la que está en appsettings.json (uso local)
+                    _connectionString = config.GetConnectionString("DefaultConnection");
+                }
+            }
         }
 
-        public ConexionDB(string cadenaConexion)
+        public MySqlConnection GetConnection()
         {
-            _connectionString = cadenaConexion;
-            conexion = new MySqlConnection(_connectionString);
+            return new MySqlConnection(_connectionString);
         }
-*/
+
         public MySqlConnection ObtenerConexion()
         {
             return new MySqlConnection(_connectionString);
-        } 
+        }
+    
+
+
         //-------------------------- 
        public List<Venta> ObtenerVentasPorUsuario(string nombreUsuario)
 {
