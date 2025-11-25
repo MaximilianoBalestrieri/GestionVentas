@@ -5,7 +5,12 @@ namespace GestionVentas.Controllers
 {
     public class InformesController : Controller
     {
-        private readonly ConexionDB conexion = new ConexionDB();
+        private readonly ConexionDB conexion;
+
+        public InformesController(IConfiguration config)
+        {
+            conexion = new ConexionDB(config);
+        }
 
         public IActionResult Index()
         {
@@ -36,17 +41,11 @@ namespace GestionVentas.Controllers
 
             return Json(lista);
         }
-    
 
-
-
-
-public class FiltroFecha
-{
-    public DateTime Desde { get; set; }
-    public DateTime Hasta { get; set; }
-}
-
-
+        public class FiltroFecha
+        {
+            public DateTime Desde { get; set; }
+            public DateTime Hasta { get; set; }
+        }
     }
 }

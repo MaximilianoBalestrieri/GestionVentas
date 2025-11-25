@@ -8,10 +8,10 @@ public class LoginController : Controller
 {
     private readonly ConexionDB conexionDB;
 
-    // Constructor necesario para recibir la instancia de ConexionDB desde DI
-    public LoginController(ConexionDB conexionDB)
+    // Ajustado para funcionar local y en Render
+    public LoginController(IConfiguration config)
     {
-        this.conexionDB = conexionDB;
+        conexionDB = new ConexionDB(config);
     }
 
     [HttpGet]

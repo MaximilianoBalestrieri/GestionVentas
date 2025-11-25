@@ -5,24 +5,28 @@ using System.Linq;
 
 public class ClientesController : Controller
 {
-    private readonly ConexionDB conexion = new ConexionDB();
+    private readonly ConexionDB conexion;
+
+    // AHORA RECIBIMOS IConfiguration DESDE EL PROYECTO
+    public ClientesController(IConfiguration config)
+    {
+        conexion = new ConexionDB(config);
+    }
 
     // Página principal de clientes 
- 
     public IActionResult Index()
-{
-    var clientes = conexion.ObtenerClientes();
+    {
+        var clientes = conexion.ObtenerClientes();
 
-    int registrosPorPagina = 5;
-    var clientesPagina = clientes.Take(registrosPorPagina).ToList();
+        int registrosPorPagina = 5;
+        var clientesPagina = clientes.Take(registrosPorPagina).ToList();
 
-    ViewBag.PaginaActual = 1;
-    ViewBag.TotalPaginas = (int)Math.Ceiling((double)clientes.Count / registrosPorPagina);
-    ViewBag.Filtro = "";
+        ViewBag.PaginaActual = 1;
+        ViewBag.TotalPaginas = (int)Math.Ceiling((double)clientes.Count / registrosPorPagina);
+        ViewBag.Filtro = "";
 
-    return View(clientesPagina);
-}
-
+        return View(clientesPagina);
+    }
 
     public IActionResult Create()
     {
@@ -68,7 +72,6 @@ public class ClientesController : Controller
         return View(cliente);
     }
 
-    // Método para devolver todos los clientes en JSON (para llenar el modal)
     [HttpGet]
     public JsonResult ObtenerClientes()
     {
@@ -76,36 +79,34 @@ public class ClientesController : Controller
         return Json(clientes);
     }
 
-    // Método para buscar clientes via Ajax como dijo el Profe
+    // Buscador por Ajax
     [HttpGet]
-  public IActionResult Buscar(string filtro, int pagina = 1)
-{
-    int registrosPorPagina = 5;
-    var clientes = conexion.ObtenerClientes();
-
-    if (!string.IsNullOrEmpty(filtro))
+    public IActionResult Buscar(string filtro, int pagina = 1)
     {
-        filtro = filtro.ToLower();
-        clientes = clientes.Where(c =>
-            (c.NombreCliente != null && c.NombreCliente.ToLower().Contains(filtro)) ||
-            (c.DniCliente != null && c.DniCliente.Contains(filtro))
-        ).ToList();
+        int registrosPorPagina = 5;
+        var clientes = conexion.ObtenerClientes();
+
+        if (!string.IsNullOrEmpty(filtro))
+        {
+            filtro = filtro.ToLower();
+            clientes = clientes.Where(c =>
+                (c.NombreCliente != null && c.NombreCliente.ToLower().Contains(filtro)) ||
+                (c.DniCliente != null && c.DniCliente.Contains(filtro))
+            ).ToList();
+        }
+
+        var totalClientes = clientes.Count;
+        var totalPaginas = (int)Math.Ceiling((double)totalClientes / registrosPorPagina);
+
+        var clientesPagina = clientes
+            .Skip((pagina - 1) * registrosPorPagina)
+            .Take(registrosPorPagina)
+            .ToList();
+
+        ViewBag.PaginaActual = pagina;
+        ViewBag.TotalPaginas = totalPaginas;
+        ViewBag.Filtro = filtro;
+
+        return PartialView("_TablaClientes", clientesPagina);
     }
-
-    var totalClientes = clientes.Count;
-    var totalPaginas = (int)Math.Ceiling((double)totalClientes / registrosPorPagina);
-
-    var clientesPagina = clientes
-        .Skip((pagina - 1) * registrosPorPagina)
-        .Take(registrosPorPagina)
-        .ToList();
-
-    ViewBag.PaginaActual = pagina;
-    ViewBag.TotalPaginas = totalPaginas;
-    ViewBag.Filtro = filtro;
-
-    return PartialView("_TablaClientes", clientesPagina);
-}
-
-
 }

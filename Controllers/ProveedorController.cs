@@ -6,7 +6,11 @@ namespace GestionVentas.Controllers
     [Route("Proveedores")]
     public class ProveedoresController : Controller
     {
-        private ConexionDB conexion = new ConexionDB();
+        private readonly ConexionDB conexion;
+        public ProveedoresController(ConexionDB conexion)
+{
+    this.conexion = conexion;
+}
 
         public IActionResult Index()
 {

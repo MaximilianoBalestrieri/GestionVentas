@@ -6,20 +6,23 @@ namespace GestionVentas.Controllers
 {
     public class FacturasController : Controller
     {
+        private readonly ConexionDB conexion;
+
+        public FacturasController(IConfiguration config)
+        {
+            conexion = new ConexionDB(config);
+        }
+
         public IActionResult Index()
         {
-            var conexion = new ConexionDB();
             ViewBag.Rol = HttpContext.Session.GetString("Rol");
-            var facturas = conexion.ObtenerFacturas(); // este método lo hacemos ahora
+
+            var facturas = conexion.ObtenerFacturas(); 
             return View(facturas);
         }
 
-
-
-
         public IActionResult Detalles(int id)
         {
-            ConexionDB conexion = new ConexionDB();
             var factura = conexion.ObtenerFacturaConItems(id);
             if (factura == null)
             {
@@ -29,32 +32,25 @@ namespace GestionVentas.Controllers
             return View(factura);
         }
 
-// GET: Facturas/Eliminar/5
-public ActionResult Eliminar(int id)
-{
-     ConexionDB conexion = new ConexionDB();
-    var factura = conexion.ObtenerFacturaConItems(id); 
-    if (factura == null)
-    {
-        return RedirectToAction("Index");
+        // GET: Facturas/Eliminar/5
+        public ActionResult Eliminar(int id)
+        {
+            var factura = conexion.ObtenerFacturaConItems(id);
+            if (factura == null)
+            {
+                return RedirectToAction("Index");
+            }
 
-    }
-    return View(factura);
-}
-    [Authorize(Roles = "Administrador")]  // ACA PONGO A PEDIDO DEL PROFE EL AUTHORIZE POR ROL. 
-        // POST: Facturas/Eliminar/5
+            return View(factura);
+        }
+
+        [Authorize(Roles = "Administrador")] 
         [HttpPost, ActionName("Eliminar")]
         [ValidateAntiForgeryToken]
-
         public ActionResult EliminarConfirmado(int id)
         {
-             ConexionDB conexion = new ConexionDB();
             conexion.EliminarFactura(id);
             return RedirectToAction("Index");
         }
-
-
     }
-
-    }
-
+}

@@ -5,25 +5,28 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace GestionVentas.Controllers
 {
-    [Authorize] // A PEDIDO DEL PROFE VA EL AUTHORIZE !! 
+    [Authorize] 
     public class HomeController : Controller
     {
-        private readonly ConexionDB db = new ConexionDB();
+        private readonly ConexionDB db;
+
+        public HomeController(IConfiguration config)
+        {
+            db = new ConexionDB(config);
+        }
 
         public IActionResult Index()
         {
-            var usuario = HttpContext.Session.GetString("Usuario"); 
+            var usuario = HttpContext.Session.GetString("Usuario");
             var nombreyApellido = HttpContext.Session.GetString("NombreyApellido");
             var rol = HttpContext.Session.GetString("Rol");
             var fotoPerfil = HttpContext.Session.GetString("FotoPerfil");
 
             if (string.IsNullOrEmpty(usuario))
             {
-                // Si no hay sesión iniciada, redirige al login
                 return RedirectToAction("Index", "Login");
             }
 
-            // Pasamos datos a la vista
             ViewBag.Usuario = usuario;
             ViewBag.NombreyApellido = nombreyApellido;
             ViewBag.Rol = rol;
@@ -60,12 +63,9 @@ namespace GestionVentas.Controllers
             return View();
         }
 
-
         public ActionResult Acercade()
         {
             return View();
         }
-
-
     }
 }

@@ -1,13 +1,17 @@
 using GestionVentas.Models;
 using Microsoft.AspNetCore.Mvc;
 
-
 namespace GestionVentas.Controllers
 {
-
     public class PresupuestoController : Controller
     {
-        ConexionDB db = new ConexionDB();
+        private readonly ConexionDB db;
+
+        // Constructor ajustado para DI + funcionamiento local y Render
+        public PresupuestoController(IConfiguration config)
+        {
+            db = new ConexionDB(config);
+        }
 
         // GET: Presupuesto
         public ActionResult Index()
@@ -23,51 +27,46 @@ namespace GestionVentas.Controllers
             if (presupuesto == null)
             {
                 return NotFound();
-
             }
 
             return View(presupuesto);
         }
 
-       // GET: Presupuesto/Create
-public ActionResult Create()
-{
-    var model = new Presupuesto();  // Defino la variable model
-    model.Fecha = DateTime.Now;      // Le asigno la fecha actual
-    return View(model);              // Retorno la vista con el modelo
-}
+        // GET: Presupuesto/Create
+        public ActionResult Create()
+        {
+            var model = new Presupuesto
+            {
+                Fecha = DateTime.Now
+            };
 
+            return View(model);
+        }
 
         // POST: Presupuesto/Create
-       [HttpPost]
-public ActionResult Create(Presupuesto presupuesto)
-{
-    try
-    {
-        presupuesto.Fecha = DateTime.Now;
-        db.AgregarPresupuesto(presupuesto);
-        return RedirectToAction("Index"); // o a una vista de confirmación
-    }
-    catch (Exception ex)
-    {
-        ViewBag.Error = "Ocurrió un error al guardar el presupuesto: " + ex.Message;
-        return View(presupuesto);
-    }
-}
+        [HttpPost]
+        public ActionResult Create(Presupuesto presupuesto)
+        {
+            try
+            {
+                presupuesto.Fecha = DateTime.Now;
+                db.AgregarPresupuesto(presupuesto);
 
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Error = "Ocurrió un error al guardar el presupuesto: " + ex.Message;
+                return View(presupuesto);
+            }
+        }
 
-[HttpGet]
-public IActionResult ObtenerSiguienteNroPresupuesto()
-{
-    ConexionDB db = new ConexionDB();
-int maxNro = db.ObtenerMaximoNroPresupuesto(); // Este método lo tenés que crear si no existe
-return Json(maxNro + 1);
-
-  
-}
-
-
-
+        [HttpGet]
+        public IActionResult ObtenerSiguienteNroPresupuesto()
+        {
+            int maxNro = db.ObtenerMaximoNroPresupuesto();
+            return Json(maxNro + 1);
+        }
 
         // GET: Presupuesto/Delete/5
         public ActionResult Delete(int id)
@@ -76,7 +75,6 @@ return Json(maxNro + 1);
             if (presupuesto == null)
             {
                 return NotFound();
-
             }
 
             return View(presupuesto);
@@ -99,21 +97,19 @@ return Json(maxNro + 1);
             }
         }
 
-public JsonResult ObtenerProductos()
-    {
-        var productos = db.ObtenerProductos();
-        var lista = productos.Select(p => new
+        public JsonResult ObtenerProductos()
         {
-            id = p.IdProducto,
-            nombre = p.Nombre,
-            descripcion = p.Descripcion,
-            precio = Math.Round(p.PrecioCosto * (1 + p.RecargoPorcentaje / 100), 2) // Calcula precio final
-        }).ToList();
+            var productos = db.ObtenerProductos();
 
-        return Json(lista);
+            var lista = productos.Select(p => new
+            {
+                id = p.IdProducto,
+                nombre = p.Nombre,
+                descripcion = p.Descripcion,
+                precio = Math.Round(p.PrecioCosto * (1 + p.RecargoPorcentaje / 100), 2)
+            }).ToList();
 
-    }
-
-
+            return Json(lista);
+        }
     }
 }

@@ -10,7 +10,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSingleton<ConexionDB>();
+builder.Services.AddSingleton<ConexionDB>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    return new ConexionDB(config);
+});
+
 
 builder.Services.AddSession(options =>
 {
