@@ -1,6 +1,6 @@
 using GestionVentas.Models;
 using Microsoft.AspNetCore.Mvc;
-using MySql.Data.MySqlClient;
+using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -17,58 +17,81 @@ namespace GestionVentas.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        public ActionResult Index(string busqueda, int pagina = 1, int tamanioPagina = 10)
+public ActionResult Index(string busqueda, int pagina = 1, int tamanioPagina = 10)
+{
+    ViewBag.FotoPerfil = HttpContext.Session.GetString("FotoPerfil");
+    List<Productos> productos = new List<Productos>();
+    int inicio = (pagina - 1) * tamanioPagina;
+
+    using (SqlConnection conn = db.ObtenerConexion())
+    {
+        conn.Open();
+        
+        // La lista explícita de columnas evita la inclusión de PrecioVenta (calculada)
+        // Mantenemos StockMinimo aquí, ya que lo incluiste en la DB.
+        string consulta = "SELECT IdProducto, Nombre, Codigo, PrecioCosto, RecargoPorcentaje, NombreProveedor, StockActual, StockMinimo, Imagen, Descripcion FROM productos";
+        
+        if (!string.IsNullOrEmpty(busqueda))
+            consulta += " WHERE nombre LIKE @busqueda OR codigo LIKE @busqueda";
+        
+        consulta += " ORDER BY IdProducto OFFSET @inicio ROWS FETCH NEXT @tamanio ROWS ONLY";
+
+        using (SqlCommand cmd = new SqlCommand(consulta, conn))
         {
-            ViewBag.FotoPerfil = HttpContext.Session.GetString("FotoPerfil");
+            if (!string.IsNullOrEmpty(busqueda))
+                cmd.Parameters.AddWithValue("@busqueda", $"%{busqueda}%");
 
-            List<Productos> productos = new List<Productos>();
+            cmd.Parameters.AddWithValue("@inicio", inicio);
+            cmd.Parameters.AddWithValue("@tamanio", tamanioPagina);
 
-            using (MySqlConnection conn = db.ObtenerConexion())
+            using (var reader = cmd.ExecuteReader())
             {
-                conn.Open();
+                // Definición de Ordinales
+                int ordinalId = reader.GetOrdinal("IdProducto");
+                int ordinalNombre = reader.GetOrdinal("Nombre");
+                int ordinalCodigo = reader.GetOrdinal("Codigo");
+                int ordinalCosto = reader.GetOrdinal("PrecioCosto");
+                int ordinalRecargo = reader.GetOrdinal("RecargoPorcentaje");
+                int ordinalProveedor = reader.GetOrdinal("NombreProveedor");
+                int ordinalStockActual = reader.GetOrdinal("StockActual");
+                int ordinalStockMinimo = reader.GetOrdinal("StockMinimo");
+                int ordinalImagen = reader.GetOrdinal("Imagen");
+                int ordinalDescripcion = reader.GetOrdinal("Descripcion");
 
-                string consulta = "SELECT * FROM productos";
-                if (!string.IsNullOrEmpty(busqueda))
-                    consulta += " WHERE nombre LIKE @busqueda OR codigo LIKE @busqueda";
-                consulta += " LIMIT @inicio, @tamanio";
-
-                using (MySqlCommand cmd = new MySqlCommand(consulta, conn))
+                while (reader.Read())
                 {
-                    if (!string.IsNullOrEmpty(busqueda))
-                        cmd.Parameters.AddWithValue("@busqueda", $"%{busqueda}%");
-
-                    int inicio = (pagina - 1) * tamanioPagina;
-                    cmd.Parameters.AddWithValue("@inicio", inicio);
-                    cmd.Parameters.AddWithValue("@tamanio", tamanioPagina);
-
-                    using (var reader = cmd.ExecuteReader())
+                    productos.Add(new Productos
                     {
-                        while (reader.Read())
-                        {
-                            productos.Add(new Productos
-                            {
-                                IdProducto = Convert.ToInt32(reader["IdProducto"]),
-                                Nombre = reader["Nombre"].ToString(),
-                                Codigo = reader["Codigo"].ToString(),
-                                PrecioCosto = Convert.ToDecimal(reader["PrecioCosto"]),
-                                RecargoPorcentaje = Convert.ToDecimal(reader["RecargoPorcentaje"]),
-                                NombreProveedor = reader["NombreProveedor"].ToString(),
-                                StockActual = Convert.ToInt32(reader["StockActual"]),
-                                Imagen = reader["Imagen"].ToString(),
-                                Descripcion = reader["Descripcion"].ToString()
-                            });
-                        }
-                    }
+                        IdProducto = reader.GetInt32(ordinalId),
+                        Nombre = reader.GetString(ordinalNombre),
+                        Codigo = reader.GetString(ordinalCodigo),
+                        
+                        // *** CORRECCIÓN CRÍTICA: Convertir INT a DECIMAL de forma segura ***
+                        PrecioCosto = reader.IsDBNull(ordinalCosto) ? 0.00M : Convert.ToDecimal(reader.GetValue(ordinalCosto)),
+                        RecargoPorcentaje = reader.IsDBNull(ordinalRecargo) ? 0.00M : Convert.ToDecimal(reader.GetValue(ordinalRecargo)),
+                        
+                        NombreProveedor = reader.IsDBNull(ordinalProveedor) ? null : reader.GetString(ordinalProveedor),
+                        
+                        // Lectura de Stock
+                        StockActual = reader.IsDBNull(ordinalStockActual) ? 0 : reader.GetInt32(ordinalStockActual),
+                        StockMinimo = reader.IsDBNull(ordinalStockMinimo) ? 0 : reader.GetInt32(ordinalStockMinimo),
+                        
+                        // Lectura de strings con nulos
+                        Imagen = reader.IsDBNull(ordinalImagen) ? null : reader.GetString(ordinalImagen),
+                        Descripcion = reader.IsDBNull(ordinalDescripcion) ? null : reader.GetString(ordinalDescripcion)
+                    });
                 }
             }
-
-            ViewBag.Busqueda = busqueda;
-            ViewBag.Pagina = pagina;
-            ViewBag.TamanioPagina = tamanioPagina;
-
-            return View(productos);
         }
+    }
 
+    ViewBag.Busqueda = busqueda;
+    ViewBag.Pagina = pagina;
+    ViewBag.TamanioPagina = tamanioPagina;
+
+    return View(productos);
+
+}
         [HttpGet]
         public JsonResult Buscar(string term)
         {

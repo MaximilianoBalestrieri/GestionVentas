@@ -1,5 +1,5 @@
 using System;
-using MySql.Data.MySqlClient;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 
 namespace GestionVentas.Models
@@ -15,15 +15,15 @@ namespace GestionVentas.Models
         }
 
         // Devuelve una nueva conexión MySQL
-        public MySqlConnection ObtenerConexion()
+        public SqlConnection ObtenerConexion()
         {
-            return new MySqlConnection(_connectionString);
+            return new SqlConnection(_connectionString);
         }
 
         /// <summary>
         /// Alias opcional para compatibilidad
         /// </summary>
-        public MySqlConnection GetConnection()
+        public SqlConnection GetConnection()
         {
             return ObtenerConexion();
         }
@@ -33,36 +33,37 @@ namespace GestionVentas.Models
 
 
         //-------------------------- 
-       public List<Venta> ObtenerVentasPorUsuario(string nombreUsuario)
+      public List<Venta> ObtenerVentasPorUsuario(string nombreUsuario)
 {
     List<Venta> lista = new List<Venta>();
 
-    using (MySqlConnection conexion = ObtenerConexion())
+    using (SqlConnection conexion = ObtenerConexion())
     {
         conexion.Open();
         string sql = "SELECT idFactura, vendedor, montoVenta, diaVenta, idCliente FROM facturas WHERE vendedor = @vendedor";
 
-        using (MySqlCommand cmd = new MySqlCommand(sql, conexion))
+        using (SqlCommand cmd = new SqlCommand(sql, conexion))
         {
             cmd.Parameters.AddWithValue("@vendedor", nombreUsuario);
             
-
-            using (MySqlDataReader reader = cmd.ExecuteReader())
+            using (SqlDataReader reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    Venta v = new Venta
                     {
-                        while (reader.Read())
-                        {
-                            Venta v = new Venta
-                            {
-                                
-                               IdFactura = reader.GetInt32("idFactura"),
-                               DiaVenta = reader.GetDateTime("diaVenta"),
-                               MontoVenta = reader.GetDecimal("montoVenta"),
-                               Vendedor = reader.GetString("vendedor"),
-                               IdCliente = reader.GetInt32("idCliente")
-                            };
-                            lista.Add(v);
-                        }
-                    }
+                        // --- CAMBIOS APLICADOS AQUÍ ---
+                        // Reemplazar reader.GetTipo("Nombre") por reader.GetTipo(reader.GetOrdinal("Nombre"))
+                        
+                        IdFactura = reader.GetInt32(reader.GetOrdinal("idFactura")),
+                        DiaVenta = reader.GetDateTime(reader.GetOrdinal("diaVenta")),
+                        MontoVenta = reader.GetDecimal(reader.GetOrdinal("montoVenta")),
+                        Vendedor = reader.GetString(reader.GetOrdinal("vendedor")),
+                        IdCliente = reader.GetInt32(reader.GetOrdinal("idCliente"))
+                    };
+                    lista.Add(v);
+                }
+            }
         }
     }
 
@@ -71,18 +72,15 @@ namespace GestionVentas.Models
 
 
 
-
-
-
         //--------------------------PROVEEDORES --------------------------------
         public List<Proveedor> ObtenerProveedores()
         {
             var lista = new List<Proveedor>();
 
-            using (var conexion = new MySqlConnection(_connectionString))
+            using (var conexion = new SqlConnection(_connectionString))
             {
                 conexion.Open();
-                var comando = new MySqlCommand("SELECT * FROM Proveedor", conexion);
+                var comando = new SqlCommand("SELECT * FROM Proveedor", conexion);
                 var reader = comando.ExecuteReader();
 
                 while (reader.Read())
@@ -104,11 +102,11 @@ namespace GestionVentas.Models
     // Agregar proveedor
     public void AgregarProveedor(Proveedor prov)
     {
-        using (var conexion = new MySqlConnection(_connectionString))
+        using (var conexion = new SqlConnection(_connectionString))
         {
             conexion.Open();
             var query = "INSERT INTO Proveedor (nombre, telefono, domicilio, localidad) VALUES (@nombre, @telefono, @domicilio, @localidad)";
-            var comando = new MySqlCommand(query, conexion);
+            var comando = new SqlCommand(query, conexion);
             comando.Parameters.AddWithValue("@nombre", prov.Nombre);
             comando.Parameters.AddWithValue("@telefono", prov.Telefono);
             comando.Parameters.AddWithValue("@domicilio", prov.Domicilio);
@@ -120,11 +118,11 @@ namespace GestionVentas.Models
     // Actualizar proveedor
     public void ActualizarProveedor(Proveedor prov)
     {
-        using (var conexion = new MySqlConnection(_connectionString))
+        using (var conexion = new SqlConnection(_connectionString))
         {
             conexion.Open();
             var query = "UPDATE Proveedor SET nombre = @nombre, telefono = @telefono, domicilio = @domicilio, localidad = @localidad WHERE idProv = @id";
-            var comando = new MySqlCommand(query, conexion);
+            var comando = new SqlCommand(query, conexion);
             comando.Parameters.AddWithValue("@id", prov.IdProv);
             comando.Parameters.AddWithValue("@nombre", prov.Nombre);
             comando.Parameters.AddWithValue("@telefono", prov.Telefono);
@@ -137,10 +135,10 @@ namespace GestionVentas.Models
     // Eliminar proveedor
     public void EliminarProveedor(int id)
     {
-        using (var conexion = new MySqlConnection(_connectionString))
+        using (var conexion = new SqlConnection(_connectionString))
         {
             conexion.Open();
-            var comando = new MySqlCommand("DELETE FROM Proveedor WHERE idProv = @id", conexion);
+            var comando = new SqlCommand("DELETE FROM Proveedor WHERE idProv = @id", conexion);
             comando.Parameters.AddWithValue("@id", id);
             comando.ExecuteNonQuery();
         }
@@ -151,10 +149,10 @@ namespace GestionVentas.Models
         public List<Cliente> ObtenerClientes()
         {
             var lista = new List<Cliente>();
-            using (var conn = new MySqlConnection(_connectionString))
+            using (var conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                var cmd = new MySqlCommand("SELECT * FROM Clientes", conn);
+                var cmd = new SqlCommand("SELECT * FROM Clientes", conn);
                 var reader = cmd.ExecuteReader();
                 while (reader.Read())
                 {
@@ -176,13 +174,13 @@ namespace GestionVentas.Models
         {
             List<Cliente> lista = new List<Cliente>();
 
-            using (MySqlConnection conexion = new MySqlConnection(_connectionString))
+            using (SqlConnection conexion = new SqlConnection(_connectionString))
             {
                 conexion.Open();
                 string query = "SELECT * FROM Clientes";
 
-                using (MySqlCommand comando = new MySqlCommand(query, conexion))
-                using (MySqlDataReader reader = comando.ExecuteReader())
+                using (SqlCommand comando = new SqlCommand(query, conexion))
+                using (SqlDataReader reader = comando.ExecuteReader())
                 {
                     while (reader.Read())
                     {
@@ -210,10 +208,10 @@ namespace GestionVentas.Models
         public Cliente ObtenerClientePorId(int id)
         {
             Cliente cliente = null;
-            using (var conn = new MySqlConnection(_connectionString))
+            using (var conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                var cmd = new MySqlCommand("SELECT * FROM Clientes WHERE idCliente = @id", conn);
+                var cmd = new SqlCommand("SELECT * FROM Clientes WHERE idCliente = @id", conn);
                 cmd.Parameters.AddWithValue("@id", id);
                 var reader = cmd.ExecuteReader();
                 if (reader.Read())
@@ -234,10 +232,10 @@ namespace GestionVentas.Models
 
         public void AgregarCliente(Cliente cliente)
         {
-            using (var conn = new MySqlConnection(_connectionString))
+            using (var conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                var cmd = new MySqlCommand("INSERT INTO Clientes (dniCliente, nombreCliente, domicilio, localidad, telefonoCliente) VALUES (@dni, @nombre, @domicilio, @localidad, @telefonoCliente)", conn);
+                var cmd = new SqlCommand("INSERT INTO Clientes (dniCliente, nombreCliente, domicilio, localidad, telefonoCliente) VALUES (@dni, @nombre, @domicilio, @localidad, @telefonoCliente)", conn);
                 cmd.Parameters.AddWithValue("@dni", cliente.DniCliente);
                 cmd.Parameters.AddWithValue("@nombre", cliente.NombreCliente);
                 cmd.Parameters.AddWithValue("@domicilio", cliente.Domicilio);
@@ -249,10 +247,10 @@ namespace GestionVentas.Models
 
         public void ActualizarCliente(Cliente cliente)
         {
-            using (var conn = new MySqlConnection(_connectionString))
+            using (var conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                var cmd = new MySqlCommand("UPDATE Clientes SET dniCliente=@dni, nombreCliente=@nombre, domicilio=@domicilio, localidad=@localidad, telefonoCliente=@telefonoCliente WHERE idCliente=@id", conn);
+                var cmd = new SqlCommand("UPDATE Clientes SET dniCliente=@dni, nombreCliente=@nombre, domicilio=@domicilio, localidad=@localidad, telefonoCliente=@telefonoCliente WHERE idCliente=@id", conn);
                 cmd.Parameters.AddWithValue("@dni", cliente.DniCliente);
                 cmd.Parameters.AddWithValue("@nombre", cliente.NombreCliente);
                 cmd.Parameters.AddWithValue("@domicilio", cliente.Domicilio);
@@ -265,10 +263,10 @@ namespace GestionVentas.Models
 
         public void EliminarCliente(int id)
         {
-            using (var conn = new MySqlConnection(_connectionString))
+            using (var conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                var cmd = new MySqlCommand("DELETE FROM Clientes WHERE idCliente=@id", conn);
+                var cmd = new SqlCommand("DELETE FROM Clientes WHERE idCliente=@id", conn);
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.ExecuteNonQuery();
             }
@@ -386,8 +384,9 @@ namespace GestionVentas.Models
                     try
                     {
                         // Insertar presupuesto
-                        var queryPresupuesto = "INSERT INTO Presupuesto (NombreCliente, TelefonoCliente, Fecha) VALUES (@nombre, @telefono, @fecha); SELECT LAST_INSERT_ID();";
-                        using (var comando = new MySqlCommand(queryPresupuesto, conexion, transaccion))
+                        //var queryPresupuesto = "INSERT INTO Presupuesto (NombreCliente, TelefonoCliente, Fecha) VALUES (@nombre, @telefono, @fecha); SELECT LAST_INSERT_ID();";
+                        var queryPresupuesto = "INSERT INTO Presupuesto (NombreCliente, TelefonoCliente, Fecha) VALUES (@nombre, @telefono, @fecha); SELECT SCOPE_IDENTITY();";
+                        using (var comando = new SqlCommand(queryPresupuesto, conexion, transaccion))
                         {
                             comando.Parameters.AddWithValue("@nombre", presupuesto.NombreCliente);
                             comando.Parameters.AddWithValue("@telefono", presupuesto.TelefonoCliente);
@@ -400,7 +399,7 @@ namespace GestionVentas.Models
                         foreach (var item in presupuesto.Items)
                         {
                             var queryItem = "INSERT INTO PresupuestoItem (IdPresupuesto, Nombre, Cantidad, PrecioUnitario) VALUES (@idPresupuesto, @nombre, @cantidad, @precio);";
-                            using (var cmdItem = new MySqlCommand(queryItem, conexion, transaccion))
+                            using (var cmdItem = new SqlCommand(queryItem, conexion, transaccion))
                             {
                                 cmdItem.Parameters.AddWithValue("@idPresupuesto", presupuesto.IdPresupuesto);
                                 cmdItem.Parameters.AddWithValue("@nombre", item.Nombre);
@@ -432,7 +431,7 @@ namespace GestionVentas.Models
             using (var conn = ObtenerConexion())
             {
                 conn.Open();
-                var cmd = new MySqlCommand(@"
+                var cmd = new SqlCommand(@"
             SELECT DATE(diaVenta) as fecha, SUM(montoVenta) as totalVendido
             FROM ventas
             WHERE diaVenta BETWEEN @desde AND @hasta
@@ -462,7 +461,7 @@ namespace GestionVentas.Models
             using (var conn = ObtenerConexion())
             {
                 conn.Open();
-                var cmd = new MySqlCommand(@"
+                var cmd = new SqlCommand(@"
             SELECT YEAR(diaVenta) AS anio, MONTH(diaVenta) AS mes, SUM(montoVenta) AS totalVendido
             FROM ventas
             WHERE diaVenta BETWEEN @desde AND @hasta
@@ -493,7 +492,7 @@ namespace GestionVentas.Models
             using (var conn = ObtenerConexion())
             {
                 conn.Open();
-                var cmd = new MySqlCommand(@"
+                var cmd = new SqlCommand(@"
             SELECT YEAR(diaVenta) AS anio, SUM(montoVenta) AS totalVendido
             FROM ventas
             WHERE diaVenta BETWEEN @desde AND @hasta
@@ -521,50 +520,54 @@ namespace GestionVentas.Models
 
         //---- USUARIOS ------
 
-        public Usuario ObtenerUsuarioPorNombre(string nombreUsuario)
+       public Usuario ObtenerUsuarioPorNombre(string nombreUsuario)
+{
+    Usuario u = null;
+
+    using (var connection = new SqlConnection(_connectionString))
+    {
+        connection.Open();
+        var query = "SELECT IdUsuario, Usuario, NombreYApellido, Rol, Contraseña, FotoPerfil FROM Usuarios WHERE Usuario = @nombre";
+        
+        using (var command = new SqlCommand(query, connection))
         {
-            Usuario u = null;
+            // Nota: Se recomienda usar Add para tipado más estricto, pero AddWithValue funciona
+            command.Parameters.AddWithValue("@nombre", nombreUsuario);
 
-            using (var connection = new MySqlConnection(_connectionString))
+            using (var reader = command.ExecuteReader())
             {
-                connection.Open();
-                var query = "SELECT * FROM Usuarios WHERE Usuario = @nombre";
-                using (var command = new MySqlCommand(query, connection))
+                if (reader.Read())
                 {
-
-                    command.Parameters.AddWithValue("@nombre", nombreUsuario);
-
-                    using (var reader = command.ExecuteReader())
+                    u = new Usuario
                     {
-                        if (reader.Read())
-                        {
-                            u = new Usuario
-                            {
-                                IdUsuario = reader.GetInt32("IdUsuario"),
-                                UsuarioNombre = reader.GetString("Usuario"),
-                                NombreyApellido = reader.GetString("NombreYApellido"),
-                                Rol = reader.GetString("Rol"),
-                                Contraseña = reader.GetString("Contraseña"),
-                                FotoPerfil = reader["FotoPerfil"] != DBNull.Value ? reader.GetString("FotoPerfil") : null
-
-                            };
-                            Console.WriteLine("Ruta de la maldita foto: " + u.FotoPerfil);
-
-                        }
-                    }
+                        // ❌ ANTES (Error): IdUsuario = reader.GetInt32("IdUsuario"),
+                        // ✅ AHORA: Usamos GetOrdinal para obtener el índice y pasarlo a GetInt32
+                        IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
+                        
+                        // ✅ AHORA: Usamos GetOrdinal para los strings también, aunque hay otra forma
+                        UsuarioNombre = reader.GetString(reader.GetOrdinal("Usuario")),
+                        NombreyApellido = reader.GetString(reader.GetOrdinal("NombreYApellido")),
+                        Rol = reader.GetString(reader.GetOrdinal("Rol")),
+                        Contraseña = reader.GetString(reader.GetOrdinal("Contraseña")),
+                        
+                        // Mantenemos la lógica de verificación de nulos (que es correcta aquí)
+                        FotoPerfil = reader["FotoPerfil"] != DBNull.Value ? reader.GetString(reader.GetOrdinal("FotoPerfil")) : null
+                    };
+                    Console.WriteLine("Ruta de la maldita foto: " + u.FotoPerfil);
                 }
             }
-
-            return u;
         }
+    }
+    return u;
+}
 
         public void ActualizarRutaFoto(Usuario u)
         {
-            using (var connection = new MySqlConnection(_connectionString))
+            using (var connection = new SqlConnection(_connectionString))
             {
                 connection.Open();
                 var query = "UPDATE Usuarios SET FotoPerfil = @fotoperfil WHERE idUsuario = @idUsuario";
-                using (var command = new MySqlCommand(query, connection))
+                using (var command = new SqlCommand(query, connection))
                 {
                     Console.WriteLine("ID del usuario: " + u.IdUsuario);
 
@@ -582,7 +585,7 @@ namespace GestionVentas.Models
             using (var con = ObtenerConexion())
             {
                 con.Open();
-                var cmd = new MySqlCommand("SELECT * FROM usuarios WHERE idUsuario = @idUsuario", con);
+                var cmd = new SqlCommand("SELECT * FROM usuarios WHERE idUsuario = @idUsuario", con);
                 cmd.Parameters.AddWithValue("@idUsuario", idUsuario);
                 var reader = cmd.ExecuteReader();
                 if (reader.Read())
@@ -594,7 +597,7 @@ namespace GestionVentas.Models
                         Contraseña = reader["contraseña"].ToString(),
                         Rol = reader["rol"].ToString(),
                         NombreyApellido = reader["nombreyApellido"].ToString(),
-                        FotoPerfil = reader["FotoPerfil"] != DBNull.Value ? reader.GetString("FotoPerfil") : null
+                      FotoPerfil = reader["FotoPerfil"] != DBNull.Value ? reader.GetString(reader.GetOrdinal("FotoPerfil")) : null
                     };
                 }
             }
@@ -606,7 +609,7 @@ namespace GestionVentas.Models
             using (var con = ObtenerConexion())
             {
                 con.Open();
-                var cmd = new MySqlCommand("INSERT INTO usuarios (Usuario, contraseña, rol, nombreyApellido, FotoPerfil) VALUES (@nombre,  @contraseña, @rol, @nombreyApellido, @FotoPerfil)", con);
+                var cmd = new SqlCommand("INSERT INTO usuarios (Usuario, contraseña, rol, nombreyApellido, FotoPerfil) VALUES (@nombre,  @contraseña, @rol, @nombreyApellido, @FotoPerfil)", con);
                 cmd.Parameters.AddWithValue("@nombre", u.UsuarioNombre);
                 cmd.Parameters.AddWithValue("@contraseña", u.Contraseña);
                 cmd.Parameters.AddWithValue("@rol", u.Rol);
@@ -621,7 +624,7 @@ namespace GestionVentas.Models
             using (var con = ObtenerConexion())
             {
                 con.Open();
-                var cmd = new MySqlCommand("UPDATE usuarios SET Usuario=@nombre, contraseña=@contraseña, rol=@rol, nombreyApellido=@nombreyApellido, FotoPerfil=@FotoPerfil WHERE idUsuario=@idUsuario", con);
+                var cmd = new SqlCommand("UPDATE usuarios SET Usuario=@nombre, contraseña=@contraseña, rol=@rol, nombreyApellido=@nombreyApellido, FotoPerfil=@FotoPerfil WHERE idUsuario=@idUsuario", con);
 
                 cmd.Parameters.AddWithValue("@idUsuario", u.IdUsuario);
                 cmd.Parameters.AddWithValue("@nombre", u.UsuarioNombre);
@@ -638,7 +641,7 @@ namespace GestionVentas.Models
             using (var con = ObtenerConexion())
             {
                 con.Open();
-                var cmd = new MySqlCommand("DELETE FROM usuarios WHERE idUsuario=@id", con);
+                var cmd = new SqlCommand("DELETE FROM usuarios WHERE idUsuario=@id", con);
                 cmd.Parameters.AddWithValue("@id", idUsuario);
                 cmd.ExecuteNonQuery();
             }
@@ -648,11 +651,11 @@ namespace GestionVentas.Models
 
         public void ActualizarClave(Usuario u)
         {
-            using (var connection = new MySqlConnection(_connectionString))
+            using (var connection = new SqlConnection(_connectionString))
             {
                 connection.Open();
                 var query = "UPDATE Usuarios SET contraseña = @contraseña WHERE IdUsuario = @id";
-                using (var command = new MySqlCommand(query, connection))
+                using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@contraseña", u.Contraseña);
                     command.Parameters.AddWithValue("@id", u.IdUsuario);
@@ -669,7 +672,7 @@ namespace GestionVentas.Models
             using (var con = ObtenerConexion())
             {
                 con.Open();
-                var cmd = new MySqlCommand("SELECT idUsuario, Usuario, contraseña, rol, nombreyApellido, FotoPerfil FROM Usuarios", con);
+                var cmd = new SqlCommand("SELECT idUsuario, Usuario, contraseña, rol, nombreyApellido, FotoPerfil FROM Usuarios", con);
                 var reader = cmd.ExecuteReader();
                 while (reader.Read())
                 {
@@ -703,13 +706,13 @@ namespace GestionVentas.Models
         public Usuario BuscarUsuario(string usuario, string contraseña)
         {
             Usuario encontrado = null;
-            using (MySqlConnection conn = new MySqlConnection(_connectionString))
+            using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
 
                 string sql = "SELECT * FROM usuarios WHERE usuario = @usuario AND contraseña = @contraseña";
 
-                using (MySqlCommand cmd = new MySqlCommand(sql, conn))
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@usuario", usuario);
                     cmd.Parameters.AddWithValue("@contraseña", contraseña);
@@ -735,7 +738,7 @@ namespace GestionVentas.Models
 
         public void EditarUsuario(Usuario usuario)
         {
-            using (var conn = new MySqlConnection(_connectionString))
+            using (var conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
                 var sql = @"UPDATE Usuario SET 
@@ -745,7 +748,7 @@ namespace GestionVentas.Models
                         Rol = @rol, 
                         FotoPerfil = @foto
                     WHERE IdUsuario = @id";
-                using (var cmd = new MySqlCommand(sql, conn))
+                using (var cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@usuario", usuario.UsuarioNombre);
                     cmd.Parameters.AddWithValue("@nombre", usuario.NombreyApellido);
@@ -758,43 +761,67 @@ namespace GestionVentas.Models
             }
         }
         //-------------------------------PRODUCTOS-----------------------------
+public List<Productos> ObtenerProductos()
+{
+    List<Productos> productos = new List<Productos>();
 
-        public List<Productos> ObtenerProductos()
+    using (SqlConnection conn = ObtenerConexion())
+    {
+        conn.Open();
+        
+        // La consulta SQL explícita es crucial (sin PrecioVenta, ya que es calculado en C#).
+        string sql = @"
+            SELECT 
+                IdProducto, Codigo, Nombre, Descripcion, Categoria, 
+                PrecioCosto, RecargoPorcentaje, 
+                StockActual, StockMinimo, NombreProveedor, Imagen 
+            FROM Productos";
+
+        using (SqlCommand cmd = new SqlCommand(sql, conn))
+        using (SqlDataReader reader = cmd.ExecuteReader())
         {
-            List<Productos> productos = new List<Productos>();
+            // --- 1. Obtener los índices de las columnas (Ordinales) ---
+            int ordIdProducto = reader.GetOrdinal("IdProducto");
+            int ordCodigo = reader.GetOrdinal("Codigo");
+            int ordNombre = reader.GetOrdinal("Nombre");
+            int ordDescripcion = reader.GetOrdinal("Descripcion");
+            int ordCategoria = reader.GetOrdinal("Categoria");
+            int ordPrecioCosto = reader.GetOrdinal("PrecioCosto");
+            int ordRecargoPorcentaje = reader.GetOrdinal("RecargoPorcentaje");
+            int ordStockActual = reader.GetOrdinal("StockActual");
+            int ordStockMinimo = reader.GetOrdinal("StockMinimo");
+            int ordNombreProveedor = reader.GetOrdinal("NombreProveedor");
+            int ordImagen = reader.GetOrdinal("Imagen");
 
-            using (MySqlConnection conn = ObtenerConexion())
+            while (reader.Read())
             {
-                conn.Open();
-                string sql = @"SELECT * 
-                       FROM Productos ";
-
-                using (MySqlCommand cmd = new MySqlCommand(sql, conn))
-                using (MySqlDataReader reader = cmd.ExecuteReader())
+                productos.Add(new Productos
                 {
-                    while (reader.Read())
-                    {
-                        productos.Add(new Productos
-                        {
-                            IdProducto = Convert.ToInt32(reader["IdProducto"]),
-                            Codigo = reader["Codigo"].ToString(),
-                            Nombre = reader["Nombre"].ToString(),
-                            Descripcion = reader["Descripcion"].ToString(),
-                            Categoria = reader["Categoria"].ToString(),
-                            PrecioCosto = Convert.ToDecimal(reader["PrecioCosto"]),
-                            RecargoPorcentaje = Convert.ToDecimal(reader["RecargoPorcentaje"]),
-                            //  PrecioVenta = Convert.ToDecimal(reader["PrecioVenta"]),
-                            StockActual = Convert.ToInt32(reader["StockActual"]),
-                            StockMinimo = Convert.ToInt32(reader["StockMinimo"]),
-                            NombreProveedor = reader["NombreProveedor"].ToString(),
-                            Imagen = reader["Imagen"].ToString()
-                        });
-                    }
-                }
+                    IdProducto = reader.GetInt32(ordIdProducto),
+                    Codigo = reader.GetString(ordCodigo),
+                    Nombre = reader.GetString(ordNombre),
+                    
+                    // Manejo de nulos para strings
+                    Descripcion = reader.IsDBNull(ordDescripcion) ? null : reader.GetString(ordDescripcion),
+                    Categoria = reader.IsDBNull(ordCategoria) ? null : reader.GetString(ordCategoria),
+                    
+                    // CORRECCIÓN CRÍTICA: Uso de GetValue y Convert.ToDecimal para evitar InvalidCastException (INT a DECIMAL)
+                    PrecioCosto = reader.IsDBNull(ordPrecioCosto) ? 0.00M : Convert.ToDecimal(reader.GetValue(ordPrecioCosto)),
+                    RecargoPorcentaje = reader.IsDBNull(ordRecargoPorcentaje) ? 0.00M : Convert.ToDecimal(reader.GetValue(ordRecargoPorcentaje)),
+                    
+                    // Manejo de nulos para enteros
+                    StockActual = reader.IsDBNull(ordStockActual) ? 0 : reader.GetInt32(ordStockActual),
+                    StockMinimo = reader.IsDBNull(ordStockMinimo) ? 0 : reader.GetInt32(ordStockMinimo),
+                    
+                    NombreProveedor = reader.IsDBNull(ordNombreProveedor) ? null : reader.GetString(ordNombreProveedor),
+                    Imagen = reader.IsDBNull(ordImagen) ? null : reader.GetString(ordImagen)
+                });
             }
-
-            return productos;
         }
+    }
+
+    return productos;
+}
 
         //-------------------CREAR PRODUCTOS-------------------
         public void AgregarProducto(Productos p)
@@ -807,7 +834,7 @@ namespace GestionVentas.Models
         VALUES 
         (@codigo, @nombre, @descripcion, @categoria, @precioCosto, @recargoPorcentaje, @precioVenta, @stockActual, @stockMinimo, @nombreProveedor, @imagen)";
 
-                using (var cmd = new MySqlCommand(query, con))
+                using (var cmd = new SqlCommand(query, con))
                 {
                     cmd.Parameters.AddWithValue("@codigo", p.Codigo);
                     cmd.Parameters.AddWithValue("@nombre", p.Nombre);
@@ -835,7 +862,7 @@ namespace GestionVentas.Models
 
                 string consulta = "DELETE FROM Productos WHERE IdProducto = @IdProducto";
 
-                using (var comando = new MySqlCommand(consulta, conexion))
+                using (var comando = new SqlCommand(consulta, conexion))
                 {
                     comando.Parameters.AddWithValue("@IdProducto", idProducto);
                     comando.ExecuteNonQuery();
@@ -844,52 +871,78 @@ namespace GestionVentas.Models
         }
 
 
-        public Productos ObtenerProductoPorId(int id)
+       public Productos ObtenerProductoPorId(int id)
+{
+    Productos prod = null;
+
+    using (var conexion = ObtenerConexion()) 
+    {
+        conexion.Open();
+        
+        // La consulta SQL es explícita y excluye PrecioVenta (porque es calculada)
+        string sql = @"
+            SELECT 
+                IdProducto, Codigo, Nombre, Descripcion, Categoria, 
+                PrecioCosto, RecargoPorcentaje, 
+                StockActual, StockMinimo, NombreProveedor, Imagen 
+            FROM Productos p 
+            WHERE p.IdProducto = @id";
+
+        using (var comando = new SqlCommand(sql, conexion))
         {
-            Productos prod = null;
-
-            using (var conexion = new MySqlConnection(_connectionString))
+            comando.Parameters.AddWithValue("@id", id);
+            using (var lector = comando.ExecuteReader())
             {
-                conexion.Open();
-                string sql = @"SELECT * 
-                       FROM Productos p
-                       WHERE p.IdProducto = @id";
-
-                using (var comando = new MySqlCommand(sql, conexion))
+                if (lector.Read())
                 {
-                    comando.Parameters.AddWithValue("@id", id);
-                    using (var lector = comando.ExecuteReader())
-                    {
-                        if (lector.Read())
-                        {
-                            prod = new Productos
-                            {
-                                IdProducto = Convert.ToInt32(lector["IdProducto"]),
-                                Codigo = lector["Codigo"].ToString(),
-                                Nombre = lector["Nombre"].ToString(),
-                                Categoria = lector["Categoria"].ToString(),
-                                Descripcion = lector["Descripcion"].ToString(),
-                                PrecioCosto = Convert.ToDecimal(lector["PrecioCosto"]),
-                                RecargoPorcentaje = Convert.ToDecimal(lector["RecargoPorcentaje"]),
-                                // PrecioVenta = Convert.ToDecimal(lector["PrecioVenta"]),
-                                StockActual = Convert.ToInt32(lector["StockActual"]),
-                                StockMinimo = Convert.ToInt32(lector["StockMinimo"]),
+                    // --- 1. Obtener Ordinales ---
+                    int ordIdProducto = lector.GetOrdinal("IdProducto");
+                    int ordCodigo = lector.GetOrdinal("Codigo");
+                    int ordNombre = lector.GetOrdinal("Nombre");
+                    int ordCategoria = lector.GetOrdinal("Categoria");
+                    int ordDescripcion = lector.GetOrdinal("Descripcion");
+                    int ordPrecioCosto = lector.GetOrdinal("PrecioCosto");
+                    int ordRecargoPorcentaje = lector.GetOrdinal("RecargoPorcentaje");
+                    int ordStockActual = lector.GetOrdinal("StockActual");
+                    int ordStockMinimo = lector.GetOrdinal("StockMinimo");
+                    int ordNombreProveedor = lector.GetOrdinal("NombreProveedor");
+                    int ordImagen = lector.GetOrdinal("Imagen");
 
-                                NombreProveedor = lector["NombreProveedor"].ToString(),
-                                Imagen = lector["Imagen"].ToString()
-                            };
-                        }
-                    }
+                    prod = new Productos
+                    {
+                        // Lectura de campos básicos
+                        IdProducto = lector.GetInt32(ordIdProducto),
+                        Codigo = lector.GetString(ordCodigo),
+                        Nombre = lector.GetString(ordNombre),
+                        
+                        // Manejo de nulos (Strings)
+                        Categoria = lector.IsDBNull(ordCategoria) ? null : lector.GetString(ordCategoria),
+                        Descripcion = lector.IsDBNull(ordDescripcion) ? null : lector.GetString(ordDescripcion),
+                        
+                        // CORRECCIÓN CRÍTICA (INT a DECIMAL): Uso de GetValue y Convert.ToDecimal
+                        PrecioCosto = lector.IsDBNull(ordPrecioCosto) ? 0.00M : Convert.ToDecimal(lector.GetValue(ordPrecioCosto)),
+                        RecargoPorcentaje = lector.IsDBNull(ordRecargoPorcentaje) ? 0.00M : Convert.ToDecimal(lector.GetValue(ordRecargoPorcentaje)),
+                        // NOTA: PrecioVenta no se asigna, ya que es calculado en el modelo.
+                        
+                        // Manejo de nulos (Enteros)
+                        StockActual = lector.IsDBNull(ordStockActual) ? 0 : lector.GetInt32(ordStockActual),
+                        StockMinimo = lector.IsDBNull(ordStockMinimo) ? 0 : lector.GetInt32(ordStockMinimo),
+
+                        NombreProveedor = lector.IsDBNull(ordNombreProveedor) ? null : lector.GetString(ordNombreProveedor),
+                        Imagen = lector.IsDBNull(ordImagen) ? null : lector.GetString(ordImagen)
+                    };
                 }
             }
-
-            return prod;
         }
+    }
+
+    return prod;
+}
 
 
         public void ActualizarProducto(Productos producto)
         {
-            using (var conexion = new MySqlConnection(_connectionString))
+            using (var conexion = new SqlConnection(_connectionString))
             {
                 conexion.Open();
                 string sql = @"UPDATE Productos SET 
@@ -905,7 +958,7 @@ namespace GestionVentas.Models
                         Imagen = @Imagen
                       WHERE IdProducto = @IdProducto";
 
-                using (var comando = new MySqlCommand(sql, conexion))
+                using (var comando = new SqlCommand(sql, conexion))
                 {
                     comando.Parameters.AddWithValue("@Codigo", producto.Codigo);
                     comando.Parameters.AddWithValue("@Nombre", producto.Nombre);
@@ -932,11 +985,11 @@ namespace GestionVentas.Models
         public int ObtenerMaximoNroPresupuesto()
         {
             int max = 0;
-            using (var connection = new MySqlConnection(_connectionString))
+            using (var connection = new SqlConnection(_connectionString))
             {
                 connection.Open();
                 var query = "SELECT MAX(idPresupuesto) FROM Presupuesto";
-                using (var cmd = new MySqlCommand(query, connection))
+                using (var cmd = new SqlCommand(query, connection))
                 {
                     var result = cmd.ExecuteScalar();
                     if (result != DBNull.Value)
@@ -957,7 +1010,7 @@ namespace GestionVentas.Models
             {
                 conn.Open();
                 string query = "UPDATE productos SET stockActual = stockActual - @cantidad WHERE idProducto = @id";
-                using (var cmd = new MySqlCommand(query, conn))
+                using (var cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@cantidad", cantidadVendida);
                     cmd.Parameters.AddWithValue("@id", idProducto);
@@ -985,7 +1038,7 @@ namespace GestionVentas.Models
                     INSERT INTO facturas (diaVenta, montoVenta, vendedor, idCliente)
                     VALUES (@diaVenta, @montoVenta, @vendedor, @idCliente);";
 
-                        using (var cmdInsert = new MySqlCommand(insertFactura, conn, transaction))
+                        using (var cmdInsert = new SqlCommand(insertFactura, conn, transaction))
                         {
 
                             cmdInsert.Parameters.AddWithValue("@diaVenta", DateTime.Now);
@@ -1004,7 +1057,7 @@ namespace GestionVentas.Models
                             cmdInsert.ExecuteNonQuery();
 
                             // Obtener ID generado
-                            using (var cmdGetId = new MySqlCommand("SELECT LAST_INSERT_ID();", conn, transaction))
+                            using (var cmdGetId = new SqlCommand("SELECT LAST_INSERT_ID();", conn, transaction))
                             {
                                 idFactura = Convert.ToInt32(cmdGetId.ExecuteScalar());
                             }
@@ -1022,7 +1075,7 @@ namespace GestionVentas.Models
                         INSERT INTO facturaitem (idFactura, idItem, nombreProd, cantidad, precio)
                         VALUES (@idFactura, @idItem, @nombreProd, @cantidad, @precio);";
 
-                            using (var cmdItem = new MySqlCommand(insertItem, conn, transaction))
+                            using (var cmdItem = new SqlCommand(insertItem, conn, transaction))
                             {
                                 cmdItem.Parameters.AddWithValue("@idFactura", idFactura);
                                 cmdItem.Parameters.AddWithValue("@idItem", item.IdProducto);
@@ -1034,7 +1087,7 @@ namespace GestionVentas.Models
 
                             // Actualizar stock
                             string restarStock = "UPDATE productos SET stockActual = stockActual - @cantidad WHERE idProducto = @id";
-                            using (var cmdStock = new MySqlCommand(restarStock, conn, transaction))
+                            using (var cmdStock = new SqlCommand(restarStock, conn, transaction))
                             {
                                 cmdStock.Parameters.AddWithValue("@cantidad", item.Cantidad);
                                 cmdStock.Parameters.AddWithValue("@id", item.IdProducto);
@@ -1070,7 +1123,7 @@ namespace GestionVentas.Models
             WHERE TABLE_SCHEMA = @gestionventas
             AND TABLE_NAME = @facturas;";
 
-                using (var cmd = new MySqlCommand(sql, conn))
+                using (var cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@gestionventas", gestionventas);
                     cmd.Parameters.AddWithValue("@facturas", facturas);
@@ -1093,14 +1146,14 @@ namespace GestionVentas.Models
         {
             try
             {
-                using (MySqlConnection conn = ObtenerConexion())
+                using (SqlConnection conn = ObtenerConexion())
                 {
                     conn.Open();
 
                     string query = @"INSERT INTO facturaitem (idFactura, idItem, nombreProd, cantidad, precio) 
                              VALUES (@idFactura, @idItem, @nombreProd, @cantidad, @precio);";
 
-                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@idFactura", idFactura);
                         cmd.Parameters.AddWithValue("@idItem", idItem);
@@ -1122,31 +1175,44 @@ namespace GestionVentas.Models
         }
 
 
-        public int GuardarVenta(Venta venta)
+       public int GuardarVenta(Venta venta)
+{
+    using (SqlConnection conn = new SqlConnection(_connectionString))
+    {
+        conn.Open();
+
+        // 1. CAMBIO: Añadimos "; SELECT SCOPE_IDENTITY();" a la query
+        string query = "INSERT INTO Ventas (diaVenta, montoVenta) VALUES (@dia, @monto); SELECT SCOPE_IDENTITY();";
+        
+        SqlCommand cmd = new SqlCommand(query, conn);
+        
+        cmd.Parameters.AddWithValue("@dia", venta.DiaVenta);
+        cmd.Parameters.AddWithValue("@monto", venta.MontoVenta);
+        
+        // 2. CAMBIO: Usamos ExecuteScalar y convertimos el resultado a int
+        // Este comando ejecuta el INSERT y luego el SELECT, devolviendo el ID.
+        object result = cmd.ExecuteScalar(); 
+
+        // Verificamos si la operación fue exitosa antes de convertir
+        if (result != null && result != DBNull.Value)
         {
-            using (MySqlConnection conn = new MySqlConnection(_connectionString))
-            {
-                conn.Open();
-
-                string query = "INSERT INTO Ventas (diaVenta, montoVenta) VALUES (@dia, @monto)";
-                MySqlCommand cmd = new MySqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@dia", venta.DiaVenta);
-                cmd.Parameters.AddWithValue("@monto", venta.MontoVenta);
-                cmd.ExecuteNonQuery();
-
-                // Obtener el ID autogenerado
-                return (int)cmd.LastInsertedId;
-            }
+            // El ID devuelto es un decimal, por lo que Convert.ToInt32 es seguro.
+            return Convert.ToInt32(result);
         }
+        
+        // Si no se pudo obtener el ID (ej: la tabla no tiene IDENTITY), devolvemos 0 o -1
+        return -1; 
+    }
+}
 
         public int ObtenerUltimaFactura()
         {
             int ultimo = 0;
-            using (MySqlConnection conn = ObtenerConexion())
+            using (SqlConnection conn = ObtenerConexion())
             {
                 conn.Open();
                 string query = "SELECT MAX(idFactura) FROM Ventas";
-                MySqlCommand cmd = new MySqlCommand(query, conn);
+                SqlCommand cmd = new SqlCommand(query, conn);
                 object result = cmd.ExecuteScalar();
                 if (result != DBNull.Value && result != null)
                 {
@@ -1160,12 +1226,12 @@ namespace GestionVentas.Models
         {
             int stock = 0;
 
-            using (MySqlConnection conn = new MySqlConnection(_connectionString))
+            using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
                 string sql = "SELECT stockActual FROM productos WHERE idProducto = @idProducto";
 
-                using (MySqlCommand cmd = new MySqlCommand(sql, conn))
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@idProducto", idProducto);
                     object result = cmd.ExecuteScalar();
@@ -1195,7 +1261,7 @@ namespace GestionVentas.Models
             ORDER BY f.idFactura DESC
             ";
 
-                using (var cmd = new MySqlCommand(query, conn))
+                using (var cmd = new SqlCommand(query, conn))
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -1230,7 +1296,7 @@ namespace GestionVentas.Models
             JOIN clientes c ON f.idCliente = c.idCliente
             WHERE f.idFactura = @id";
 
-                using (var cmd = new MySqlCommand(queryFactura, conn))
+                using (var cmd = new SqlCommand(queryFactura, conn))
                 {
                     cmd.Parameters.AddWithValue("@id", idFactura);
                     using (var reader = cmd.ExecuteReader())
@@ -1261,7 +1327,7 @@ namespace GestionVentas.Models
                 FROM facturaitem fi
                 WHERE fi.idFactura = @id";
 
-                    using (var cmd = new MySqlCommand(queryItems, conn))
+                    using (var cmd = new SqlCommand(queryItems, conn))
                     {
                         cmd.Parameters.AddWithValue("@id", idFactura);
                         using (var reader = cmd.ExecuteReader())
@@ -1291,14 +1357,14 @@ namespace GestionVentas.Models
                 conexion.Open();
 
                 // Primero eliminamos los items asociados
-                using (var cmd = new MySqlCommand("DELETE FROM facturaitem WHERE idFactura = @id", conexion))
+                using (var cmd = new SqlCommand("DELETE FROM facturaitem WHERE idFactura = @id", conexion))
                 {
                     cmd.Parameters.AddWithValue("@id", idFactura);
                     cmd.ExecuteNonQuery();
                 }
 
                 // Luego eliminamos la factura
-                using (var cmd = new MySqlCommand("DELETE FROM facturas WHERE idFactura = @id", conexion))
+                using (var cmd = new SqlCommand("DELETE FROM facturas WHERE idFactura = @id", conexion))
                 {
                     cmd.Parameters.AddWithValue("@id", idFactura);
                     cmd.ExecuteNonQuery();

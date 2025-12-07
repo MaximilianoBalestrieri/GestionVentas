@@ -68,8 +68,8 @@ builder.Services.AddAuthentication(options =>
 // 🔹 Configuración de puerto
 // --------------------------------------------------
 // LOCALHOST: puerto 5000
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-builder.WebHost.UseUrls($"http://localhost:{port}");
+//var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+//builder.WebHost.UseUrls($"http://localhost:{port}");
 
 // --------------------------------------------------
 // Build de la app

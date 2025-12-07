@@ -1,0 +1,133 @@
+body {
+   background: url('/imagenes/fondo.jpg') no-repeat center center fixed;
+    background-size: cover;
+   
+  }
+
+  .seccion-cards {
+  padding: 70px 20px;
+  max-width: 1200px;
+  margin: auto;
+  margin-top: -50px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem; /* menos espacio entre cards */
+}
+
+ .card-servicio {
+  width: 22% !important; /* Aproximadamente 4 por fila con margen */
+  min-width: 150px;
+  max-width: 150px;
+  padding: 0.8rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  text-align: center;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  height: 250px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+ .card-servicio:hover {
+  transform: scale(1.05);
+  background-color: #f9f9f9;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  border-color: #1409f3;
+}
+
+ .card-servicio img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+ .card-servicio h5 {
+  font-size: 1rem; /* más chico */
+  margin-top: 0.5rem;
+}
+
+.card-servicio p {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+    #menu-admin {
+    position: fixed;
+    top: 60px;
+    right: 40px;
+    width: 280px;
+    height: 90px; /* Podés ajustar el alto según necesites */
+    background-color: rgba(255, 255, 255, 0.6);
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    }
+
+    #menu-bienvenido {
+    position: fixed;
+    top: 60px;
+    left: 40px;
+    width: 280px;
+    height: 90px; /* Podés ajustar el alto según necesites */
+    background-color: rgba(255, 255, 255, 0.6);
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+.titulo-principal h1 {
+  font-size: 2.5rem;
+  color: #003366;
+  font-weight: 700;
+  animation: fadeInUp 1s ease-in-out;
+  margin-top: -40px;   /* 💡 menos espacio arriba */
+  margin-bottom: 0.5rem; /* 💡 separa un poco del SALE */
+}
+
+.titulo-principal .titulo-sale {
+  font-size: 4.2rem;
+  font-weight: 800;
+  color: #f9fbfc; /* celeste claro */
+  text-shadow:
+    -2px -2px 0 black,
+     2px -2px 0 black,
+    -2px  2px 0 black,
+     2px  2px 0 black,
+     0px  0px 4px black; /* leve difuminado */
+  letter-spacing: 1rem;
+  display: inline-block;
+  animation: fadeInUp 1.3s ease-in-out;
+}
+
+
+
+/* Animación suave */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

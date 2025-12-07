@@ -1,0 +1,44 @@
+   
+@media print {
+th.col-quitar,
+    td.col-quitar {
+      display: none !important;
+    }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #facturaImprimible, #facturaImprimible * {
+    visibility: visible;
+  }
+
+  #facturaImprimible {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  
+}
+
+
+    .col-codigo   { width: 50px; text-align: center;}
+    .col-nombre   { width: 250px; }
+    .col-precio   { width: 80px; text-align: center;}
+    .col-cantidad { width: 20px; text-align: center;}
+    .col-subtotal { width: 80px; text-align: center; }
+    .col-quitar   { width: 20px; text-align: center;}
+     
+    .col-stock {
+        display: none;
+    }
+
+     .sin-stock {
+    background-color: #ffe6e6 !important; /* rosita suave */
+  }
