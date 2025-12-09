@@ -73,31 +73,35 @@ namespace GestionVentas.Models
 
 
         //--------------------------PROVEEDORES --------------------------------
-        public List<Proveedor> ObtenerProveedores()
+       public List<Proveedor> ObtenerProveedores()
+{
+    var lista = new List<Proveedor>();
+
+    using (var conexion = new SqlConnection(_connectionString))
+    {
+        conexion.Open();
+        var comando = new SqlCommand("SELECT * FROM Proveedor", conexion);
+        var reader = comando.ExecuteReader();
+
+        while (reader.Read())
         {
-            var lista = new List<Proveedor>();
-
-            using (var conexion = new SqlConnection(_connectionString))
+            lista.Add(new Proveedor
             {
-                conexion.Open();
-                var comando = new SqlCommand("SELECT * FROM Proveedor", conexion);
-                var reader = comando.ExecuteReader();
-
-                while (reader.Read())
-                {
-                    lista.Add(new Proveedor
-                    {
-                        IdProv = Convert.ToInt32(reader["idProv"]),
-                        Nombre = reader["nombre"].ToString(),
-                        Telefono = reader["telefono"].ToString(),
-                        Domicilio = reader["domicilio"].ToString(),
-                        Localidad = reader["localidad"].ToString()
-                    });
-                }
-            }
-
-            return lista;
+                // Mapear la columna 'idProv' a la propiedad 'IdProveedor'
+                IdProveedor = Convert.ToInt32(reader["idProv"]), 
+                
+                // Mapear la columna 'nombre' a la propiedad 'NombreProveedor'
+                NombreProveedor = reader["nombre"].ToString(), 
+                
+                Telefono = reader["telefono"].ToString(),
+                Domicilio = reader["domicilio"].ToString(),
+                Localidad = reader["localidad"].ToString()
+            });
         }
+    }
+
+    return lista;
+}
 
     // Agregar proveedor
     public void AgregarProveedor(Proveedor prov)
@@ -107,7 +111,7 @@ namespace GestionVentas.Models
             conexion.Open();
             var query = "INSERT INTO Proveedor (nombre, telefono, domicilio, localidad) VALUES (@nombre, @telefono, @domicilio, @localidad)";
             var comando = new SqlCommand(query, conexion);
-            comando.Parameters.AddWithValue("@nombre", prov.Nombre);
+            comando.Parameters.AddWithValue("@nombre", prov.NombreProveedor);
             comando.Parameters.AddWithValue("@telefono", prov.Telefono);
             comando.Parameters.AddWithValue("@domicilio", prov.Domicilio);
             comando.Parameters.AddWithValue("@localidad", prov.Localidad);
@@ -123,8 +127,8 @@ namespace GestionVentas.Models
             conexion.Open();
             var query = "UPDATE Proveedor SET nombre = @nombre, telefono = @telefono, domicilio = @domicilio, localidad = @localidad WHERE idProv = @id";
             var comando = new SqlCommand(query, conexion);
-            comando.Parameters.AddWithValue("@id", prov.IdProv);
-            comando.Parameters.AddWithValue("@nombre", prov.Nombre);
+            comando.Parameters.AddWithValue("@id", prov.IdProveedor);
+            comando.Parameters.AddWithValue("@nombre", prov.NombreProveedor);
             comando.Parameters.AddWithValue("@telefono", prov.Telefono);
             comando.Parameters.AddWithValue("@domicilio", prov.Domicilio);
             comando.Parameters.AddWithValue("@localidad", prov.Localidad);
@@ -1023,123 +1027,134 @@ public List<Productos> ObtenerProductos()
 
 
         public (bool success, int idFactura, string error) RegistrarVenta(VentaCompleta venta)
+{
+    Console.WriteLine("🚀 RegistrarVenta fue llamado.");
+    using (var conn = ObtenerConexion())
+    {
+        conn.Open();
+        using (var transaction = conn.BeginTransaction())
         {
-            Console.WriteLine("🚀 RegistrarVenta fue llamado.");
-            using (var conn = ObtenerConexion())
+            try
             {
-                conn.Open();
-                using (var transaction = conn.BeginTransaction())
-                {
-                    try
-                    {
-                        int idFactura = 0;
+                int idFactura = 0;
 
-                        string insertFactura = @"
+                // CAMBIO CLAVE: Agregamos "SELECT SCOPE_IDENTITY();" a la sentencia INSERT.
+                // Esto hace que ExecuteScalar devuelva el ID de la fila que acaba de ser insertada.
+                string insertFactura = @"
                     INSERT INTO facturas (diaVenta, montoVenta, vendedor, idCliente)
-                    VALUES (@diaVenta, @montoVenta, @vendedor, @idCliente);";
+                    VALUES (@diaVenta, @montoVenta, @vendedor, @idCliente);
+                    SELECT SCOPE_IDENTITY();"; // <-- CAMBIO AQUÍ PARA SQL SERVER
 
-                        using (var cmdInsert = new SqlCommand(insertFactura, conn, transaction))
-                        {
+                using (var cmdInsert = new SqlCommand(insertFactura, conn, transaction))
+                {
+                    cmdInsert.Parameters.AddWithValue("@diaVenta", DateTime.Now);
+                    cmdInsert.Parameters.AddWithValue("@montoVenta", venta.MontoVenta);
+                    cmdInsert.Parameters.AddWithValue("@vendedor", venta.Vendedor);
+                    cmdInsert.Parameters.AddWithValue("@idCliente", venta.IdCliente);
 
-                            cmdInsert.Parameters.AddWithValue("@diaVenta", DateTime.Now);
-                            cmdInsert.Parameters.AddWithValue("@montoVenta", venta.MontoVenta);
-                            cmdInsert.Parameters.AddWithValue("@vendedor", venta.Vendedor);
-                            cmdInsert.Parameters.AddWithValue("@idCliente", venta.IdCliente);
+                    Console.WriteLine("---- DATOS PARA FACTURA ----");
+                    Console.WriteLine("Día de venta: " + DateTime.Now);
+                    Console.WriteLine("Monto: " + venta.MontoVenta);
+                    Console.WriteLine("Vendedor: " + venta.Vendedor);
+                    Console.WriteLine("ID Cliente: " + venta.IdCliente);
 
+                    // ExecuteScalar ahora ejecuta la inserción Y devuelve el ID generado por SCOPE_IDENTITY().
+                    var result = cmdInsert.ExecuteScalar(); 
+                    
+                    // Verificación de si se obtuvo un resultado (necesaria para SCOPE_IDENTITY)
+                    if (result != null && result != DBNull.Value)
+                    {
+                        // SCOPE_IDENTITY devuelve un decimal/numérico, lo convertimos a Int32.
+                        idFactura = Convert.ToInt32(result); 
+                    }
+                    else
+                    {
+                        // Si no se generó un ID (ej: tabla sin identidad), forzamos el error.
+                        throw new Exception("Error al obtener el ID de la factura con SCOPE_IDENTITY().");
+                    }
+                    
+                    Console.WriteLine("ID FACTURA generado: " + idFactura);
+                } // Eliminada la sección del cmdGetId ya que se fusionó arriba.
 
-                            Console.WriteLine("---- DATOS PARA FACTURA ----");
-                            Console.WriteLine("Día de venta: " + DateTime.Now);
-                            Console.WriteLine("Monto: " + venta.MontoVenta);
-                            Console.WriteLine("Vendedor: " + venta.Vendedor);
-                            Console.WriteLine("ID Cliente: " + venta.IdCliente);
+                if (idFactura <= 0)
+                    throw new Exception("No se generó el ID de la factura.");
 
-
-                            cmdInsert.ExecuteNonQuery();
-
-                            // Obtener ID generado
-                            using (var cmdGetId = new SqlCommand("SELECT LAST_INSERT_ID();", conn, transaction))
-                            {
-                                idFactura = Convert.ToInt32(cmdGetId.ExecuteScalar());
-                            }
-
-                            Console.WriteLine("ID FACTURA generado: " + idFactura);
-                        }
-
-                        if (idFactura <= 0)
-                            throw new Exception("No se generó el ID de la factura.");
-
-                        foreach (var item in venta.Productos)
-                        {
-                            // Insertar item de factura
-                            string insertItem = @"
+                // El resto de la lógica de ítems y stock se mantiene
+                foreach (var item in venta.Productos)
+                {
+                    // Insertar item de factura
+                    string insertItem = @"
                         INSERT INTO facturaitem (idFactura, idItem, nombreProd, cantidad, precio)
                         VALUES (@idFactura, @idItem, @nombreProd, @cantidad, @precio);";
 
-                            using (var cmdItem = new SqlCommand(insertItem, conn, transaction))
-                            {
-                                cmdItem.Parameters.AddWithValue("@idFactura", idFactura);
-                                cmdItem.Parameters.AddWithValue("@idItem", item.IdProducto);
-                                cmdItem.Parameters.AddWithValue("@nombreProd", item.NombreProd);
-                                cmdItem.Parameters.AddWithValue("@cantidad", item.Cantidad);
-                                cmdItem.Parameters.AddWithValue("@precio", item.Precio);
-                                cmdItem.ExecuteNonQuery();
-                            }
-
-                            // Actualizar stock
-                            string restarStock = "UPDATE productos SET stockActual = stockActual - @cantidad WHERE idProducto = @id";
-                            using (var cmdStock = new SqlCommand(restarStock, conn, transaction))
-                            {
-                                cmdStock.Parameters.AddWithValue("@cantidad", item.Cantidad);
-                                cmdStock.Parameters.AddWithValue("@id", item.IdProducto);
-                                cmdStock.ExecuteNonQuery();
-                            }
-                        }
-
-                        transaction.Commit();
-                        return (true, idFactura, "");
-
-                    }
-                    catch (Exception ex)
+                    using (var cmdItem = new SqlCommand(insertItem, conn, transaction))
                     {
-                        transaction.Rollback();
-                        return (false, 0, ex.Message);
+                        cmdItem.Parameters.AddWithValue("@idFactura", idFactura);
+                        cmdItem.Parameters.AddWithValue("@idItem", item.IdProducto);
+                        cmdItem.Parameters.AddWithValue("@nombreProd", item.NombreProd);
+                        cmdItem.Parameters.AddWithValue("@cantidad", item.Cantidad);
+                        cmdItem.Parameters.AddWithValue("@precio", item.Precio);
+                        cmdItem.ExecuteNonQuery();
+                    }
+
+                    // Actualizar stock
+                    string restarStock = "UPDATE productos SET stockActual = stockActual - @cantidad WHERE idProducto = @id";
+                    using (var cmdStock = new SqlCommand(restarStock, conn, transaction))
+                    {
+                        cmdStock.Parameters.AddWithValue("@cantidad", item.Cantidad);
+                        cmdStock.Parameters.AddWithValue("@id", item.IdProducto);
+                        cmdStock.ExecuteNonQuery();
                     }
                 }
+
+                transaction.Commit();
+                return (true, idFactura, "");
+
             }
-        }
-
-
-        public int ObtenerProximoAutoIncremento(string facturas, string gestionventas)
-        {
-            int autoIncrement = 1;
-
-            using (var conn = ObtenerConexion())
+            catch (Exception ex)
             {
-                conn.Open();
-
-                string sql = @"
-            SELECT AUTO_INCREMENT
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_SCHEMA = @gestionventas
-            AND TABLE_NAME = @facturas;";
-
-                using (var cmd = new SqlCommand(sql, conn))
-                {
-                    cmd.Parameters.AddWithValue("@gestionventas", gestionventas);
-                    cmd.Parameters.AddWithValue("@facturas", facturas);
-
-                    var result = cmd.ExecuteScalar();
-
-                    if (result != DBNull.Value && result != null)
-                    {
-                        autoIncrement = Convert.ToInt32(result);
-                    }
-                }
+                transaction.Rollback();
+                return (false, 0, ex.Message);
             }
-
-            return autoIncrement;
         }
+    }
+}
 
+        public int ObtenerProximoAutoIncremento(string tabla, string baseDeDatos)
+{
+    // El argumento 'baseDeDatos' (gestionventas) ya no es necesario para IDENT_CURRENT
+    // pero lo dejamos en la firma del método para no romper otras llamadas.
+    
+    using (var conn = ObtenerConexion())
+    {
+        conn.Open();
+
+        // *** Consulta SQL Server (Reemplazando la de MySQL) ***
+        // IDENT_CURRENT devuelve el último valor de identidad generado para la tabla.
+        string sql = "SELECT IDENT_CURRENT(@tabla);"; 
+
+        using (var cmd = new SqlCommand(sql, conn))
+        {
+            // Usamos el parámetro @tabla para pasar el nombre 'facturas'
+            cmd.Parameters.AddWithValue("@tabla", tabla); 
+            
+            var result = cmd.ExecuteScalar();
+
+            // Si la tabla está vacía, IDENT_CURRENT puede devolver NULL.
+            if (result == DBNull.Value || result == null)
+            {
+                // Si no hay filas, el primer ID será 1.
+                return 1; 
+            }
+            else
+            {
+                // El resultado es el ÚLTIMO ID usado. El próximo será el resultado + 1.
+                int ultimoId = Convert.ToInt32(result);
+                return ultimoId + 1;
+            }
+        }
+    }
+}
 
 
         public void GuardarItemFactura(int idFactura, int idItem, string nombreProd, int cantidad, decimal precio)
