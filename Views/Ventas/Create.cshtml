@@ -5,7 +5,43 @@
 }
 
 
+<style>
+    /* Reduce el espacio en todas las filas de la tabla de factura */
+    #tablaFactura th, #tablaFactura td {
+        padding: 4px 8px !important; /* Espaciado muy reducido */
+        vertical-align: middle;
+    }
 
+    /* Hace los inputs de cantidad más pequeños */
+    #tablaFactura .cantidad {
+        height: 28px;
+        padding: 2px;
+        margin: 0;
+    }
+
+    /* Reduce el espacio en el panel de carga rápida */
+    .panel-carga-rapida {
+        padding: 8px !important;
+        margin-bottom: 10px !important;
+    }
+
+    /* Ajusta los márgenes generales del contenedor */
+    .card.p-3 {
+        padding: 10px !important;
+    }
+
+    hr {
+        margin: 8px 0 !important; /* Líneas divisorias más juntas */
+    }
+
+    .row.g-2 {
+        --bs-gutter-y: 0.3rem; /* Reduce el espacio vertical entre filas de inputs */
+    }
+
+    h5, h4 {
+        margin-bottom: 5px !important;
+    }
+</style>
 
 <link rel="stylesheet" href="/css/ventas.css" />
 
@@ -81,15 +117,53 @@
     <button class="btn btn-primary px-4 btn-sm col-md-4" style="min-width: 200px;" data-bs-toggle="modal" data-bs-target="#modalProductos">
         Agregar Producto
     </button>
+    
 </div>
 </div>
-
+ <hr style="margin-top: 0; margin-bottom: 15px;"> 
     </div>
 </div>
 
 
- <hr style="margin-top: 0; margin-bottom: 15px;">
+<!----------------------------------->
 
+<div class="row g-1 mb-2 align-items-end no-print panel-carga-rapida" 
+     style="background-color: #f8f9fa; border-radius: 6px; border: 1px solid #dee2e6; padding: 8px; font-size: 0.85rem;">
+    
+    <div class="col-md-1">
+        <label class="form-label mb-0" style="font-size: 0.75rem;"><strong>Código</strong></label>
+        <input type="text" id="inputCodigoRapido" class="form-control form-control-sm" style="font-size: 0.85rem;" placeholder="Cód.">
+    </div>
+    
+    <div class="col-md-4">
+        <label class="form-label mb-0" style="font-size: 0.75rem;"><strong>Producto</strong></label>
+        <input type="text" id="inputNombreRapido" class="form-control form-control-sm" style="background-color: #e9ecef; font-size: 0.85rem;" readonly>
+    </div>
+
+    <div class="col-md-1">
+        <label class="form-label mb-0" style="font-size: 0.75rem;"><strong>Cant.</strong></label>
+        <input type="number" id="inputCantidadRapida" class="form-control form-control-sm text-center" value="1" min="1" style="font-size: 0.85rem;">
+    </div>
+
+    <div class="col-md-2">
+        <label class="form-label mb-0" style="font-size: 0.75rem;"><strong>Precio</strong></label>
+        <input type="text" id="inputPrecioRapido" class="form-control form-control-sm text-end" style="background-color: #e9ecef; font-size: 0.85rem;" readonly placeholder="$0.00">
+    </div>
+
+    <div class="col-md-2">
+        <label class="form-label mb-0" style="font-size: 0.75rem;"><strong>Subtotal</strong></label>
+        <input type="text" id="inputSubtotalRapido" class="form-control form-control-sm text-end" style="background-color: #e9ecef; font-size: 0.85rem; font-weight: bold;" readonly placeholder="$0.00">
+    </div>
+
+    <div class="col-md-2">
+        <button type="button" id="btnAgregarRapido" class="btn btn-dark btn-sm w-100" style="font-size: 0.8rem; padding: 4px 0;">
+            + Agregar
+        </button>
+    </div>
+</div>
+
+<!------------------------------------>
+  <hr style="margin-top: 0; margin-bottom: 15px;"> 
 <!-------------------- MODAL CLIENTES -------------------------->
 
 <div class="modal fade" id="clientesModal" tabindex="-1" aria-hidden="true">
@@ -166,17 +240,18 @@
     <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAbonar">
         Abonar
     </button>
-</div>
-
- </div>
-</div>
- <div class="text-end mt-2  no-print">
+     <div class="text-end mt-2  no-print">
      <button onclick="window.print()" class="btn btn-primary">Imprimir PDF</button>
   
     <button class="btn btn-danger me-2" id="btnNuevaFactura">
         Nueva Factura
     </button>
  </div>
+</div>
+
+ </div>
+</div>
+
 
 
 <!-- -----------------MODAL PARA EL VUELTO  ---------------->
@@ -295,484 +370,321 @@
 </div>
 
 
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
 @section Scripts {
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
-
-   
     const vendedor = '@ViewBag.nombreyApellido';
-    console.log("Vendedor logueado:", vendedor);
+    // Lista de productos para búsqueda rápida sin servidor
+    const listaProductosData = @Html.Raw(Json.Serialize(Model));
 
-
-//--------------------------CLIENTES --------------------------
-
-document.addEventListener("DOMContentLoaded", function () {
-    const modal = document.getElementById("clientesModal");
-
-    // Cargar todos los clientes cuando se abre el modal
-    modal.addEventListener("show.bs.modal", function () {
-        fetch("/Clientes/ObtenerClientes")
-            .then(response => response.json())
-            .then(clientes => {
-                const tbody = document.getElementById("tablaClientes");
-                tbody.innerHTML = "";
-
-                clientes.forEach(cliente => {
-                    const tr = document.createElement("tr");
-
-                    tr.dataset.id = cliente.idCliente;
-                    tr.dataset.nombre = cliente.nombreCliente;
-                    tr.dataset.dni = cliente.dniCliente;
-                    tr.dataset.domicilio = cliente.domicilio;
-                    tr.dataset.localidad = cliente.localidad;
-                    tr.dataset.telefono = cliente.telefonoCliente;
-
-                    tr.innerHTML = `
-                        <td>${cliente.dniCliente}</td>
-                        <td>${cliente.nombreCliente}</td>
-                        <td>${cliente.domicilio}</td>
-                        <td>${cliente.localidad}</td>
-                        <td>${cliente.telefonoCliente}</td>
-                        <td><button type="button" class="btn btn-sm btn-success seleccionar-cliente">Seleccionar</button></td>
-                    `;
-
-                    tbody.appendChild(tr);
-                });
-            })
-            .catch(error => {
-                console.error("Error cargando clientes:", error);
-            });
-    });
-
-    // Filtro de búsqueda
-    document.getElementById("filtroCliente").addEventListener("input", function () {
-        const filtro = this.value;
-
-        fetch("/Clientes/BuscarClientes?filtro=" + encodeURIComponent(filtro))
-            .then(response => response.json())
-            .then(clientes => {
-                const tbody = document.getElementById("tablaClientes");
-                tbody.innerHTML = "";
-
-                clientes.forEach(c => {
-                    const fila = document.createElement("tr");
-
-                    fila.dataset.id = c.idCliente;
-                    fila.dataset.nombre = c.nombreCliente;
-                    fila.dataset.dni = c.dniCliente;
-                    fila.dataset.domicilio = c.domicilio;
-                    fila.dataset.localidad = c.localidad;
-                    fila.dataset.telefono = c.telefonoCliente;
-
-                    fila.innerHTML = `
-                        <td>${c.dniCliente}</td>
-                        <td>${c.nombreCliente}</td>
-                        <td>${c.domicilio}</td>
-                        <td>${c.localidad}</td>
-                        <td>${c.telefonoCliente}</td>
-                        <td><button type="button" class="btn btn-sm btn-success seleccionar-cliente">Seleccionar</button></td>
-                    `;
-
-                    tbody.appendChild(fila);
-                });
-            });
-    });
-
-    // Selección del cliente
-    document.addEventListener("click", function (e) {
-        if (e.target.classList.contains("seleccionar-cliente")) {
-            const tr = e.target.closest("tr");
-
-            document.getElementById("idCliente").value = tr.dataset.id;
-            document.getElementById("nombreCliente").value = tr.dataset.nombre;
-            document.getElementById("dniCliente").value = tr.dataset.dni;
-           document.getElementById("direccionCliente").value = tr.dataset.domicilio;
-            document.getElementById("localidadCliente").value = tr.dataset.localidad;
-            document.getElementById("telefonoCliente").value = tr.dataset.telefono;
-
-            const modalBootstrap = bootstrap.Modal.getInstance(modal);
-            modalBootstrap.hide();
+    // -------------------------------------------------------------------------
+    // 1. FUNCIÓN UNIFICADA PARA AGREGAR PRODUCTOS A LA TABLA (COMPACTA)
+    // -------------------------------------------------------------------------
+    function agregarFilaFactura(idproducto, codigo, nombre, precio, stock, cantidadSolicitada) {
+        let filaExistente = document.querySelector(`#tablaFactura tbody tr[data-idproducto="${idproducto}"]`);
+        
+        if (filaExistente) {
+            let inputCant = filaExistente.querySelector(".cantidad");
+            inputCant.value = parseInt(inputCant.value) + cantidadSolicitada;
+            inputCant.dispatchEvent(new Event('input', { bubbles: true }));
+            return;
         }
-    });
-});
 
-
-
-//-------------------------- CONFIRMAR COMPRA -------------------------- 
-document.getElementById("confirmarCompra").addEventListener("click", function () {
-    const filas = document.querySelectorAll("#tablaFactura tbody tr");
-    const productos = [];
-
-    filas.forEach(fila => {
-        const id = parseInt(fila.getAttribute("data-idproducto"));
-        const nombre = fila.querySelector("td:nth-child(2)").textContent.trim();
-        const precio = parseFloat(fila.querySelector("td:nth-child(3)").textContent.replace("$", "").trim());
-        const cantidad = parseInt(fila.querySelector(".cantidad").value);
-
-        if (cantidad > 0) {
-            productos.push({
-                IdProducto: id,
-                NombreProd: nombre,
-                Cantidad: cantidad,
-                Precio: precio
-            });
-        }
-    });
-
-    const totalFactura = parseFloat(document.getElementById("totalFactura").textContent.replace("$", "") || "0");
-    const idCliente = parseInt(document.getElementById("idCliente").value || "0");
-   // const vendedor = "Mbalestrieri"; // Podés tomarlo dinámicamente si lo tenés logueado
-
-    if (totalFactura <= 0 || productos.length === 0 || isNaN(idCliente) || idCliente === 0) {
-        alert("Faltan datos para confirmar la compra.");
-        return;
-    }
-
-    const datosVenta = {
-        idCliente: idCliente,
-        vendedor: vendedor,
-        montoVenta: totalFactura,
-        productos: productos
-    };
-
-console.log("Enviando a backend:", JSON.stringify(datosVenta));
-
-
-    fetch("/Ventas/RegistrarVenta", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datosVenta)
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert("¡Compra confirmada! Factura " + data.nroFactura + " guardada");
-
-                // Limpiar factura
-                document.querySelector("#tablaFactura tbody").innerHTML = "";
-                actualizarTotales();
-
-                // Limpiar cliente
-                document.getElementById("dniCliente").value = "";
-                document.getElementById("nombreCliente").value = "";
-                document.getElementById("direccionCliente").value = "";
-                document.getElementById("localidadCliente").value = "";
-                document.getElementById("telefonoCliente").value = "";
-                document.getElementById("idCliente").value = "";
-
-                // Actualizar número de factura
-                fetch('/Ventas/ObtenerProximoNroFactura')
-                    .then(response => response.json())
-                    .then(res => {
-                        if (res.success) {
-                            const nroFacturaSpan = document.getElementById("nroFacturaPrincipal");
-                            if (nroFacturaSpan) nroFacturaSpan.textContent = res.nroFactura;
-                        } else {
-                            console.error("Error al obtener número de factura:", res.message);
-                        }
-                    });
-
-                // Cerrar modal abonar
-                const modalAbonar = bootstrap.Modal.getInstance(document.getElementById("modalAbonar"));
-                if (modalAbonar) modalAbonar.hide();
-
-                // Refrescar productos
-                fetch('/Productos/ObtenerProductos')
-                    .then(r => r.text())
-                    .then(html => {
-                        document.querySelector('#tablaProductos tbody').innerHTML = html;
-
-                        document.querySelectorAll('#tablaProductos tbody tr').forEach(tr => {
-                            const stockTd = tr.querySelector('td:nth-child(3)');
-                            if (stockTd && parseInt(stockTd.textContent) === 0) {
-                                stockTd.classList.add('text-danger', 'fw-bold');
-                            } else {
-                                stockTd.classList.remove('text-danger', 'fw-bold');
-                            }
-                        });
-                    });
-
-                const modalProductos = bootstrap.Modal.getInstance(document.getElementById("modalProductos"));
-                if (modalProductos) modalProductos.hide();
-
-            } else {
-                alert("Error al guardar la factura: " + data.message);
-            }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            alert("Error de conexión con el servidor.");
-        });
-});
-
-
-
-// Función para obtener y mostrar el próximo nro de factura
-function cargarNroFactura() {
-    fetch('/Ventas/ObtenerProximoNroFactura')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById("nroFacturaPrincipal").textContent = data.nroFactura;
-            } else {
-                document.getElementById("nroFacturaPrincipal").textContent = "Error";
-                console.error("Error en respuesta:", data.message);
-            }
-        })
-        .catch(err => {
-            console.error("Error al obtener número de factura:", err);
-            document.getElementById("nroFacturaPrincipal").textContent = "Error";
-        });
-}
-
-document.addEventListener("DOMContentLoaded", cargarNroFactura);
-
-// Ejecutar al cargar la página
-document.addEventListener("DOMContentLoaded", function() {
-    cargarNroFactura();
-});
-
-
-
-//-------------------- IMPRIME FACTURA ----------------
- function imprimirFactura() {
-    // Elegimos el contenedor de la factura
-    const factura = document.querySelector('.card');
-
-    // Opciones para el PDF
-    const opciones = {
-      margin:       10,
-      filename:     'Factura.pdf',
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2 },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    // Generamos el PDF
-    html2pdf().set(opciones).from(factura).save();
-  }
-
-//-------------------- VISTA PREVIA DE LA FACTURA 
-function generarVistaPrevia() {
-  const nombre = document.getElementById("nombreCliente").value || "Cliente sin nombre";
-  const fecha = new Date().toLocaleDateString();
-  const total = document.getElementById("totalFactura").textContent;
-
-  const tablaOriginal = document.querySelectorAll("#tablaFactura tbody tr");
-  const tbodyVista = document.getElementById("detalleVista");
-  tbodyVista.innerHTML = ""; // Limpiar por si hay datos previos
-
-  tablaOriginal.forEach(fila => {
-    const celdas = fila.querySelectorAll("td");
-    const codigo = celdas[0].textContent;
-    const nombreProd = celdas[1].textContent;
-    const precio = celdas[2].textContent;
-    const cantidad = celdas[3].querySelector("input")?.value || "";
-    const subtotal = celdas[4].textContent;
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${codigo}</td>
-      <td>${nombreProd}</td>
-      <td class="text-end">${precio}</td>
-      <td class="text-center">${cantidad}</td>
-      <td class="text-end">${subtotal}</td>
-    `;
-    tbodyVista.appendChild(tr);
-  });
-
-  document.getElementById("clienteVista").textContent = nombre;
-  document.getElementById("fechaVista").textContent = fecha;
-  document.getElementById("totalVista").textContent = total;
-
-  document.getElementById("vistaPreviaFactura").style.display = "block";
-}
-
-// --------LIMPIA FACTURA ----------------
-document.getElementById('btnNuevaFactura').addEventListener('click', function () {
-  // Vaciar tabla
-  document.querySelector('#tablaFactura tbody').innerHTML = "";
-
-  // Reiniciar valores
-  document.getElementById('subtotalFactura').textContent = "$0.00";
-  document.getElementById('totalFactura').textContent = "$0.00";
-  document.getElementById('descuento').value = 0;
-
-
-});
-
-
-// ----------- STOCK --------------------
-
-function verificarStock() {
-    const filas = document.querySelectorAll("#tablaProductos tbody tr");
-
-    filas.forEach(fila => {
-        const tdCodigo = fila.children[0];
-        const tdNombre = fila.children[1];
-        const tdStock = fila.children[2];
-        const tdPrecio = fila.children[3];
-
-        const stock = parseInt(tdStock.textContent);
-
-        if (stock <= 0) {
-            fila.classList.add("sin-stock");
-            [tdCodigo, tdNombre, tdStock, tdPrecio].forEach(td => {
-                td.style.color = "red";
-                // td.style.fontWeight = "bold";
-            });
-        } else {
-            fila.classList.remove("sin-stock");
-            [tdCodigo, tdNombre, tdStock, tdPrecio].forEach(td => {
-                td.style.color = "";
-                td.style.fontWeight = "";
-            });
-        }
-    });
-}
-
-
-  // Llamamos a la función al cargar el modal
-  document.addEventListener('DOMContentLoaded', verificarStock);
-
-  // También cada vez que se abre el modal (por si actualizás los datos dinámicamente)
-  const modalProductos = document.getElementById('modalProductos');
-  modalProductos.addEventListener('shown.bs.modal', verificarStock);
-
-
-
-// Al abrir el modal, cargar el total actual
-document.getElementById("modalAbonar").addEventListener("shown.bs.modal", function () {
-    // Total
-    const totalTexto = document.getElementById("totalFactura").innerText.replace("$", "").replace(",", ".");
-    const total = parseFloat(totalTexto);
-    document.getElementById("modalTotal").innerText = total.toFixed(2);
-    document.getElementById("montoAbonado").value = "";
-    document.getElementById("vuelto").innerText = "0.00";
-    document.getElementById("montoAbonado").focus();
-
-    // 👉 Copiar número de factura desde el principal
-    const nro = document.getElementById("nroFacturaPrincipal").textContent;
-    document.getElementById("nroFactura").textContent = nro;
-});
-
-
-
-// Calcular vuelto en tiempo real
-document.getElementById("montoAbonado").addEventListener("input", function () {
-    const total = parseFloat(document.getElementById("modalTotal").innerText);
-    const abonado = parseFloat(this.value);
-    let vuelto = 0;
-
-    if (!isNaN(abonado) && abonado >= total) {
-        vuelto = abonado - total;
-    }
-
-    document.getElementById("vuelto").innerText = vuelto.toFixed(2);
-});
-
-// Filtrar productos
-document.getElementById("buscarProducto").addEventListener("input", function () {
-    const filtro = this.value.toLowerCase();
-    const filas = document.querySelectorAll("#tablaProductos tbody tr");
-
-    filas.forEach(fila => {
-        const texto = fila.innerText.toLowerCase();
-        fila.style.display = texto.includes(filtro) ? "" : "none";
-    });
-});
-
-document.querySelector('#tablaProductos tbody').addEventListener('click', function (e) {
-  if (e.target.classList.contains('seleccionarProducto')) {
-    const btn = e.target;
-    const idproducto = btn.dataset.idproducto;
-    const codigo = btn.dataset.codigo;
-    const nombre = btn.dataset.nombre;
-    const precio = parseFloat(btn.dataset.precio);
-    const stock = parseInt(btn.dataset.stock);
-    const cantidad = 1;
-    const subtotal = precio * cantidad;
-
-    const fila = document.createElement("tr");
-    fila.setAttribute("data-stock", stock);
-    fila.setAttribute("data-idproducto", idproducto);
-
-    fila.innerHTML = `
-      <td class="col-codigo text-center">${codigo}</td>
-      <td class="col-nombre">${nombre}</td>
-      <td class="col-precio text-end">$${precio.toFixed(2)}</td>
-      <td class="col-stock text-center">${stock}</td>
-      <td class="col-cantidad">
-        <div class="d-flex justify-content-center">
-          <input type="number" class="form-control form-control-sm text-center cantidad" value="${cantidad}" min="1" style="width:60px"/>
-        </div>
-      </td>
-      <td class="subtotal text-end">$${subtotal.toFixed(2)}</td>
-      <td class="col-quitar text-center">
-        <button class="btn btn-danger btn-sm btn-quitar">X</button>
-      </td>
-    `;
-
-    document.querySelector("#tablaFactura tbody").appendChild(fila);
-    actualizarTotales();
-    verificarStock();
-
-    const modalElement = document.getElementById("modalProductos");
-    const modal = bootstrap.Modal.getInstance(modalElement);
-    if (modal) modal.hide();
-  }
-});
-
-// Eventos dinámicos
-document.addEventListener("input", function (e) {
-    if (e.target.classList.contains("cantidad")) {
-        const fila = e.target.closest("tr");
-        const precio = parseFloat(fila.querySelector(".col-precio").innerText.replace("$", ""));
-        const cantidad = parseInt(e.target.value);
-        const subtotal = precio * cantidad;
-        fila.querySelector(".subtotal").innerText = `$${subtotal.toFixed(2)}`;
-        actualizarTotales();
-        verificarStock(); // 💡 Verificamos si el stock quedó en cero
-    }
-});
-
-document.addEventListener("click", function (e) {
-    if (e.target.classList.contains("btn-quitar")) {
-        e.target.closest("tr").remove();
+        const subtotal = precio * cantidadSolicitada;
+        const fila = document.createElement("tr");
+        fila.setAttribute("data-stock", stock);
+        fila.setAttribute("data-idproducto", idproducto);
+
+        fila.innerHTML = `
+          <td class="col-codigo text-center small" style="padding: 4px;">${codigo}</td>
+          <td class="col-nombre small" style="padding: 4px;">${nombre}</td>
+          <td class="col-precio text-end small" style="padding: 4px;">$${precio.toFixed(2)}</td>
+          <td class="col-cantidad" style="padding: 4px;">
+            <div class="d-flex justify-content-center">
+              <input type="number" class="form-control form-control-sm text-center cantidad" 
+                     value="${cantidadSolicitada}" min="1" 
+                     style="width:55px; height:24px; font-size: 0.85rem;"/>
+            </div>
+          </td>
+          <td class="subtotal text-end small" style="padding: 4px;">$${subtotal.toFixed(2)}</td>
+          <td class="col-quitar text-center" style="padding: 4px;">
+            <button class="btn btn-danger btn-sm btn-quitar" style="padding: 0px 6px; font-size: 0.7rem;">x</button>
+          </td>
+        `;
+
+        document.querySelector("#tablaFactura tbody").appendChild(fila);
         actualizarTotales();
         verificarStock();
     }
-});
 
+    // -------------------------------------------------------------------------
+    // 2. LÓGICA DE CARGA RÁPIDA (CON PRECIO Y SUBTOTAL)
+    // -------------------------------------------------------------------------
+    document.addEventListener("DOMContentLoaded", function() {
+        const inputCodigo = document.getElementById("inputCodigoRapido");
+        const inputNombre = document.getElementById("inputNombreRapido");
+        const inputCantidad = document.getElementById("inputCantidadRapida");
+        const inputPrecio = document.getElementById("inputPrecioRapido");
+        const inputSubtotal = document.getElementById("inputSubtotalRapido");
+        const btnAgregar = document.getElementById("btnAgregarRapido");
 
-// Actualizar totales
-function actualizarTotales() {
-    let subtotal = 0;
+        let productoEncontrado = null;
 
-    document.querySelectorAll(".subtotal").forEach(sub => {
-        subtotal += parseFloat(sub.innerText.replace("$", ""));
+        function calcularSubtotalRapido() {
+            const p = productoEncontrado ? productoEncontrado.precioVenta : 0;
+            const c = parseInt(inputCantidad.value) || 0;
+            inputSubtotal.value = '$' + (p * c).toFixed(2);
+        }
+
+        inputCodigo.addEventListener("keyup", function(e) {
+            const busqueda = e.target.value.trim();
+            productoEncontrado = listaProductosData.find(p => p.codigo == busqueda);
+
+            if (productoEncontrado) {
+                inputNombre.value = productoEncontrado.nombre;
+                inputPrecio.value = '$' + productoEncontrado.precioVenta.toFixed(2);
+                inputNombre.classList.add("is-valid");
+                calcularSubtotalRapido();
+                
+                if (e.key === "Enter") {
+                    inputCantidad.focus();
+                    inputCantidad.select();
+                }
+            } else {
+                inputNombre.value = "";
+                inputPrecio.value = "";
+                inputSubtotal.value = "";
+                inputNombre.classList.remove("is-valid");
+            }
+        });
+
+        inputCantidad.addEventListener("input", calcularSubtotalRapido);
+
+        inputCantidad.addEventListener("keypress", function(e) {
+            if (e.key === "Enter") btnAgregar.click();
+        });
+
+        btnAgregar.addEventListener("click", function() {
+            if (!productoEncontrado) {
+                alert("Código no válido");
+                inputCodigo.focus();
+                return;
+            }
+
+            const cant = parseInt(inputCantidad.value);
+            if (isNaN(cant) || cant <= 0) {
+                alert("Ingrese una cantidad válida");
+                return;
+            }
+
+            agregarFilaFactura(
+                productoEncontrado.idProducto,
+                productoEncontrado.codigo,
+                productoEncontrado.nombre,
+                productoEncontrado.precioVenta,
+                productoEncontrado.stockActual,
+                cant
+            );
+
+            // Resetear panel y foco
+            inputCodigo.value = "";
+            inputNombre.value = "";
+            inputPrecio.value = "";
+            inputSubtotal.value = "";
+            inputCantidad.value = "1";
+            productoEncontrado = null;
+            inputCodigo.focus();
+        });
     });
 
-    document.getElementById("subtotalFactura").innerText = subtotal.toFixed(2);
+    // -------------------------------------------------------------------------
+    // 3. NUEVA FACTURA (LIMPIEZA TOTAL)
+    // -------------------------------------------------------------------------
+    document.getElementById('btnNuevaFactura').addEventListener('click', function () {
+        if (!confirm("¿Desea anular la carga actual y empezar una factura nueva?")) return;
 
-    const descuentoInput = document.getElementById("descuento");
-    let porcentajeDescuento = parseFloat(descuentoInput.value);
-    if (isNaN(porcentajeDescuento) || porcentajeDescuento < 0) porcentajeDescuento = 0;
-    if (porcentajeDescuento > 100) porcentajeDescuento = 100;
+        // Limpiar tabla
+        document.querySelector('#tablaFactura tbody').innerHTML = "";
 
-    let descuentoCalculado = subtotal * (porcentajeDescuento / 100);
-    let totalConDescuento = subtotal - descuentoCalculado;
+        // Limpiar cliente
+        ["idCliente", "dniCliente", "nombreCliente", "direccionCliente", "localidadCliente", "telefonoCliente"].forEach(id => {
+            document.getElementById(id).value = "";
+        });
 
-    document.getElementById("totalFactura").innerText = totalConDescuento.toFixed(2);
-}
+        // Reiniciar totales
+        document.getElementById('subtotalFactura').textContent = "0.00";
+        document.getElementById('totalFactura').textContent = "0.00";
+        document.getElementById('descuento').value = 0;
 
-// Escuchar descuento
-document.getElementById("descuento").addEventListener("input", actualizarTotales);
+        // Limpiar panel carga rápida
+        document.getElementById("inputCodigoRapido").value = "";
+        document.getElementById("inputNombreRapido").value = "";
+        document.getElementById("inputNombreRapido").classList.remove("is-valid");
+        document.getElementById("inputCantidadRapida").value = "1";
+        if(document.getElementById("inputPrecioRapido")) document.getElementById("inputPrecioRapido").value = "";
+        if(document.getElementById("inputSubtotalRapido")) document.getElementById("inputSubtotalRapido").value = "";
 
+        // Refrescar Nro Factura y Foco
+        cargarNroFactura();
+        document.getElementById("inputCodigoRapido").focus();
+    });
 
+    // -------------------------------------------------------------------------
+    // 4. EVENTOS DE CLIENTES Y FACTURACIÓN
+    // -------------------------------------------------------------------------
 
+    document.querySelector('#tablaProductos tbody').addEventListener('click', function (e) {
+        if (e.target.classList.contains('seleccionarProducto')) {
+            const btn = e.target;
+            agregarFilaFactura(
+                btn.dataset.idproducto, btn.dataset.codigo, btn.dataset.nombre,
+                parseFloat(btn.dataset.precio), parseInt(btn.dataset.stock), 1
+            );
+            const modal = bootstrap.Modal.getInstance(document.getElementById("modalProductos"));
+            if (modal) modal.hide();
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const modal = document.getElementById("clientesModal");
+        modal.addEventListener("show.bs.modal", function () {
+            fetch("/Clientes/ObtenerClientes").then(r => r.json()).then(clientes => {
+                const tbody = document.getElementById("tablaClientes");
+                tbody.innerHTML = "";
+                clientes.forEach(c => {
+                    const tr = document.createElement("tr");
+                    tr.dataset.id = c.idCliente; tr.dataset.nombre = c.nombreCliente;
+                    tr.dataset.dni = c.dniCliente; tr.dataset.domicilio = c.domicilio;
+                    tr.dataset.localidad = c.localidad; tr.dataset.telefono = c.telefonoCliente;
+                    tr.innerHTML = `<td>${c.dniCliente}</td><td>${c.nombreCliente}</td><td>${c.domicilio}</td><td>${c.localidad}</td><td>${c.telefonoCliente}</td><td><button type="button" class="btn btn-sm btn-success seleccionar-cliente">Seleccionar</button></td>`;
+                    tbody.appendChild(tr);
+                });
+            });
+        });
+
+        document.getElementById("filtroCliente").addEventListener("input", function () {
+            fetch("/Clientes/BuscarClientes?filtro=" + encodeURIComponent(this.value)).then(r => r.json()).then(clientes => {
+                const tbody = document.getElementById("tablaClientes");
+                tbody.innerHTML = "";
+                clientes.forEach(c => {
+                    const tr = document.createElement("tr");
+                    tr.dataset.id = c.idCliente; tr.dataset.nombre = c.nombreCliente;
+                    tr.dataset.dni = c.dniCliente; tr.dataset.domicilio = c.domicilio;
+                    tr.dataset.localidad = c.localidad; tr.dataset.telefono = c.telefonoCliente;
+                    tr.innerHTML = `<td>${c.dniCliente}</td><td>${c.nombreCliente}</td><td>${c.domicilio}</td><td>${c.localidad}</td><td>${c.telefonoCliente}</td><td><button type="button" class="btn btn-sm btn-success seleccionar-cliente">Seleccionar</button></td>`;
+                    tbody.appendChild(tr);
+                });
+            });
+        });
+
+        document.addEventListener("click", function (e) {
+            if (e.target.classList.contains("seleccionar-cliente")) {
+                const tr = e.target.closest("tr");
+                document.getElementById("idCliente").value = tr.dataset.id;
+                document.getElementById("nombreCliente").value = tr.dataset.nombre;
+                document.getElementById("dniCliente").value = tr.dataset.dni;
+                document.getElementById("direccionCliente").value = tr.dataset.domicilio;
+                document.getElementById("localidadCliente").value = tr.dataset.localidad;
+                document.getElementById("telefonoCliente").value = tr.dataset.telefono;
+                bootstrap.Modal.getInstance(modal).hide();
+            }
+        });
+    });
+
+    document.getElementById("confirmarCompra").addEventListener("click", function () {
+        const filas = document.querySelectorAll("#tablaFactura tbody tr");
+        const productos = [];
+        filas.forEach(fila => {
+            const id = parseInt(fila.getAttribute("data-idproducto"));
+            const nombre = fila.querySelector("td:nth-child(2)").textContent.trim();
+            const precio = parseFloat(fila.querySelector("td:nth-child(3)").textContent.replace("$", ""));
+            const cantidad = parseInt(fila.querySelector(".cantidad").value);
+            if (cantidad > 0) productos.push({ IdProducto: id, NombreProd: nombre, Cantidad: cantidad, Precio: precio });
+        });
+
+        const totalFactura = parseFloat(document.getElementById("totalFactura").textContent) || 0;
+        const idCliente = parseInt(document.getElementById("idCliente").value || "0");
+
+        if (totalFactura <= 0 || productos.length === 0 || idCliente === 0) {
+            alert("Faltan datos para confirmar la compra."); return;
+        }
+
+        fetch("/Ventas/RegistrarVenta", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ idCliente, vendedor, montoVenta: totalFactura, productos })
+        })
+        .then(r => r.json()).then(data => {
+            if (data.success) {
+                alert("Venta guardada con éxito.");
+                document.querySelector("#tablaFactura tbody").innerHTML = "";
+                actualizarTotales();
+                ["dniCliente", "nombreCliente", "direccionCliente", "localidadCliente", "telefonoCliente", "idCliente"].forEach(id => document.getElementById(id).value = "");
+                cargarNroFactura();
+                bootstrap.Modal.getInstance(document.getElementById("modalAbonar")).hide();
+            } else {
+                alert("Error: " + data.message);
+            }
+        });
+    });
+
+    function cargarNroFactura() {
+        fetch('/Ventas/ObtenerProximoNroFactura')
+            .then(r => r.json())
+            .then(d => { if(d.success) document.getElementById("nroFacturaPrincipal").textContent = d.nroFactura; });
+    }
+
+    function actualizarTotales() {
+        let subtotal = 0;
+        document.querySelectorAll(".subtotal").forEach(s => subtotal += parseFloat(s.innerText.replace("$", "")));
+        document.getElementById("subtotalFactura").innerText = subtotal.toFixed(2);
+        let desc = parseFloat(document.getElementById("descuento").value) || 0;
+        document.getElementById("totalFactura").innerText = (subtotal - (subtotal * (desc / 100))).toFixed(2);
+    }
+
+    document.addEventListener("input", function (e) {
+        if (e.target.classList.contains("cantidad")) {
+            const fila = e.target.closest("tr");
+            const precio = parseFloat(fila.querySelector("td:nth-child(3)").innerText.replace("$", ""));
+            const cant = parseInt(e.target.value) || 0;
+            fila.querySelector(".subtotal").innerText = `$${(precio * cant).toFixed(2)}`;
+            actualizarTotales();
+        }
+    });
+
+    document.addEventListener("click", function (e) {
+        if (e.target.classList.contains("btn-quitar")) {
+            e.target.closest("tr").remove();
+            actualizarTotales();
+        }
+    });
+
+    document.getElementById("descuento").addEventListener("input", actualizarTotales);
+
+    function verificarStock() {
+        document.querySelectorAll("#tablaProductos tbody tr").forEach(fila => {
+            const stock = parseInt(fila.children[2].textContent);
+            fila.style.color = stock <= 0 ? "red" : "";
+        });
+    }
+
+    document.getElementById("montoAbonado").addEventListener("input", function () {
+        const total = parseFloat(document.getElementById("modalTotal").innerText);
+        const abonado = parseFloat(this.value);
+        document.getElementById("vuelto").innerText = (abonado >= total) ? (abonado - total).toFixed(2) : "0.00";
+    });
+
+    document.getElementById("modalAbonar").addEventListener("shown.bs.modal", function () {
+        document.getElementById("modalTotal").innerText = document.getElementById("totalFactura").innerText;
+        document.getElementById("nroFactura").textContent = document.getElementById("nroFacturaPrincipal").textContent;
+        document.getElementById("montoAbonado").focus();
+    });
+
+    document.getElementById("buscarProducto").addEventListener("input", function () {
+        const f = this.value.toLowerCase();
+        document.querySelectorAll("#tablaProductos tbody tr").forEach(r => r.style.display = r.innerText.toLowerCase().includes(f) ? "" : "none");
+    });
+
+    cargarNroFactura();
 </script>
-
 }
