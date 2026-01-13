@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using GestionVentas.Models;
+using System.Security.AccessControl;
 
 namespace GestionVentas.Controllers
 {
@@ -90,9 +91,19 @@ namespace GestionVentas.Controllers
             if (usuario.FotoSubida != null && usuario.FotoSubida.Length > 0)
             {
                 string rutaFotos = Path.Combine(_env.WebRootPath, "imagenes", "usuarios");
-                Directory.CreateDirectory(rutaFotos);
 
-                string nombreArchivo = Guid.NewGuid() + Path.GetExtension(usuario.FotoSubida.FileName);
+                // Fuerza la creación de la carpeta si por alguna razón no existe
+                if (!Directory.Exists(rutaFotos))
+                {
+                    Directory.CreateDirectory(rutaFotos);
+                }
+
+DirectoryInfo dInfo = new DirectoryInfo(rutaFotos);
+DirectorySecurity dSecurity = dInfo.GetAccessControl();
+// Aquí se intentaría añadir permisos, pero es más efectivo hacerlo desde el panel.
+
+                //    Directory.CreateDirectory(rutaFotos);
+                string nombreArchivo = Guid.NewGuid() + Path.GetExtension(usuario.FotoSubida.FileName).ToLower();
                 string rutaCompleta = Path.Combine(rutaFotos, nombreArchivo);
 
                 using (var stream = new FileStream(rutaCompleta, FileMode.Create))
@@ -128,8 +139,7 @@ namespace GestionVentas.Controllers
             {
                 string rutaCarpeta = Path.Combine(_env.WebRootPath, "imagenes", "usuarios");
                 Directory.CreateDirectory(rutaCarpeta);
-
-                string nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(FotoNueva.FileName);
+                string nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(FotoNueva.FileName).ToLower();
                 string rutaCompleta = Path.Combine(rutaCarpeta, nombreArchivo);
 
                 using (var stream = new FileStream(rutaCompleta, FileMode.Create))
@@ -192,7 +202,8 @@ namespace GestionVentas.Controllers
 
             if (accion == "cargar" && FotoNueva != null && FotoNueva.Length > 0)
             {
-                string nombreArchivo = Guid.NewGuid() + Path.GetExtension(FotoNueva.FileName);
+                // string nombreArchivo = Guid.NewGuid() + Path.GetExtension(FotoNueva.FileName);
+                string nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(FotoNueva.FileName).ToLower();
                 string rutaCompleta = Path.Combine(rutaFotos, nombreArchivo);
 
                 using (var stream = new FileStream(rutaCompleta, FileMode.Create))

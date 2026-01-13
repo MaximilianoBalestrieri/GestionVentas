@@ -1,0 +1,185 @@
+@model GestionVentas.Models.Caja
+
+@{
+    ViewData["Title"] = "Control de Caja";
+    var movimientos = ViewBag.Movimientos as List<GestionVentas.Models.MovimientoCaja> ?? new
+    List<GestionVentas.Models.MovimientoCaja>();
+    decimal saldoActual = ViewBag.SaldoActual ?? 0;
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-secondary mb-0"><i class="fas fa-cash-register me-2"></i>Gestión de Caja</h2>
+            <small class="text-muted">Ferretería - Control Diario</small>
+        </div>
+        <div>
+            @if (Model.EstaAbierta)
+            {
+                <span class="badge bg-success p-2 fs-6">CAJA ABIERTA</span>
+            }
+            else
+            {
+                <span class="badge bg-danger p-2 fs-6">CAJA CERRADA</span>
+            }
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card bg-primary text-white shadow-sm h-100">
+                <div class="card-body d-flex flex-column justify-content-center text-center">
+                    <h6 class="text-uppercase opacity-75">Saldo Actual</h6>
+                    <h2 class="display-5 fw-bold mb-0">$ @saldoActual.ToString("N2")</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                        <span class="text-muted">Apertura:</span>
+                        <span class="fw-bold text-success">$ @Model.MontoInicial.ToString("N2")</span>
+                    </div>
+                    <div class="text-muted small">
+                        Iniciado: @Model.FechaApertura.ToString("dd/MM/yyyy HH:mm")
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3 d-grid gap-2">
+            <button class="btn btn-outline-success fw-bold" data-bs-toggle="modal" data-bs-target="#modalIngreso">
+                <i class="fas fa-plus-circle me-1"></i> NUEVO INGRESO
+            </button>
+            <button class="btn btn-outline-danger fw-bold" data-bs-toggle="modal" data-bs-target="#modalEgreso">
+                <i class="fas fa-minus-circle me-1"></i> NUEVO EGRESO
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0 text-dark fw-bold">Historial de Hoy</h5>
+            @if (Model.EstaAbierta)
+            {
+                <a asp-action="CerrarCaja" class="btn btn-warning btn-sm fw-bold shadow-sm">
+                    <i class="fas fa-lock me-1"></i> REALIZAR CIERRE
+                </a>
+            }
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Hora</th>
+                            <th>Concepto / Descripción</th>
+                            <th>Tipo</th>
+                            <th class="text-end px-4">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var mov in movimientos)
+                        {
+                            <tr>
+                                <td class="text-muted">@mov.Fecha.ToString("HH:mm") hs</td>
+                                <td class="fw-medium">@mov.Concepto</td>
+                                <td>
+                                    @if (mov.Tipo == TipoMovimiento.Ingreso)
+                                    {
+                                        <span class="badge rounded-pill bg-info text-dark">Ingreso</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge rounded-pill bg-warning text-dark">Egreso</span>
+                                    }
+                                </td>
+                                @* Corregido: Comparamos contra el Enum, no contra un string entre comillas *@
+                                <td
+                                    class="text-end px-4 fw-bold @(mov.Tipo == TipoMovimiento.Ingreso ? "text-success" : "text-danger")">
+                                    @(mov.Tipo == TipoMovimiento.Ingreso ? "+" : "-") $ @mov.Monto.ToString("N2")
+                                </td>
+                            </tr>
+                        }
+                        @if (!movimientos.Any())
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">No hay movimientos registrados hoy.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalIngreso" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+            <form asp-action="NuevoMovimiento" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="tipo" value="Ingreso" />
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title font-monospace">REGISTRAR INGRESO</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Monto del Ingreso</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-light text-success">$</span>
+                            <input type="number" step="0.01" name="monto"
+                                class="form-control border-success text-success fw-bold" placeholder="0.00" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Concepto</label>
+                        <input type="text" name="concepto" class="form-control" placeholder="Ej: Pago de cliente"
+                            required />
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-success px-4">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEgreso" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+            <form asp-action="NuevoMovimiento" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="tipo" value="Egreso" />
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title font-monospace">REGISTRAR EGRESO (SALIDA)</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Monto de la Salida</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-light text-danger">$</span>
+                            <input type="number" step="0.01" name="monto"
+                                class="form-control border-danger text-danger fw-bold" placeholder="0.00" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Concepto / Motivo</label>
+                        <input type="text" name="concepto" class="form-control" placeholder="Ej: Pago a proveedores"
+                            required />
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-danger px-4">Registrar Gasto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

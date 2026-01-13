@@ -1,0 +1,242 @@
+@{
+    ViewData["Title"] = "Gestión de Stock";
+}
+
+<style>
+    /* Estilos específicos para la vista de Stock */
+    .contenedor-stock {
+        max-width: 1000px;
+        margin: 30px auto;
+        padding: 20px;
+    }
+
+    .titulo-stock {
+        color: #003366;
+        font-weight: 700;
+        margin-bottom: 25px;
+        border-bottom: 3px solid #1409f3;
+        display: inline-block;
+        padding-bottom: 5px;
+    }
+
+    .buscador-stock {
+        border-radius: 20px;
+        padding: 12px 20px;
+        border: 2px solid #ddd;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+
+    .buscador-stock:focus {
+        border-color: #1409f3;
+        box-shadow: 0 4px 12px rgba(20, 9, 243, 0.2);
+        outline: none;
+    }
+
+    .tabla-stock {
+        border-radius: 12px;
+        overflow: hidden;
+        background: white;
+    }
+
+    .tabla-stock thead {
+        background-color: #003366;
+        color: white;
+    }
+
+    /* Estilo para el nombre del producto (sin negrita) */
+    .nombre-producto {
+        font-weight: 400; /* Letra normal */
+        color: #333;
+    }
+
+    .badge-stock {
+        padding: 8px 15px;
+        border-radius: 50px;
+        font-weight: 600;
+        min-width: 100px;
+    }
+
+    /* Estilos del Modal */
+    .modal-content {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .display-stock {
+        font-size: 3rem;
+        font-weight: 800;
+        color: #003366;
+    }
+
+    .input-suma {
+        font-size: 1.5rem;
+        text-align: center;
+        font-weight: bold;
+        color: #1409f3;
+    }
+</style>
+
+<div id="app" class="contenedor-stock">
+    <h2 class="titulo-stock">
+        <i class="bi bi-box-seam"></i> Control de Stock
+    </h2>
+
+    <div class="mb-4">
+        <input type="text" 
+               class="form-control buscador-stock" 
+               placeholder="🔍 Buscar producto por nombre o código..." 
+               v-model="busqueda" />
+    </div>
+
+    <div class="table-responsive shadow-sm tabla-stock">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th class="text-center">Código</th>
+                    <th class="text-center">Stock Actual</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="p in productosFiltrados" :key="p.idProducto">
+                    <td class="align-middle nombre-producto">{{ p.nombre }}</td>
+                    <td class="text-center align-middle text-muted small">{{ p.codigo }}</td>
+                    <td class="text-center align-middle">
+                        <span :class="p.stockActual <= 5 ? 'badge bg-danger badge-stock' : 'badge bg-success badge-stock'">
+                            {{ p.stockActual }} unidades
+                        </span>
+                    </td>
+                    <td class="text-center align-middle">
+                        <button class="btn btn-primary btn-sm rounded-pill px-3" v-on:click="abrirAjuste(p)">
+                            <i class="bi bi-plus-circle"></i> Agregar
+                        </button>
+                    </td>
+                </tr>
+                <tr v-if="productosFiltrados.length === 0">
+                    <td colspan="4" class="text-center py-4 text-muted">No se encontraron productos.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="modal fade" id="modalStock" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" v-if="seleccionado">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">📦 Ingreso de Mercadería</h5>
+                    <button type="button" class="btn-close btn-close-white" v-on:click="cerrar"></button>
+                </div>
+                <div class="modal-body text-center p-4">
+                    <h4 class="fw-normal mb-1">{{ seleccionado.nombre }}</h4>
+                    <small class="text-muted d-block mb-3">Código: {{ seleccionado.codigo }}</small>
+                    
+                    <div class="mb-4">
+                        <small class="text-secondary text-uppercase" style="letter-spacing: 1px;">Stock actual</small>
+                        <div class="display-stock">{{ seleccionado.stockActual }}</div>
+                    </div>
+                    
+                    <div class="form-group px-4">
+                        <label class="form-label fw-bold">Cantidad a SUMAR:</label>
+                        <input type="number" 
+                               class="form-control form-control-lg input-suma" 
+                               v-model.number="cantidadIngresada" 
+                               min="1"
+                               id="inputCantidad" />
+                        
+                        <div class="mt-3 p-2 bg-light rounded border">
+                            <small class="text-muted">Nuevo Stock proyectado:</small><br>
+                            <span class="h5 text-primary fw-bold">
+                                {{ seleccionado.stockActual + (cantidadIngresada || 0) }} unidades
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center pb-4">
+                    <button type="button" class="btn btn-outline-secondary px-4 rounded-pill" v-on:click="cerrar">Cancelar</button>
+                    <button type="button" class="btn btn-success px-5 rounded-pill shadow-sm" 
+                            :disabled="!cantidadIngresada || cantidadIngresada <= 0"
+                            v-on:click="guardarStock">
+                        Confirmar Ingreso
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                productos: [],
+                busqueda: '',
+                seleccionado: null,
+                cantidadIngresada: 0,
+                modalBS: null
+            },
+            computed: {
+                productosFiltrados() {
+                    const f = this.busqueda.toLowerCase();
+                    return this.productos.filter(p => 
+                        (p.nombre && p.nombre.toLowerCase().includes(f)) || 
+                        (p.codigo && p.codigo.toLowerCase().includes(f))
+                    );
+                }
+            },
+            methods: {
+                cargar() {
+                    fetch('/Stock/ObtenerProductos')
+                        .then(r => r.json())
+                        .then(data => {
+                            this.productos = data;
+                        });
+                },
+                abrirAjuste(p) {
+                    this.seleccionado = Object.assign({}, p);
+                    this.cantidadIngresada = 0;
+                    if (!this.modalBS) {
+                        this.modalBS = new bootstrap.Modal(document.getElementById('modalStock'));
+                    }
+                    this.modalBS.show();
+                    setTimeout(() => {
+                        const input = document.getElementById('inputCantidad');
+                        if(input) input.focus();
+                    }, 500);
+                },
+                cerrar() {
+                    if(this.modalBS) this.modalBS.hide();
+                    this.seleccionado = null;
+                },
+                guardarStock() {
+                    const data = {
+                        idProducto: this.seleccionado.idProducto,
+                        cantidad: this.cantidadIngresada
+                    };
+
+                    fetch('/Stock/SumarStock', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    })
+                    .then(r => {
+                        if (r.ok) {
+                            this.cargar();
+                            this.cerrar();
+                        } else {
+                            alert("Error al actualizar el stock.");
+                        }
+                    })
+                    .catch(e => alert("Error de conexión."));
+                }
+            },
+            mounted() {
+                this.cargar();
+            }
+        });
+    </script>
+}

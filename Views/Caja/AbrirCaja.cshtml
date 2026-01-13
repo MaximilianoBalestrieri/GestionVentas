@@ -1,0 +1,57 @@
+@model GestionVentas.Models.Caja
+
+@{
+    ViewData["Title"] = "Apertura de Caja";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <i class="fas fa-lock-open fa-3x mb-3"></i>
+                    <h3 class="fw-bold text-uppercase mb-0">Iniciar Turno</h3>
+                    <p class="mb-0 opacity-75">Apertura de Caja Diaria</p>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="AbrirCaja" method="post">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-secondary">Monto Inicial en Efectivo</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light text-primary fw-bold">$</span>
+                                <input type="number" 
+                                       step="0.01" 
+                                       name="montoInicial" 
+                                       class="form-control border-primary text-primary fw-bold" 
+                                       placeholder="0.00" 
+                                       required 
+                                       autofocus />
+                            </div>
+                            <div class="form-text mt-2">
+                                Ingrese el dinero disponible en el cajón para cambio.
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+                                <i class="fas fa-check-circle me-2"></i>ABRIR CAJA
+                            </button>
+                            <a asp-controller="Home" asp-action="Index" class="btn btn-link text-muted">
+                                Cancelar y volver
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-light text-center py-3">
+                    <small class="text-muted">
+                        <i class="fas fa-user-circle me-1"></i> Operador: @User.Identity.Name
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,33 +1,48 @@
 using System;
+using Microsoft.EntityFrameworkCore; // Necesario para DbContext
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 
 namespace GestionVentas.Models
 {
-    public class ConexionDB
+    // Agregamos ": DbContext" para que el controlador pueda usar Cajas y SaveChanges
+    public class ConexionDB : DbContext
     {
         private readonly string _connectionString;
 
+        // CONSTRUCTOR COMPATIBLE:
+        // Mantenemos el IConfiguration para que tus métodos manuales sigan funcionando
         public ConexionDB(IConfiguration config)
         {
-            // Conexión local usando appsettings.json
             _connectionString = config.GetConnectionString("DefaultConnection");
         }
 
-        // Devuelve una nueva conexión MySQL
+        // Este constructor es para que Entity Framework (la Caja) no de errores
+        public ConexionDB(DbContextOptions<ConexionDB> options, IConfiguration config) 
+            : base(options)
+        {
+            _connectionString = config.GetConnectionString("DefaultConnection");
+        }
+
+        // --- SECCIÓN DE TABLAS (Solo esto es lo "nuevo") ---
+        public DbSet<Caja> Cajas { get; set; }
+        public DbSet<MovimientoCaja> MovimientosCaja { get; set; }
+
+        // --- TU MÉTODO DE SIEMPRE (No se toca) ---
         public SqlConnection ObtenerConexion()
         {
             return new SqlConnection(_connectionString);
         }
 
-        /// <summary>
-        /// Alias opcional para compatibilidad
-        /// </summary>
-        public SqlConnection GetConnection()
+        // Configuramos EF para que use la misma conexión que tus otros controladores
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            return ObtenerConexion();
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlServer(_connectionString);
+            }
         }
-
+    
 
 
 

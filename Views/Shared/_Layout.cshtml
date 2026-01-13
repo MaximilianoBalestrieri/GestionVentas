@@ -4,6 +4,7 @@
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,7 +19,8 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
     <style>
-        html, body {
+        html,
+        body {
             height: 100%;
             margin: 0;
         }
@@ -38,32 +40,35 @@
             display: flex;
             flex-direction: column;
         }
+
         .Bien {
             color: #f0f0f0;
-             max-width: 300px;
-    margin: 0 auto;
-    text-align: center;
-    font-size: 0.9rem;
+            max-width: 300px;
+            margin: 0 auto;
+            text-align: center;
+            font-size: 0.9rem;
         }
     </style>
 </head>
+
 <body>
-  @{
-        var esLogin = string.Equals(ViewContext.RouteData.Values["controller"]?.ToString(), "Login", StringComparison.OrdinalIgnoreCase)
-                   && string.Equals(ViewContext.RouteData.Values["action"]?.ToString(), "Index", StringComparison.OrdinalIgnoreCase);
+    @{
+        var esLogin = string.Equals(ViewContext.RouteData.Values["controller"]?.ToString(), "Login",
+        StringComparison.OrdinalIgnoreCase)
+        && string.Equals(ViewContext.RouteData.Values["action"]?.ToString(), "Index", StringComparison.OrdinalIgnoreCase);
 
         var usuario = HttpContextAccessor.HttpContext?.Session.GetString("Usuario");
         var nombreyApellido = HttpContextAccessor.HttpContext?.Session.GetString("NombreyApellido");
         var fotoPerfil = HttpContextAccessor.HttpContext?.Session.GetString("FotoPerfil");
-        var rol = HttpContextAccessor.HttpContext?.Session.GetString("Rol");  
-           
-        ViewBag.FotoPerfil = fotoPerfil;
-        ViewBag.Usuario=usuario;
-        ViewBag.Rol = rol;
-        ViewBag.NombreyApellido=nombreyApellido;
+        var rol = HttpContextAccessor.HttpContext?.Session.GetString("Rol");
 
-    // Verifica en consola que los datos están llegando correctamente
-    //Console.WriteLine($"Usuario: {usuario}, Nombre y Apellido: {nombreyApellido}");
+        ViewBag.FotoPerfil = fotoPerfil;
+        ViewBag.Usuario = usuario;
+        ViewBag.Rol = rol;
+        ViewBag.NombreyApellido = nombreyApellido;
+
+        // Verifica en consola que los datos están llegando correctamente
+        //Console.WriteLine($"Usuario: {usuario}, Nombre y Apellido: {nombreyApellido}");
     }
 
 
@@ -74,20 +79,19 @@
             <div class="container">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index"> </a>
                 <div class="d-flex align-items-center">
-            <img src="@(!string.IsNullOrEmpty(ViewBag.FotoPerfil) ? ViewBag.FotoPerfil : Url.Content("~/imagenes/usuarios/default.png"))"
-                 alt="Foto de perfil"
-                 style="width:50px; height:50px; object-fit:cover; border-radius:50%; border:1px solid #ccc; margin-right:10px;" />
+                    <img src="@(!string.IsNullOrEmpty(ViewBag.FotoPerfil) ? ViewBag.FotoPerfil : Url.Content("~/imagenes/usuarios/default.png"))"
+                        alt="Foto de perfil"
+                        style="width:50px; height:50px; object-fit:cover; border-radius:50%; border:1px solid #ccc; margin-right:10px;" />
 
                     <div class="Bien">
                         <p class="mb-0">
                             <span style="font-size: 1.1rem;">¡Bienvenido, </span>
-                            <strong style="font-size: 1.2rem;">@ViewBag.NombreyApellido</strong>
-                            <span style="font-size: 1.1rem;">!</span>
+                            <strong style="font-size: 1.2rem; white-space: nowrap;">@ViewBag.NombreyApellido!</strong>
                         </p>
                         <p class="mb-0">Tu rol es: @ViewBag.Rol</p>
                     </div>
 
-        </div>
+                </div>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
                     <span class="navbar-toggler-icon"></span>
                 </button>
@@ -98,13 +102,13 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Home" asp-action="Index">Inicio</a>
                         </li>
-                       
-                           <a class="nav-link" href="@Url.Action("Index", "Productos")">
-                                Productos
-                           </a>
+
+                        <a class="nav-link" href="@Url.Action("Index", "Productos")">
+                            Productos
+                        </a>
 
 
-                           @*  <ul class="dropdown-menu" aria-labelledby="navbarDropdownInicio">
+                        @*  <ul class="dropdown-menu" aria-labelledby="navbarDropdownInicio">
                                 <li><a class="dropdown-item" asp-controller="Productos" asp-action="Index">Propietarios</a>
                                 </li>
                                 <li><a class="dropdown-item" asp-controller="Ventas" asp-action="Index">Inquilinos</a></li>
@@ -117,9 +121,9 @@
 
 
                         <li class="nav-item">
-                             <a class="nav-link" href="@Url.Action("Index", "Facturas")">
+                            <a class="nav-link" href="@Url.Action("Index", "Facturas")">
                                 Ventas
-                           </a>
+                            </a>
 
                         </li>
                         <li class="nav-item">
@@ -129,17 +133,17 @@
                             <a class="nav-link" asp-controller="Presupuesto" asp-action="Index">Presupuestos</a>
                         </li>
                         <li class="nav-item">
-                             @if (ViewBag.Rol == "Administrador")
-                                {
-                                    <a class="nav-link" asp-controller="Usuarios" asp-action="Index">Usuarios</a>
-                                }
+                            @if (ViewBag.Rol == "Administrador")
+                            {
+                                <a class="nav-link" asp-controller="Usuarios" asp-action="Index">Usuarios</a>
+                            }
                             else if (ViewBag.Rol == "Usuario")
-                                {
-        
-                                    <a class="nav-link" href="/Home/Index#modalPerfil">Mi Perfil</a>
-                                }
+                            {
+
+                                <a class="nav-link" href="/Home/Index#modalPerfil">Mi Perfil</a>
+                            }
                         </li>
-                    <li class="nav-item">
+                        <li class="nav-item">
                             <a class="nav-link" asp-controller="Proveedores" asp-action="Index">Proveedores</a>
                         </li>
                         <li class="nav-item">
@@ -182,4 +186,5 @@
 
 
 </body>
+
 </html>
