@@ -443,98 +443,99 @@ namespace GestionVentas.Models
 
 
 
-        //---------------------------- VENTAS POR FECHA ---------------------
-        public List<object> ObtenerTotalVentasPorFecha(DateTime desde, DateTime hasta)
+      // 1. VENTAS POR FECHA (DIARIO)
+public List<object> ObtenerTotalVentasPorFecha(DateTime desde, DateTime hasta)
+{
+    List<object> lista = new List<object>();
+    using (var conn = ObtenerConexion())
+    {
+        conn.Open();
+        // Usamos CAST en el WHERE para que SQL no se confunda con las horas del servidor
+        var cmd = new SqlCommand(@"
+            SELECT CAST(diaVenta AS DATE) as fecha, SUM(montoVenta) as totalVendido
+            FROM facturas
+            WHERE CAST(diaVenta AS DATE) >= CAST(@desde AS DATE) 
+              AND CAST(diaVenta AS DATE) <= CAST(@hasta AS DATE)
+            GROUP BY CAST(diaVenta AS DATE)
+            ORDER BY fecha", conn);
+
+        // Enviamos las fechas tal cual vienen de la vista
+        cmd.Parameters.AddWithValue("@desde", desde);
+        cmd.Parameters.AddWithValue("@hasta", hasta);
+
+        var reader = cmd.ExecuteReader();
+        while (reader.Read())
         {
-            List<object> lista = new List<object>();
-            using (var conn = ObtenerConexion())
-            {
-                conn.Open();
-                var cmd = new SqlCommand(@"
-            SELECT DATE(diaVenta) as fecha, SUM(montoVenta) as totalVendido
-            FROM ventas
-            WHERE diaVenta BETWEEN @desde AND @hasta
-            GROUP BY DATE(diaVenta)
-            ORDER BY diaVenta", conn);
-
-                cmd.Parameters.AddWithValue("@desde", desde);
-                cmd.Parameters.AddWithValue("@hasta", hasta);
-
-                var reader = cmd.ExecuteReader();
-                while (reader.Read())
-                {
-                    lista.Add(new
-                    {
-                        fecha = Convert.ToDateTime(reader["fecha"]),
-                        totalVendido = Convert.ToDecimal(reader["totalVendido"])
-                    });
-                }
-            }
-            return lista;
+            lista.Add(new {
+                fecha = Convert.ToDateTime(reader["fecha"]),
+                totalVendido = Convert.ToDecimal(reader["totalVendido"])
+            });
         }
+    }
+    return lista;
+}
 
+// 2. VENTAS POR MES
+public List<object> ObtenerTotalVentasPorMes(DateTime desde, DateTime hasta)
+{
+    List<object> lista = new List<object>();
+    using (var conn = ObtenerConexion())
+    {
+        conn.Open();
+        var cmd = new SqlCommand(@"
+            SELECT 
+                DATEFROMPARTS(YEAR(diaVenta), MONTH(diaVenta), 1) as fecha, 
+                SUM(montoVenta) as totalVendido
+            FROM facturas
+            WHERE diaVenta BETWEEN @desde AND @hasta
+            GROUP BY YEAR(diaVenta), MONTH(diaVenta)
+            ORDER BY fecha", conn);
 
-        public List<object> ObtenerTotalVentasPorMes(DateTime desde, DateTime hasta)
+        cmd.Parameters.AddWithValue("@desde", desde);
+        cmd.Parameters.AddWithValue("@hasta", hasta.Date.AddDays(1).AddTicks(-1));
+
+        var reader = cmd.ExecuteReader();
+        while (reader.Read())
         {
-            List<object> lista = new List<object>();
-            using (var conn = ObtenerConexion())
-            {
-                conn.Open();
-                var cmd = new SqlCommand(@"
-            SELECT YEAR(diaVenta) AS anio, MONTH(diaVenta) AS mes, SUM(montoVenta) AS totalVendido
-            FROM ventas
-            WHERE diaVenta BETWEEN @desde AND @hasta
-            GROUP BY anio, mes
-            ORDER BY anio, mes", conn);
-
-                cmd.Parameters.AddWithValue("@desde", desde);
-                cmd.Parameters.AddWithValue("@hasta", hasta);
-
-                var reader = cmd.ExecuteReader();
-                while (reader.Read())
-                {
-                    int anio = Convert.ToInt32(reader["anio"]);
-                    int mes = Convert.ToInt32(reader["mes"]);
-                    lista.Add(new
-                    {
-                        fecha = new DateTime(anio, mes, 1),
-                        totalVendido = Convert.ToDecimal(reader["totalVendido"])
-                    });
-                }
-            }
-            return lista;
+            lista.Add(new {
+                fecha = Convert.ToDateTime(reader["fecha"]),
+                totalVendido = Convert.ToDecimal(reader["totalVendido"])
+            });
         }
+    }
+    return lista;
+}
 
-        public List<object> ObtenerTotalVentasPorAnio(DateTime desde, DateTime hasta)
+// 3. VENTAS POR AÑO
+public List<object> ObtenerTotalVentasPorAnio(DateTime desde, DateTime hasta)
+{
+    List<object> lista = new List<object>();
+    using (var conn = ObtenerConexion())
+    {
+        conn.Open();
+        var cmd = new SqlCommand(@"
+            SELECT 
+                DATEFROMPARTS(YEAR(diaVenta), 1, 1) as fecha, 
+                SUM(montoVenta) as totalVendido
+            FROM facturas
+            WHERE diaVenta BETWEEN @desde AND @hasta
+            GROUP BY YEAR(diaVenta)
+            ORDER BY fecha", conn);
+
+        cmd.Parameters.AddWithValue("@desde", desde);
+      cmd.Parameters.AddWithValue("@hasta", hasta.Date.AddDays(1).AddTicks(-1));
+
+        var reader = cmd.ExecuteReader();
+        while (reader.Read())
         {
-            List<object> lista = new List<object>();
-            using (var conn = ObtenerConexion())
-            {
-                conn.Open();
-                var cmd = new SqlCommand(@"
-            SELECT YEAR(diaVenta) AS anio, SUM(montoVenta) AS totalVendido
-            FROM ventas
-            WHERE diaVenta BETWEEN @desde AND @hasta
-            GROUP BY anio
-            ORDER BY anio", conn);
-
-                cmd.Parameters.AddWithValue("@desde", desde);
-                cmd.Parameters.AddWithValue("@hasta", hasta);
-
-                var reader = cmd.ExecuteReader();
-                while (reader.Read())
-                {
-                    int anio = Convert.ToInt32(reader["anio"]);
-                    lista.Add(new
-                    {
-                        fecha = new DateTime(anio, 1, 1),
-                        totalVendido = Convert.ToDecimal(reader["totalVendido"])
-                    });
-                }
-            }
-            return lista;
+            lista.Add(new {
+                fecha = Convert.ToDateTime(reader["fecha"]),
+                totalVendido = Convert.ToDecimal(reader["totalVendido"])
+            });
         }
-
+    }
+    return lista;
+}
 
 
         //---- USUARIOS ------
@@ -1041,7 +1042,7 @@ public List<Productos> ObtenerProductos()
         //------------------- VENTAS --------------------
 
 
-        public (bool success, int idFactura, string error) RegistrarVenta(VentaCompleta venta)
+      public (bool success, int idFactura, string error) RegistrarVenta(VentaCompleta venta)
 {
     Console.WriteLine("🚀 RegistrarVenta fue llamado.");
     using (var conn = ObtenerConexion())
@@ -1053,12 +1054,11 @@ public List<Productos> ObtenerProductos()
             {
                 int idFactura = 0;
 
-                // CAMBIO CLAVE: Agregamos "SELECT SCOPE_IDENTITY();" a la sentencia INSERT.
-                // Esto hace que ExecuteScalar devuelva el ID de la fila que acaba de ser insertada.
+                // 1. INSERTAR FACTURA (Agregamos idCaja para mantener la relación)
                 string insertFactura = @"
-                    INSERT INTO facturas (diaVenta, montoVenta, vendedor, idCliente)
-                    VALUES (@diaVenta, @montoVenta, @vendedor, @idCliente);
-                    SELECT SCOPE_IDENTITY();"; // <-- CAMBIO AQUÍ PARA SQL SERVER
+                    INSERT INTO facturas (diaVenta, montoVenta, vendedor, idCliente, idCaja)
+                    VALUES (@diaVenta, @montoVenta, @vendedor, @idCliente, @idCaja);
+                    SELECT SCOPE_IDENTITY();";
 
                 using (var cmdInsert = new SqlCommand(insertFactura, conn, transaction))
                 {
@@ -1066,38 +1066,22 @@ public List<Productos> ObtenerProductos()
                     cmdInsert.Parameters.AddWithValue("@montoVenta", venta.MontoVenta);
                     cmdInsert.Parameters.AddWithValue("@vendedor", venta.Vendedor);
                     cmdInsert.Parameters.AddWithValue("@idCliente", venta.IdCliente);
+                    cmdInsert.Parameters.AddWithValue("@idCaja", venta.IdCaja); // ID de la caja actual
 
-                    Console.WriteLine("---- DATOS PARA FACTURA ----");
-                    Console.WriteLine("Día de venta: " + DateTime.Now);
-                    Console.WriteLine("Monto: " + venta.MontoVenta);
-                    Console.WriteLine("Vendedor: " + venta.Vendedor);
-                    Console.WriteLine("ID Cliente: " + venta.IdCliente);
-
-                    // ExecuteScalar ahora ejecuta la inserción Y devuelve el ID generado por SCOPE_IDENTITY().
-                    var result = cmdInsert.ExecuteScalar(); 
-                    
-                    // Verificación de si se obtuvo un resultado (necesaria para SCOPE_IDENTITY)
+                    var result = cmdInsert.ExecuteScalar();
                     if (result != null && result != DBNull.Value)
                     {
-                        // SCOPE_IDENTITY devuelve un decimal/numérico, lo convertimos a Int32.
-                        idFactura = Convert.ToInt32(result); 
+                        idFactura = Convert.ToInt32(result);
                     }
                     else
                     {
-                        // Si no se generó un ID (ej: tabla sin identidad), forzamos el error.
-                        throw new Exception("Error al obtener el ID de la factura con SCOPE_IDENTITY().");
+                        throw new Exception("Error al obtener el ID de la factura.");
                     }
-                    
-                    Console.WriteLine("ID FACTURA generado: " + idFactura);
-                } // Eliminada la sección del cmdGetId ya que se fusionó arriba.
+                }
 
-                if (idFactura <= 0)
-                    throw new Exception("No se generó el ID de la factura.");
-
-                // El resto de la lógica de ítems y stock se mantiene
+                // 2. INSERTAR ITEMS Y ACTUALIZAR STOCK
                 foreach (var item in venta.Productos)
                 {
-                    // Insertar item de factura
                     string insertItem = @"
                         INSERT INTO facturaitem (idFactura, idItem, nombreProd, cantidad, precio)
                         VALUES (@idFactura, @idItem, @nombreProd, @cantidad, @precio);";
@@ -1112,7 +1096,6 @@ public List<Productos> ObtenerProductos()
                         cmdItem.ExecuteNonQuery();
                     }
 
-                    // Actualizar stock
                     string restarStock = "UPDATE productos SET stockActual = stockActual - @cantidad WHERE idProducto = @id";
                     using (var cmdStock = new SqlCommand(restarStock, conn, transaction))
                     {
@@ -1122,13 +1105,31 @@ public List<Productos> ObtenerProductos()
                     }
                 }
 
+                // 3. REGISTRAR MOVIMIENTO EN LA TABLA MovimientosCaja 
+                // Esto es lo que hace que aparezca en el Informe Diario de Caja
+                string insertMov = @"
+                    INSERT INTO MovimientosCaja (CajaId, Tipo, Monto, Fecha, Descripcion) 
+                    VALUES (@cajaId, @tipo, @monto, @fecha, @desc)";
+
+                using (var cmdMov = new SqlCommand(insertMov, conn, transaction))
+                {
+                    cmdMov.Parameters.AddWithValue("@cajaId", venta.IdCaja);
+                    cmdMov.Parameters.AddWithValue("@tipo", 1); // 1 representa 'Ingreso'
+                    cmdMov.Parameters.AddWithValue("@monto", venta.MontoVenta);
+                    cmdMov.Parameters.AddWithValue("@fecha", DateTime.Now);
+                    cmdMov.Parameters.AddWithValue("@desc", "Venta Factura Nro " + idFactura);
+                    cmdMov.ExecuteNonQuery();
+                }
+
                 transaction.Commit();
+                Console.WriteLine("✅ Venta y Movimiento de Caja registrados con éxito. ID: " + idFactura);
                 return (true, idFactura, "");
 
             }
             catch (Exception ex)
             {
                 transaction.Rollback();
+                Console.WriteLine("❌ Error en RegistrarVenta: " + ex.Message);
                 return (false, 0, ex.Message);
             }
         }

@@ -126,8 +126,32 @@
                             </a>
 
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="ProductosVendidos" asp-action="Index">Informes</a>
+                        
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownInformes" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-chart-bar me-1"></i> Informes
+                            </a>
+                            <ul class="dropdown-menu shadow" aria-labelledby="navbarDropdownInformes">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="ProductosVendidos" asp-action="Index">
+                                        <i class="fas fa-box-open me-2 text-primary"></i> Venta x Producto
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Informes" asp-action="MovimientosDiarios">
+                                        <i class="fas fa-calendar-day me-2 text-success"></i> Movimiento x Día
+                                    </a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-muted" asp-controller="Informes" asp-action="Index">
+                                        <i class="fas fa-file-alt me-2"></i> Otros Reportes
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Presupuesto" asp-action="Index">Presupuestos</a>

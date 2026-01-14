@@ -1,43 +1,33 @@
 @{
     ViewBag.Title = "Informe de Ventas por Fecha";
 }
+
 <head>
+    <style>
+        /* Colores personalizados para el <select> */
+        .modo-diario { background-color: #f8f9fa; }
+        .modo-mensual { background-color: #fff3cd; }
+        .modo-anual { background-color: #d1e7dd; }
 
-<style>
-    /* Colores personalizados para el <select> */
-    .modo-diario {
-        background-color: #f8f9fa; /* table-light */
-    }
-
-    .modo-mensual {
-        background-color: #fff3cd; /* table-warning */
-    }
-
-    .modo-anual {
-        background-color: #d1e7dd; /* table-success */
-    }
-
-    .mensaje-error-fechas {
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #f8d7da;
-    color: #842029;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 500;
-    font-size: 0.9rem;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    opacity: 0;
-    transition: opacity 0.5s ease;
-    z-index: 10;
-}
-
-</style>
-
-
+        .mensaje-error-fechas {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #f8d7da;
+            color: #842029;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 10;
+        }
+    </style>
 </head>
+
 <div class="container mt-5">
     <div class="card shadow-lg p-4 rounded-4">
         <h2 class="text-center text-primary mb-4">📊 Informe de Ventas</h2>
@@ -45,11 +35,11 @@
         <form id="formFechas" class="row g-3 align-items-end justify-content-center mb-4">
             <div class="col-auto">
                 <label for="fechaDesde" class="form-label fw-bold">Desde:</label>
-                <input type="date" id="fechaDesde" name="fechaDesde" required class="form-control" />
+                <input type="date" id="fechaDesde" name="desde" required class="form-control" />
             </div>
             <div class="col-auto">
                 <label for="fechaHasta" class="form-label fw-bold">Hasta:</label>
-                <input type="date" id="fechaHasta" name="fechaHasta" required class="form-control" />
+                <input type="date" id="fechaHasta" name="hasta" required class="form-control" />
             </div>
             <div class="col-auto">
                 <label for="modo" class="form-label fw-bold">Agrupar por:</label>
@@ -59,10 +49,9 @@
                     <option value="anual">Anual</option>
                 </select>
             </div>
-            
         </form>
-        <div id="mensajeErrorFechas" class="mensaje-error-fechas text-danger small fw-semibold" style="opacity: 0; transition: opacity 0.5s;"></div>
 
+        <div id="mensajeErrorFechas" class="mensaje-error-fechas text-danger small fw-semibold"></div>
 
         <div class="table-responsive">
             <table class="table table-hover table-bordered align-middle text-center w-auto mx-auto" id="tablaVentas">
@@ -73,142 +62,111 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Se llena con JavaScript -->
-                </tbody>
+                    </tbody>
             </table>
         </div>
     </div>
 </div>
 
 <script>
-   
-document.getElementById('modo').addEventListener('change', function () {
-    document.getElementById('formFechas').dispatchEvent(new Event('submit'));
-});
+    // Eventos para recarga automática
+    document.getElementById('modo').addEventListener('change', dispararSubmit);
+    document.getElementById('fechaDesde').addEventListener('change', dispararSubmit);
+    document.getElementById('fechaHasta').addEventListener('change', dispararSubmit);
 
-document.getElementById('fechaDesde').addEventListener('change', function () {
-    document.getElementById('formFechas').dispatchEvent(new Event('submit'));
-});
+    function dispararSubmit() {
+        const form = document.getElementById('formFechas');
+        if (form.checkValidity()) {
+            form.dispatchEvent(new Event('submit'));
+        }
+    }
 
-document.getElementById('fechaHasta').addEventListener('change', function () {
-    document.getElementById('formFechas').dispatchEvent(new Event('submit'));
-});
-
-
-const modoSelect = document.getElementById("modo");
+    const modoSelect = document.getElementById("modo");
 
     function actualizarColorModo() {
-        // Quitamos clases anteriores
         modoSelect.classList.remove("modo-diario", "modo-mensual", "modo-anual");
-
-        // Agregamos la clase correspondiente
         const valor = modoSelect.value;
         if (valor === "diario") modoSelect.classList.add("modo-diario");
         else if (valor === "mensual") modoSelect.classList.add("modo-mensual");
         else if (valor === "anual") modoSelect.classList.add("modo-anual");
     }
 
-    // Cambiar color al cargar y al cambiar el valor
     actualizarColorModo();
     modoSelect.addEventListener("change", actualizarColorModo);
 
-
     document.getElementById("formFechas").addEventListener("submit", function (e) {
-    e.preventDefault();
+        e.preventDefault();
 
-    const desde = document.getElementById("fechaDesde").value;
-    const hasta = document.getElementById("fechaHasta").value;
-    const modo = document.getElementById("modo").value;
-    const mensajeError = document.getElementById("mensajeErrorFechas");
+        const desde = document.getElementById("fechaDesde").value;
+        const hasta = document.getElementById("fechaHasta").value;
+        const modo = document.getElementById("modo").value;
+        const mensajeError = document.getElementById("mensajeErrorFechas");
 
-    // Limpiamos mensajes anteriores y mostramos el div por si estaba oculto
-    mensajeError.textContent = "";
-    mensajeError.style.opacity = "1";
+        if (!desde || !hasta) return;
 
-    // Validación de fechas
-    if (new Date(hasta) < new Date(desde)) {
-        mensajeError.textContent = "⚠️ La fecha final no puede ser anterior a la fecha de inicio.";
+        mensajeError.style.opacity = "0";
 
-        // Ocultar luego de 5 segundos
-        setTimeout(() => {
-            mensajeError.style.opacity = "0";
-        }, 5000);
+        // Usamos URLSearchParams pero aseguramos que el formato sea el que el controlador espera
+        const params = new URLSearchParams();
+        params.append("desde", desde);
+        params.append("hasta", hasta);
+        params.append("modo", modo);
 
-        return;
-    }
+        fetch("/Informes/ObtenerVentasPorFecha", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: params
+        })
+        .then(async response => {
+            if (!response.ok) {
+                const textoErr = await response.text();
+                throw new Error(textoErr || "Error en el servidor");
+            }
+            return response.json();
+        })
+        .then(data => {
+            const tbody = document.querySelector("#tablaVentas tbody");
+            tbody.innerHTML = "";
 
-    const params = new URLSearchParams();
-    params.append("desde", desde);
-    params.append("hasta", hasta);
-    params.append("modo", modo);
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="2">No hay datos en ese período.</td></tr>`;
+                return;
+            }
 
-    fetch("/Informes/ObtenerVentasPorFecha", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: params
-    })
-    .then(response => {
-        if (!response.ok) throw new Error("Error al consultar el servidor.");
-        return response.json();
-    })
-    .then(data => {
-        const tbody = document.querySelector("#tablaVentas tbody");
-        tbody.innerHTML = "";
+            let totalGeneral = 0;
+            let rowClass = "";
+            if (modo === "diario") rowClass = "table-light";
+            else if (modo === "mensual") rowClass = "table-warning";
+            else if (modo === "anual") rowClass = "table-success";
 
-        if (data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="2">No hay datos en ese período.</td></tr>`;
-            return;
-        }
+            data.forEach(item => {
+                const fechaRaw = item.fecha || item.Fecha;
+                const totalRaw = item.totalVendido || item.TotalVendido;
 
-        let totalGeneral = 0;
-        let rowClass = "";
+                const fecha = new Date(fechaRaw).toLocaleDateString('es-AR', { timeZone: 'UTC' });
+                const total = parseFloat(totalRaw);
+                totalGeneral += total;
 
-        switch (modo) {
-            case "diario":
-                rowClass = "table-light";
-                break;
-            case "mensual":
-                rowClass = "table-warning";
-                break;
-            case "anual":
-                rowClass = "table-success";
-                break;
-        }
+                tbody.innerHTML += `
+                    <tr class="${rowClass}">
+                        <td>${fecha}</td>
+                        <td class="text-end fw-semibold">$ ${total.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                    </tr>`;
+            });
 
-        data.forEach(item => {
-            const fecha = new Date(item.fecha).toLocaleDateString('es-AR');
-            const total = parseFloat(item.totalVendido);
-            totalGeneral += total;
-
-            const fila = `
-                <tr class="${rowClass}">
-                    <td>${fecha}</td>
-                    <td class="text-end fw-semibold">$ ${total.toFixed(2)}</td>
+            tbody.innerHTML += `
+                <tr class="table-dark fw-bold">
+                    <td>Total</td>
+                    <td class="text-end">$ ${totalGeneral.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
                 </tr>`;
-            tbody.innerHTML += fila;
+        })
+        .catch(error => {
+            console.error(error);
+            mensajeError.textContent = "⚠️ " + error.message;
+            mensajeError.style.opacity = "1";
+            setTimeout(() => { mensajeError.style.opacity = "0"; }, 5000);
         });
-
-        const filaTotal = `
-            <tr class="table-dark fw-bold">
-                <td>Total</td>
-                <td class="text-end">$ ${totalGeneral.toFixed(2)}</td>
-            </tr>`;
-        tbody.innerHTML += filaTotal;
-    })
-    .catch(error => {
-        mensajeError.textContent = "Ocurrió un error: " + error.message;
-        setTimeout(() => {
-            mensajeError.style.opacity = "0";
-        }, 5000);
     });
-});
-
-
-
-
-
-
-
 </script>

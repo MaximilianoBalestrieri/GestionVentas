@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using GestionVentas.Models;
+using System.Linq;
+using Microsoft.Extensions.Configuration;
 
 namespace GestionVentas.Controllers
 {
@@ -11,12 +13,53 @@ namespace GestionVentas.Controllers
 
         public VentasController(IConfiguration config)
         {
+            // Mantenemos tu forma de instanciar la base de datos
             db = new ConexionDB(config);
+        }
+
+        // --- FUNCIÓN PRIVADA PARA REGISTRAR EL DINERO EN LA CAJA ---
+        private void RegistrarIngresoEnCaja(decimal monto, int idFactura)
+        {
+            try
+            {
+                // Buscamos si hay una caja abierta en este momento
+                var cajaAbierta = db.Cajas.FirstOrDefault(c => c.EstaAbierta);
+
+                if (cajaAbierta != null)
+                {
+                    var movimiento = new MovimientoCaja
+                    {
+                        CajaId = cajaAbierta.Id,
+                        Fecha = DateTime.Now,
+                        Concepto = "Venta Factura Nro: " + idFactura.ToString("D8"),
+                        Monto = monto,
+                        Tipo = TipoMovimiento.Ingreso // Enum definido en Caja.cs
+                    };
+
+                    db.MovimientosCaja.Add(movimiento);
+                    db.SaveChanges();
+                }
+            }
+            catch (Exception)
+            {
+                // Opcional: Loguear error, pero no detener la venta por un error en caja
+            }
         }
 
         // GET: Crear venta
         public ActionResult Create()
         {
+            // VERIFICACIÓN DE CAJA:
+            // Buscamos si existe alguna caja abierta
+            var cajaAbierta = db.Cajas.FirstOrDefault(c => c.EstaAbierta);
+
+            if (cajaAbierta == null)
+            {
+                // Si no hay caja abierta, guardamos un mensaje para mostrar en la otra pantalla
+                TempData["MensajeError"] = "DEBE ABRIR CAJA PRIMERO PARA PODER VENDER.";
+                return RedirectToAction("AbrirCaja", "Caja");
+            }
+
             var productos = db.ObtenerProductos() ?? new List<Productos>();
             ViewBag.Vendedor = User.Identity.Name ?? "Usuario Desconocido";
             return View(productos);
@@ -39,7 +82,7 @@ namespace GestionVentas.Controllers
             }
         }
 
-        // POST: Restar stock y registrar venta
+        // POST: Restar stock y registrar venta (Sincronizado con Caja)
         [HttpPost]
         public JsonResult RestarStockYRegistrar([FromBody] VentaConProductos datos)
         {
@@ -56,14 +99,16 @@ namespace GestionVentas.Controllers
 
                     db.RestarStock(p.IdProducto, p.Cantidad);
                     int stockActual = db.ObtenerStockActual(p.IdProducto);
-
                     stocksActualizados.Add(new { IdProducto = p.IdProducto, StockDisponible = stockActual });
                 }
 
                 Venta venta = new Venta { DiaVenta = DateTime.Today, MontoVenta = datos.MontoVenta };
                 int nuevoIdFactura = db.GuardarVenta(venta);
-                string nroFacturaFormateado = "0001-" + nuevoIdFactura.ToString("D8");
 
+                // IMPACTO EN CAJA
+                RegistrarIngresoEnCaja(datos.MontoVenta, nuevoIdFactura);
+
+                string nroFacturaFormateado = "0001-" + nuevoIdFactura.ToString("D8");
                 return Json(new { success = true, idFactura = nuevoIdFactura, nroFactura = nroFacturaFormateado, stocksActualizados });
             }
             catch (Exception ex)
@@ -72,7 +117,7 @@ namespace GestionVentas.Controllers
             }
         }
 
-        // POST: Guardar venta completa
+        // POST: Guardar venta completa (Sincronizado con Caja)
         [HttpPost]
         public JsonResult GuardarVentaCompleta([FromBody] VentaCompleta venta)
         {
@@ -85,6 +130,9 @@ namespace GestionVentas.Controllers
 
                 if (resultado.success)
                 {
+                    // IMPACTO EN CAJA
+                    RegistrarIngresoEnCaja(venta.MontoVenta, resultado.idFactura);
+
                     string nroFactura = "0001-" + resultado.idFactura.ToString("D8");
                     return Json(new { success = true, idFactura = resultado.idFactura, nroFactura, message = "Venta guardada correctamente" });
                 }
@@ -97,7 +145,7 @@ namespace GestionVentas.Controllers
             }
         }
 
-        // POST: Registrar venta (alternativa)
+        // POST: Registrar venta (Sincronizado con Caja)
         [HttpPost]
         public JsonResult RegistrarVenta([FromBody] VentaCompleta datos)
         {
@@ -110,8 +158,10 @@ namespace GestionVentas.Controllers
 
                 if (!resultado.success) return Json(new { success = false, message = resultado.error });
 
-                string nroFacturaFormateado = "0001-" + resultado.idFactura.ToString("D8");
+                // IMPACTO EN CAJA
+                RegistrarIngresoEnCaja(datos.MontoVenta, resultado.idFactura);
 
+                string nroFacturaFormateado = "0001-" + resultado.idFactura.ToString("D8");
                 return Json(new { success = true, idFactura = resultado.idFactura, nroFactura = nroFacturaFormateado });
             }
             catch (Exception ex)
@@ -136,14 +186,11 @@ namespace GestionVentas.Controllers
             }
         }
 
-        // Clases auxiliares
+        // Clases auxiliares necesarias para el model binding
         public class ProductoVenta
         {
             public int idProducto { get; set; }
             public int cantidad { get; set; }
         }
-
-
-        
     }
 }

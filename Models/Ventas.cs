@@ -55,13 +55,13 @@ public class ProductoEnVenta
     }
 
 
-
 public class VentaCompleta
 {
-     public int IdFactura { get; set; }
+    public int IdFactura { get; set; }
     public decimal MontoVenta { get; set; }
     public string Vendedor { get; set; }
     public int IdCliente { get; set; }
+    public int IdCaja { get; set; } // <--- AGREGAR ESTA LÍNEA
     public List<ItemFactura> Productos { get; set; }
 }
 
