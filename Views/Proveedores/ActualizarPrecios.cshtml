@@ -1,0 +1,49 @@
+@model dynamic
+@{
+    ViewData["Title"] = "Actualizar Precios Masivo";
+}
+
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4><i class="bi bi-percent"></i> Actualizar Precios por Proveedor</h4>
+        </div>
+        <div class="card-body">
+            @if (TempData["Mensaje"] != null)
+            {
+                <div class="alert alert-success">@TempData["Mensaje"]</div>
+            }
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert alert-danger">@ViewBag.Error</div>
+            }
+
+            <form asp-action="ActualizarPrecios" method="post">
+                <div class="row">
+                    <div class="col-md-5">
+                        <label class="form-label">Seleccionar Proveedor</label>
+                        <select name="nombreProveedor" class="form-select" required>
+                            <option value="">-- Seleccione un proveedor --</option>
+                            @foreach (var p in ViewBag.Proveedores)
+                            {
+                                <option value="@p.NombreProveedor">@p.NombreProveedor</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Porcentaje de Aumento (ej: 10)</label>
+                        <div class="input-group">
+                            <input type="number" step="5" name="porcentajeAumento" class="form-control" placeholder="Ingrese porcentaje" required />
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-danger w-100" onclick="return confirm('¿Está seguro? Esto cambiará los precios de TODOS los productos de este proveedor.')">
+                            Aplicar Aumento
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

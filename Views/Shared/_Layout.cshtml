@@ -126,7 +126,7 @@
                             </a>
 
                         </li>
-                        
+
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownInformes" role="button"
                                 data-bs-toggle="dropdown" aria-expanded="false">
@@ -135,20 +135,20 @@
                             <ul class="dropdown-menu shadow" aria-labelledby="navbarDropdownInformes">
                                 <li>
                                     <a class="dropdown-item" asp-controller="ProductosVendidos" asp-action="Index">
-                                        <i class="fas fa-box-open me-2 text-primary"></i> Venta x Producto
+                                        <i class="fas fa-box-open me-2 text-primary"></i> Ventas x Producto
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" asp-controller="Informes" asp-action="MovimientosDiarios">
-                                        <i class="fas fa-calendar-day me-2 text-success"></i> Movimiento x Día
+                                        <i class="fas fa-calendar-day me-2 text-success"></i> Movimientos x Día
                                     </a>
                                 </li>
                                 <li>
-                                    <hr class="dropdown-divider">
+                                    <!-- <hr class="dropdown-divider"> -->
                                 </li>
                                 <li>
-                                    <a class="dropdown-item text-muted" asp-controller="Informes" asp-action="Index">
-                                        <i class="fas fa-file-alt me-2"></i> Otros Reportes
+                                    <a class="dropdown-item" asp-controller="Informes" asp-action="Index">
+                                        <i class="fas fa-file-alt me-2"></i> Resumen Dia/Mes/Año
                                     </a>
                                 </li>
                             </ul>
@@ -167,8 +167,23 @@
                                 <a class="nav-link" href="/Home/Index#modalPerfil">Mi Perfil</a>
                             }
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Proveedores" asp-action="Index">Proveedores</a>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProveedores" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                Proveedores
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdownProveedores">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Proveedores" asp-action="Index">
+                                        <i class="bi bi-person-lines-fill me-2"></i>ABM Proveedores
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Proveedores" asp-action="ActualizarPrecios">
+                                        <i class="bi bi-percent me-2"></i>Cambio Porcentaje
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Home" asp-action="Acercade">Acerca de...</a>

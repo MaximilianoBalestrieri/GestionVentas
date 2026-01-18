@@ -106,7 +106,7 @@ namespace GestionVentas.Controllers
                 int nuevoIdFactura = db.GuardarVenta(venta);
 
                 // IMPACTO EN CAJA
-                RegistrarIngresoEnCaja(datos.MontoVenta, nuevoIdFactura);
+              //  RegistrarIngresoEnCaja(datos.MontoVenta, nuevoIdFactura);
 
                 string nroFacturaFormateado = "0001-" + nuevoIdFactura.ToString("D8");
                 return Json(new { success = true, idFactura = nuevoIdFactura, nroFactura = nroFacturaFormateado, stocksActualizados });
@@ -131,7 +131,7 @@ namespace GestionVentas.Controllers
                 if (resultado.success)
                 {
                     // IMPACTO EN CAJA
-                    RegistrarIngresoEnCaja(venta.MontoVenta, resultado.idFactura);
+                  //  RegistrarIngresoEnCaja(venta.MontoVenta, resultado.idFactura);
 
                     string nroFactura = "0001-" + resultado.idFactura.ToString("D8");
                     return Json(new { success = true, idFactura = resultado.idFactura, nroFactura, message = "Venta guardada correctamente" });
@@ -159,7 +159,7 @@ namespace GestionVentas.Controllers
                 if (!resultado.success) return Json(new { success = false, message = resultado.error });
 
                 // IMPACTO EN CAJA
-                RegistrarIngresoEnCaja(datos.MontoVenta, resultado.idFactura);
+              //  RegistrarIngresoEnCaja(datos.MontoVenta, resultado.idFactura);
 
                 string nroFacturaFormateado = "0001-" + resultado.idFactura.ToString("D8");
                 return Json(new { success = true, idFactura = resultado.idFactura, nroFactura = nroFacturaFormateado });

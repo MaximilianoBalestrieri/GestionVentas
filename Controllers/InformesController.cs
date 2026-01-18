@@ -21,26 +21,20 @@ namespace GestionVentas.Controllers
         }
 
         // --- NUEVA VISTA DE MOVIMIENTOS DIARIOS ---
-        public IActionResult MovimientosDiarios(DateTime? fecha)
+      public IActionResult MovimientosDiarios(DateTime? fecha)
 {
     // 1. Filtro de fecha (hoy si viene nulo)
     DateTime diaFiltro = fecha ?? DateTime.Today;
     ViewBag.FechaActual = diaFiltro.ToString("yyyy-MM-dd");
 
-    // 2. Traemos TODOS los movimientos que ocurrieron en esa fecha
-    // Eliminamos la dependencia de 'cajasIds' para que si hay una factura
-    // de una caja de ayer, también aparezca.
+    // 2. Traemos los movimientos, pero FILTRAMOS las aperturas de caja 
+    // para que no ensucien la suma ni la lista si así lo deseas.
     var movimientos = conexion.MovimientosCaja
-        .Where(m => m.Fecha.Date == diaFiltro.Date)
+        .Where(m => m.Fecha.Date == diaFiltro.Date && !m.Concepto.Contains("Apertura"))
         .OrderBy(m => m.Fecha)
         .ToList();
 
-    // 3. Obtenemos los montos iniciales de las cajas que estuvieron activas hoy
-    decimal totalIniciales = conexion.Cajas
-        .Where(c => c.FechaApertura.Date == diaFiltro.Date)
-        .Sum(c => (decimal?)c.MontoInicial) ?? 0;
-
-    // 4. Totales basados en los movimientos encontrados
+    // 3. Calculamos totales netos de lo que pasó en las manos del cajero hoy
     decimal totalIngresos = movimientos
         .Where(m => m.Tipo == TipoMovimiento.Ingreso)
         .Sum(m => m.Monto);
@@ -49,37 +43,43 @@ namespace GestionVentas.Controllers
         .Where(m => m.Tipo == TipoMovimiento.Egreso)
         .Sum(m => m.Monto);
 
-    // Saldo final = Inicial + Ventas/Ingresos - Gastos
-    ViewBag.TotalFinalDia = totalIniciales + totalIngresos - totalEgresos;
+    // 4. EL CAMBIO CLAVE: El total ahora es solo la diferencia de movimientos.
+    // Ya no sumamos 'totalIniciales'.
+    ViewBag.TotalFinalDia = totalIngresos - totalEgresos;
+
+    // Cambiamos el título para la vista
+    ViewBag.TituloInforme = "RESUMEN DE INGRESOS Y EGRESOS DEL DÍA";
 
     return View(movimientos);
 }
 
         // --- TUS MÉTODOS ANTERIORES (SIN TOCAR) ---
-        [HttpPost]
-        public IActionResult ObtenerVentasPorFecha(DateTime desde, DateTime hasta, string modo)
-        {
-            List<object> lista = new List<object>();
+       [HttpPost]
+public IActionResult ObtenerVentasPorFecha(DateTime desde, DateTime hasta, string modo)
+{
+    List<object> lista = new List<object>();
 
-            if (modo == "diario")
-            {
-                lista = conexion.ObtenerTotalVentasPorFecha(desde, hasta);
-            }
-            else if (modo == "mensual")
-            {
-                lista = conexion.ObtenerTotalVentasPorMes(desde, hasta);
-            }
-            else if (modo == "anual")
-            {
-                lista = conexion.ObtenerTotalVentasPorAnio(desde, hasta);
-            }
-            else
-            {
-                return BadRequest("Modo inválido");
-            }
+    // Cambiamos el nombre de los métodos de la conexión para que busquen en MovimientosCaja
+    if (modo == "diario")
+    {
+        // Este método debe sumar (Ingresos - Egresos) agrupado por día
+        lista = conexion.ObtenerBalanceMovimientosPorFecha(desde, hasta);
+    }
+    else if (modo == "mensual")
+    {
+        lista = conexion.ObtenerBalanceMovimientosPorMes(desde, hasta);
+    }
+    else if (modo == "anual")
+    {
+        lista = conexion.ObtenerBalanceMovimientosPorAnio(desde, hasta);
+    }
+    else
+    {
+        return BadRequest("Modo inválido");
+    }
 
-            return Json(lista);
-        }
+    return Json(lista);
+}
 
         public class FiltroFecha
         {

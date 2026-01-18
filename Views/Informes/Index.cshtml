@@ -5,9 +5,17 @@
 <head>
     <style>
         /* Colores personalizados para el <select> */
-        .modo-diario { background-color: #f8f9fa; }
-        .modo-mensual { background-color: #fff3cd; }
-        .modo-anual { background-color: #d1e7dd; }
+        .modo-diario {
+            background-color: #f8f9fa;
+        }
+
+        .modo-mensual {
+            background-color: #fff3cd;
+        }
+
+        .modo-anual {
+            background-color: #d1e7dd;
+        }
 
         .mensaje-error-fechas {
             position: absolute;
@@ -62,7 +70,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    </tbody>
+                </tbody>
             </table>
         </div>
     </div>
@@ -106,7 +114,6 @@
 
         mensajeError.style.opacity = "0";
 
-        // Usamos URLSearchParams pero aseguramos que el formato sea el que el controlador espera
         const params = new URLSearchParams();
         params.append("desde", desde);
         params.append("hasta", hasta);
@@ -127,11 +134,12 @@
             return response.json();
         })
         .then(data => {
+            console.log("Datos recibidos:", data); // Para depuración
             const tbody = document.querySelector("#tablaVentas tbody");
             tbody.innerHTML = "";
 
             if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="2">No hay datos en ese período.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="2" class="text-center">No hay datos en ese período.</td></tr>`;
                 return;
             }
 
@@ -142,24 +150,33 @@
             else if (modo === "anual") rowClass = "table-success";
 
             data.forEach(item => {
-                const fechaRaw = item.fecha || item.Fecha;
-                const totalRaw = item.totalVendido || item.TotalVendido;
+                // Captura flexible de nombres (Mayúscula o minúscula)
+                const fechaRaw = (item.Fecha || item.fecha || "").toString();
+                const totalRaw = item.Total || item.total || 0;
 
-                const fecha = new Date(fechaRaw).toLocaleDateString('es-AR', { timeZone: 'UTC' });
+                let fechaFormateada = fechaRaw;
+
+                // Formatear solo si es formato YYYY-MM-DD
+                if (fechaRaw.includes("-") && fechaRaw.length === 10) {
+                    const [y, m, d] = fechaRaw.split("-");
+                    fechaFormateada = `${d}/${m}/${y}`;
+                }
+
                 const total = parseFloat(totalRaw);
                 totalGeneral += total;
 
                 tbody.innerHTML += `
                     <tr class="${rowClass}">
-                        <td>${fecha}</td>
-                        <td class="text-end fw-semibold">$ ${total.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                        <td>${fechaFormateada}</td>
+                        <td class="text-end fw-semibold">$ ${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
                     </tr>`;
             });
 
+            // Agregar fila de total al final
             tbody.innerHTML += `
                 <tr class="table-dark fw-bold">
-                    <td>Total</td>
-                    <td class="text-end">$ ${totalGeneral.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                    <td>TOTAL BALANCE</td>
+                    <td class="text-end">$ ${totalGeneral.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
                 </tr>`;
         })
         .catch(error => {
