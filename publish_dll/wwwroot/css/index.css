@@ -1,0 +1,219 @@
+/* ================================================= */
+/* === 1. ESTILOS BASE Y FONDO (BODY)              === */
+/* ================================================= */
+body {
+    background: url('/imagenes/fondo.jpg') no-repeat center center fixed;
+    background-size: cover;
+}
+
+/* ================================================= */
+/* === 2. ESTILOS TÍTULOS Y ANIMACIONES            === */
+/* ================================================= */
+.titulo-principal h1 {
+    font-size: 2.5rem;
+    color: #003366;
+    font-weight: 700;
+    animation: fadeInUp 1s ease-in-out;
+    margin-top: -40px;
+    margin-bottom: 0.5rem;
+}
+
+.titulo-principal .titulo-sale {
+    line-height: 0.9;      /* Reduce el espacio entre "Ferreteria" y "SANTIAGO" */
+    margin-bottom: 0;      /* Elimina margen inferior del h3 */
+    font-size: 4.2rem;
+    font-weight: 800;
+    color: #f9fbfc;
+    text-shadow:
+        -2px -2px 0 black,
+        2px -2px 0 black,
+        -2px 2px 0 black,
+        2px 2px 0 black,
+        0px 0px 4px black;
+    letter-spacing: 1rem;
+    display: inline-block;
+    animation: fadeInUp 1.3s ease-in-out;
+}
+
+
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ================================================= */
+/* === 3. SECCIÓN DE CARDS (GRID - ESCRITORIO)     === */
+/* ================================================= */
+.seccion-cards {
+    padding: 70px 20px;
+    max-width: 900px;
+    margin: 0 auto;
+
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: 1rem;
+    row-gap: 1rem;
+
+    padding-top: 20px !important; /* Reduce drásticamente el espacio arriba de las cards */
+    padding-bottom: 30px;
+    max-width: 950px;
+    margin: 0 auto;
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    justify-items: center;
+
+    justify-items: stretch;
+    align-items: stretch;
+}
+
+
+/* === CARD === */
+.card-servicio {
+    padding: 0.8rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    height: 150px;
+    cursor: pointer;
+
+    
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card-servicio:hover {
+    transform: scale(1.05);
+    background-color: #f9f9f9;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    border-color: #1409f3;
+}
+
+.card-servicio img {
+    width: 80px;
+    height: 50px;
+    object-fit: contain;
+    margin: 0 auto;
+}
+
+.card-servicio h5 {
+    font-size: 1rem;
+    margin-top: 0.5rem;
+}
+
+.card-servicio p {
+    font-size: 0.85rem;
+    color: #555;
+}
+
+/* ================================================= */
+/* === 4. MENÚS FIJOS LATERALES                    === */
+/* ================================================= */
+#menu-admin,
+#menu-bienvenido {
+    position: fixed;
+    height: 90px;
+    background-color: rgba(255, 255, 255, 0.6);
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    width: 280px;
+    top: 60px;
+}
+
+#menu-admin {
+    right: 40px;
+}
+
+#menu-bienvenido {
+    left: 40px;
+}
+
+/* ================================================= */
+/* === 5. MEDIA QUERIES (RESPONSIVE)               === */
+/* ================================================= */
+
+/* --- TABLET --- */
+@media (max-width: 768px) {
+
+    .titulo-principal h1 {
+        font-size: 2rem;
+        margin-top: 10px;
+    }
+
+    .titulo-principal .titulo-sale {
+        font-size: 3rem;
+        letter-spacing: 0.5rem;
+    }
+
+    .seccion-cards {
+        grid-template-columns: repeat(3, 1fr); /* 3 por fila */
+    }
+
+    #menu-admin,
+    #menu-bienvenido {
+        display: none !important;
+    }
+}
+
+/* --- MÓVIL --- */
+@media (max-width: 576px) {
+
+    .titulo-principal h1 {
+        font-size: 1.5rem;
+        margin-top: 10px;
+    }
+
+    .titulo-principal .titulo-sale {
+        font-size: 2rem;
+        letter-spacing: 0.1rem;
+        text-shadow:
+            -1px -1px 0 black,
+            1px -1px 0 black,
+            -1px 1px 0 black,
+            1px 1px 0 black,
+            0px 0px 2px black;
+    }
+
+    .seccion-cards {
+        grid-template-columns: repeat(2, 1fr); /* 2 por fila */
+    }
+
+    .card-servicio h5 {
+        font-size: 0.9rem;
+    }
+
+    .card-servicio p {
+        font-size: 0.75rem;
+    }
+
+    .card-servicio img {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+/* --- MÓVIL PEQUEÑO --- */
+@media (max-width: 400px) {
+
+    .seccion-cards {
+        grid-template-columns: 1fr; /* 1 por fila */
+        padding: 40px 10px;
+    }
+}
