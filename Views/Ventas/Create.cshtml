@@ -4,687 +4,426 @@
     var fechaHoy = DateTime.Now.ToString("dd/MM/yyyy");
 }
 
-
 <style>
-    /* Reduce el espacio en todas las filas de la tabla de factura */
-    #tablaFactura th, #tablaFactura td {
-        padding: 4px 8px !important; /* Espaciado muy reducido */
-        vertical-align: middle;
-    }
-
-    /* Hace los inputs de cantidad más pequeños */
-    #tablaFactura .cantidad {
-        height: 28px;
-        padding: 2px;
-        margin: 0;
-    }
-
-    /* Reduce el espacio en el panel de carga rápida */
-    .panel-carga-rapida {
-        padding: 8px !important;
-        margin-bottom: 10px !important;
-    }
-
-    /* Ajusta los márgenes generales del contenedor */
-    .card.p-3 {
-        padding: 10px !important;
-    }
-
-    hr {
-        margin: 8px 0 !important; /* Líneas divisorias más juntas */
-    }
-
-    .row.g-2 {
-        --bs-gutter-y: 0.3rem; /* Reduce el espacio vertical entre filas de inputs */
-    }
-
-    h5, h4 {
-        margin-bottom: 5px !important;
-    }
+    /* Estilos de tabla y compactación */
+    #tablaFactura th, #tablaFactura td { padding: 4px 8px !important; vertical-align: middle; }
+    #tablaFactura .cantidad { height: 28px; padding: 2px; margin: 0; }
+    .panel-carga-rapida { padding: 12px !important; margin-bottom: 15px !important; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .card.p-3 { padding: 15px !important; }
+    hr { margin: 10px 0 !important; }
+    .row.g-2 { --bs-gutter-y: 0.4rem; }
+    h5, h4 { margin-bottom: 8px !important; }
+    .is-valid-custom { border-color: #198754 !important; background-color: #e8f5e9 !important; }
+    .input-group-text { background-color: #343a40; color: white; border: none; }
 </style>
 
-<link rel="stylesheet" href="/css/ventas.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-<!--  TÍTULO Y BOTÓN FUERA DEL RECUADRO, CON MARGEN SUPERIOR -->
-<div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 900px; margin: 20px auto 10px auto;">
-    <h4 class="mb-0">Factura</h4>
-   <!--   <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalProductos">Agregar Producto</button>  -->
+<div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 950px; margin: 20px auto 10px auto;">
+    <h4 class="mb-0"><i class="bi bi-cart4"></i> Nueva Venta</h4>
 </div>
 
-<!--  CONTENEDOR DE FACTURA -->
-
-<div id="facturaImprimible" class="card p-3 shadow-sm" style="max-width: 900px; margin: auto; font-size: 14px;">
-
- <!-- Logo -->
-<div class="d-flex align-items-center mb-3" id="facturaEncabezado">
-    <img src="/imagenes/logo.png" alt="Logo" style="height: 50px; margin-right: 15px;">
-    <div>
-        <h5 style="margin: 0;">Ferreteria Santiago</h5>
-        <small class="text-muted">La Paz - Córdoba</small>
+<div id="facturaImprimible" class="card p-4 shadow-sm" style="max-width: 950px; margin: auto; font-size: 14px;">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div class="d-flex align-items-center">
+            <img src="/imagenes/logo.png" alt="Logo" style="height: 60px; margin-right: 20px;" onerror="this.style.display='none'">
+            <div>
+                <h3 style="margin: 0; color: #2c3e50;">Ferretería Santiago</h3>
+                <small class="text-muted">La Paz - Córdoba | Tel: 351-XXXXXXX</small>
+            </div>
+        </div>
+        <div class="text-end">
+            <h5 class="mb-0">Factura N°: <span id="nroFacturaPrincipal" class="text-danger">0000-0000</span></h5>
+            <p class="mb-0 text-muted">Fecha: @fechaHoy</p>
+        </div>
     </div>
-</div>
-<hr style="margin-top: 0; margin-bottom: 15px;">
+    
+    <hr>
 
-<div class="mb-2 d-flex justify-content-between align-items-center">
-    <div>
-        <strong>Factura N°:</strong>
-        <span id="nroFacturaPrincipal">0001-00000001</span>
+    <div class="mb-3 bg-light p-3 rounded border">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-2 text-md-end"><strong>DNI / CUIT:</strong></div>
+            <div class="col-md-3">
+                <input type="text" id="dniCliente" class="form-control form-control-sm" readonly value="00000001">
+            </div>
+            <div class="col-md-1 text-md-end"><strong>Cliente:</strong></div>
+            <div class="col-md-4">
+                <div class="input-group input-group-sm">
+                    <input type="text" id="nombreCliente" class="form-control" readonly value="Consumidor Final">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#clientesModal">
+                        <i class="bi bi-people-fill"></i> Buscar
+                    </button>
+                </div>
+                <input type="hidden" id="idCliente" value="8">
+            </div>
+        </div>
     </div>
-    <small class="text-end" style="font-size: 1rem;">Fecha: @fechaHoy</small>
-</div>
 
-<div class="mb-3">
-    <div class="row g-2 align-items-center"> <div class="col-md-2">
-            <strong>DNI:</strong>
-        </div>
+    <div class="row g-2 align-items-end panel-carga-rapida">
         <div class="col-md-3">
-            <input type="text" id="dniCliente" class="form-control form-control-sm" placeholder="DNI del cliente" readonly>
+            <label class="form-label mb-1 small"><strong>Código de Ptoducto</strong></label>
+            <div class="input-group input-group-sm">
+             
+                <input type="text" id="inputCodigoRapido" class="form-control" placeholder="Ingrese código">
+                <button class="btn btn-dark" type="button" data-bs-toggle="modal" data-bs-target="#modalProductos">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
         </div>
-        <div class="col-md-2 text-md-end"> <strong>Cliente:</strong>
+        <div class="col-md-4">
+            <label class="form-label mb-1 small"><strong>Producto Seleccionado</strong></label>
+            <input type="text" id="inputNombreRapido" class="form-control form-control-sm" readonly style="background-color: #e9ecef;">
         </div>
-        <div class="col-md-3">
-            <input type="text" id="nombreCliente" class="form-control form-control-sm" placeholder="Nombre del cliente" readonly>
-            <input type="hidden" id="idCliente"> </div>
+        <div class="col-md-1">
+            <label class="form-label mb-1 small"><strong>Cant.</strong></label>
+            <input type="number" id="inputCantidadRapida" class="form-control form-control-sm text-center" value="1" min="1">
+        </div>
         <div class="col-md-2">
-            <button type="button" class="btn btn-sm btn-primary w-100" data-bs-toggle="modal" data-bs-target="#clientesModal">
-                Clientes
+            <label class="form-label mb-1 small"><strong>Precio</strong></label>
+            <input type="text" id="inputPrecioRapido" class="form-control form-control-sm text-end fw-bold" readonly>
+        </div>
+        <div class="col-md-2">
+            <button type="button" id="btnAgregarRapido" class="btn btn-success btn-sm w-100">
+                <i class="bi bi-plus-circle"></i> Agregar
             </button>
         </div>
     </div>
-    <div class="row g-2 mt-2"> <div class="col-md-2">
-            <strong>Dirección:</strong>
-        </div>
-        <div class="col-md-4">
-            <input type="text" id="direccionCliente" class="form-control form-control-sm" placeholder="Dirección del cliente" readonly>
-        </div>
-        <div class="col-md-2 text-md-end">
-            <strong>Localidad:</strong>
-        </div>
-        <div class="col-md-4">
-            <input type="text" id="localidadCliente" class="form-control form-control-sm" placeholder="Localidad del cliente" readonly>
-        </div>
-    </div>
-    <div class="row g-2 mt-2"> <div class="col-md-2">
-            <strong>Teléfono:</strong>
-        </div>
-        <div class="col-md-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <input type="text" id="telefonoCliente" class="form-control form-control-sm me-2" style="min-width: 200px;" placeholder="Teléfono del cliente" readonly style="max-width: 300px;">
-    
-<h2>  
-</h2> 
-   
-    <button class="btn btn-primary px-4 btn-sm col-md-4" style="min-width: 200px;" data-bs-toggle="modal" data-bs-target="#modalProductos">
-        Agregar Producto
-    </button>
-    
-</div>
-</div>
- <hr style="margin-top: 0; margin-bottom: 15px;"> 
-    </div>
-</div>
 
-
-<!----------------------------------->
-
-<div class="row g-1 mb-2 align-items-end no-print panel-carga-rapida" 
-     style="background-color: #f8f9fa; border-radius: 6px; border: 1px solid #dee2e6; padding: 8px; font-size: 0.85rem;">
-    
-    <div class="col-md-1">
-        <label class="form-label mb-0" style="font-size: 0.75rem;"><strong>Código</strong></label>
-        <input type="text" id="inputCodigoRapido" class="form-control form-control-sm" style="font-size: 0.85rem;" placeholder="Cód.">
-    </div>
-    
-    <div class="col-md-4">
-        <label class="form-label mb-0" style="font-size: 0.75rem;"><strong>Producto</strong></label>
-        <input type="text" id="inputNombreRapido" class="form-control form-control-sm" style="background-color: #e9ecef; font-size: 0.85rem;" readonly>
-    </div>
-
-    <div class="col-md-1">
-        <label class="form-label mb-0" style="font-size: 0.75rem;"><strong>Cant.</strong></label>
-        <input type="number" id="inputCantidadRapida" class="form-control form-control-sm text-center" value="1" min="1" style="font-size: 0.85rem;">
-    </div>
-
-    <div class="col-md-2">
-        <label class="form-label mb-0" style="font-size: 0.75rem;"><strong>Precio</strong></label>
-        <input type="text" id="inputPrecioRapido" class="form-control form-control-sm text-end" style="background-color: #e9ecef; font-size: 0.85rem;" readonly placeholder="$0.00">
-    </div>
-
-    <div class="col-md-2">
-        <label class="form-label mb-0" style="font-size: 0.75rem;"><strong>Subtotal</strong></label>
-        <input type="text" id="inputSubtotalRapido" class="form-control form-control-sm text-end" style="background-color: #e9ecef; font-size: 0.85rem; font-weight: bold;" readonly placeholder="$0.00">
-    </div>
-
-    <div class="col-md-2">
-        <button type="button" id="btnAgregarRapido" class="btn btn-dark btn-sm w-100" style="font-size: 0.8rem; padding: 4px 0;">
-            + Agregar
-        </button>
-    </div>
-</div>
-
-<!------------------------------------>
-  <hr style="margin-top: 0; margin-bottom: 15px;"> 
-<!-------------------- MODAL CLIENTES -------------------------->
-
-<div class="modal fade" id="clientesModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Buscar Cliente</h5>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        
-        <input type="text" id="filtroCliente" class="form-control mb-3" placeholder="Buscar por nombre o DNI">
-
-        <table class="table table-hover">
-          <thead>
-          <tr>
-            <th>DNI</th>
-            <th>Nombre</th>
-            <th>Domicilio</th>
-            <th>Localidad</th>
-            <th>Teléfono</th>
-            <th>Seleccionar</th>
-          </tr>
-        </thead>
-
-          <tbody id="tablaClientes">
-            <!-- Se llena con JS -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-------------------------------------------------------------->
-
-    <table class="table table-sm table-bordered" id="tablaFactura">
-        <thead class="table-light">
-    <tr>
-        <th class="col-codigo">Código</th>
-        <th class="col-nombre">Nombre</th>
-        <th class="col-precio">Precio</th>
-        <th class="col-cantidad">Cantidad</th>
-        <th class="col-subtotal">Subtotal</th>
-        <th class="col-quitar">Quitar</th>
-    </tr>
- </thead>
-
-        <tbody>
-           
-            <!-- Se agregan productos dinámicamente -->
-        </tbody>
-    </table>
-
-  <div class="text-end mt-3">
-    <p style="margin-bottom: 2px;">
-        <strong>Subtotal:</strong>
-        <span id="subtotalFactura" style="font-size: 16px;">$0.00</span>
-    </p>
-    
-   <div class="mb-2">
-    <label for="descuento" class="form-label" style="font-size: 14px;"><strong>Descuento (%):</strong></label>
-    <input type="number" id="descuento" class="form-control form-control-sm d-inline-block text-end" style="width: 100px;" value="0" min="0" max="100">
-  </div>
-
-
-    <p style="margin-bottom: 2px;">
-        <strong>Total:</strong>
-        <span id="totalFactura" style="font-size: 18px; color: #155724;">$0.00</span>
-    </p>
-    <!-- Botón abonar alineado a la derecha -->
- <div class="text-end mt-2 no-print">
-    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAbonar">
-        Abonar
-    </button>
-     <div class="text-end mt-2  no-print">
-     <button onclick="window.print()" class="btn btn-primary">Imprimir PDF</button>
-  
-    <button class="btn btn-danger me-2" id="btnNuevaFactura">
-        Nueva Factura
-    </button>
- </div>
-</div>
-
- </div>
-</div>
-
-
-
-<!-- -----------------MODAL PARA EL VUELTO  ---------------->
-<div class="modal fade" id="modalAbonar" tabindex="-1" aria-labelledby="modalAbonarLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content p-4">
-      <div class="modal-header">
-        <h2 class="modal-title w-100 text-center" id="modalAbonarLabel">Abonar</h2>
-      </div>
-      <div class="modal-body text-center">
-
-        <!-- ✅ Mostrar número de factura -->
-        <div class="mb-3">
-          <strong>Factura N°:</strong>
-          <span id="nroFactura">Cargando...</span>
-        </div>
-
-        <h3>Total a pagar: $<span id="modalTotal">0.00</span></h3>
-        <div class="form-group mt-3">
-          <label for="montoAbonado" class="form-label fs-5">¿Con cuánto abona?</label>
-          <input type="number" 
-            class="form-control form-control-lg text-center" 
-            id="montoAbonado" 
-            placeholder="Ingrese el monto"
-            style="color: #155724; font-size: 1.5rem;">
-        </div>
-        <h4 class="mt-4">Vuelto: $<span id="vuelto">0.00</span></h4>
-      </div>
-      <div class="modal-footer justify-content-center">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-        <button type="button" class="btn btn-success" id="confirmarCompra">Confirmar compra</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- 🌟 MODAL DE PRODUCTOS -->
-<div class="modal fade" id="modalProductos" tabindex="-1" aria-labelledby="modalProductosLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Seleccionar producto</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body">
-        <input type="text" id="buscarProducto" class="form-control form-control-sm mb-3" placeholder="Buscar por nombre o código">
-
-        <table class="table table-sm table-bordered" id="tablaProductos">
-            <thead class="table-light">
+    <div class="table-responsive">
+        <table class="table table-sm table-hover table-bordered border-secondary" id="tablaFactura">
+            <thead class="table-dark">
                 <tr>
-                    <th>Código</th>
-                    <th>Nombre</th>
-                    <th>Stock</th>
-                    <th>Precio Venta</th>
-                    <th>Accion</th>
+                    <th style="width: 15%;">Código</th>
+                    <th>Nombre del Producto</th>
+                    <th style="width: 15%;">Precio Unit.</th>
+                    <th style="width: 10%;">Cant.</th>
+                    <th style="width: 15%;">Subtotal</th>
+                    <th style="width: 5%;"></th>
                 </tr>
             </thead>
-           <tbody>
-    @foreach (var prod in Model)
-    {
-        <tr>
-            <td>@prod.Codigo</td>
-            <td>@prod.Nombre</td>
-            <td class="text-center">@prod.StockActual</td>
-            <td class="text-end">@prod.PrecioVenta.ToString("F2")</td>
-            <td>
-                <button class="btn btn-success btn-sm seleccionarProducto"
-        data-idproducto="@prod.IdProducto"
-        data-codigo="@prod.Codigo"
-        data-nombre="@prod.Nombre"
-        data-stock="@prod.StockActual"
-        data-precio="@prod.PrecioVenta"
-       >
-    Seleccionar
-</button>
-
-            </td>
-        </tr>
-    }
-    
-</tbody>
-
+            <tbody>
+                </tbody>
         </table>
-      </div>
     </div>
-  </div>
+
+    <div class="row mt-3">
+        <div class="col-md-7">
+            <div class="alert alert-info py-2 small">
+                <i class="bi bi-info-circle"></i> Presione <b>Enter</b> en el código para pasar a cantidad y nuevamente para agregar.
+            </div>
+        </div>
+        <div class="col-md-5 text-end">
+            <p class="mb-1"><strong>Subtotal:</strong> <span id="subtotalFactura" class="fs-5">$0.00</span></p>
+            <div class="mb-2 d-flex justify-content-end align-items-center">
+                <label class="small me-2"><strong>Descuento (%):</strong></label>
+                <input type="number" id="descuento" class="form-control form-control-sm text-end" style="width: 80px;" value="0" min="0" max="100">
+            </div>
+            <h3 class="text-success fw-bold">TOTAL: <span id="totalFactura">$0.00</span></h3>
+            
+            <div class="mt-4">
+                <button class="btn btn-outline-danger me-2" id="btnNuevaFactura" onclick="location.reload()">
+                    <i class="bi bi-trash"></i> Cancelar
+                </button>
+                <button class="btn btn-success btn-lg px-5 shadow" data-bs-toggle="modal" data-bs-target="#modalAbonar">
+                    <i class="bi bi-check-all"></i> CONFIRMAR PAGO
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
-
-<!-----------  VISTA PREVIA DE LA FACTURA ---------------- ----------->
-
-<div id="vistaPreviaFactura" class="card p-4 shadow mt-4" style="display: none; background-color: white;">
-  <h4 class="text-center mb-3">Vista Previa de la Factura</h4>
-  <p><strong>Cliente:</strong> <span id="clienteVista"></span></p>
-  <p><strong>Fecha:</strong> <span id="fechaVista"></span></p>
-  <table class="table table-bordered table-sm">
-    <thead class="table-light">
-      <tr>
-        <th>Código</th>
-        <th>Nombre</th>
-        <th>Precio</th>
-        <th>Cantidad</th>
-        <th>Subtotal</th>
-      </tr>
-    </thead>
-    <tbody id="detalleVista">
-      <!-- Se llenará desde JS -->
-    </tbody>
-  </table>
-  <p class="text-end"><strong>Total:</strong> <span id="totalVista"></span></p>
-
-  <div class="text-end mt-3">
-    <button onclick="window.print()" class="btn btn-primary">Imprimir</button>
-  </div>
+<div class="modal fade" id="modalProductos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title"><i class="bi bi-box-seam"></i> Listado de Productos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="filtroProductosModal" class="form-control mb-3" placeholder="Buscar por nombre o código...">
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light">
+                            <tr><th>Código</th><th>Nombre</th><th>Stock</th><th>Precio</th><th>Acción</th></tr>
+                        </thead>
+                        <tbody id="tablaProductosModal">
+                            @foreach (var p in Model) {
+                                <tr>
+                                    <td>@p.Codigo</td>
+                                    <td>@p.Nombre</td>
+                                    <td class="@(p.StockActual <= 5 ? "text-danger fw-bold" : "")">@p.StockActual</td>
+                                    <td>$@p.PrecioVenta.ToString("F2")</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="seleccionarDesdeModal('@p.IdProducto', '@p.Codigo', '@p.Nombre', @p.PrecioVenta.ToString().Replace(",", "."))">
+                                            Seleccionar
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
+<div class="modal fade" id="clientesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-person-search"></i> Seleccionar Cliente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="filtroCliente" class="form-control mb-3" placeholder="Buscar por nombre o DNI...">
+                <div style="max-height: 350px; overflow-y: auto;">
+                    <table class="table table-hover table-sm">
+                        <thead><tr><th>DNI</th><th>Nombre</th><th>Acción</th></tr></thead>
+                        <tbody id="tablaClientes">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAbonar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-success border-3">
+            <div class="modal-header bg-success text-white">
+                <h4 class="modal-title w-100 text-center">Cobrar Venta</h4>
+            </div>
+            <div class="modal-body text-center">
+                <h1 class="text-primary mb-4" style="font-size: 3.5rem;">Total: <span id="modalTotal">$0.00</span></h1>
+
+                <label class="form-label fw-bold">Seleccione Medio de Pago:</label>
+                <div class="btn-group w-100 mb-4 shadow-sm" role="group">
+                    <input type="radio" class="btn-check" name="medioPago" id="rEf" value="Efectivo" checked>
+                    <label class="btn btn-outline-success py-3" for="rEf"><i class="bi bi-cash fs-3"></i><br>Efectivo</label>
+
+                    <input type="radio" class="btn-check" name="medioPago" id="rTr" value="Transferencia">
+                    <label class="btn btn-outline-primary py-3" for="rTr"><i class="bi bi-bank fs-3"></i><br>Transf.</label>
+
+                    <input type="radio" class="btn-check" name="medioPago" id="rCc" value="CtaCte">
+                    <label class="btn btn-outline-warning py-3" for="rCc"><i class="bi bi-person-vcard fs-3"></i><br>Fiado</label>
+                </div>
+
+                <div id="divVuelto">
+                    <div class="form-group mb-3">
+                        <label class="fs-4">¿Con cuánto paga?</label>
+                        <input type="number" class="form-control form-control-lg text-center fw-bold" id="montoAbonado" style="font-size: 2.5rem; color: #198754;">
+                    </div>
+                    <div class="alert alert-danger py-2">
+                        <h3 class="mb-0">Vuelto: <span id="vuelto">$0.00</span></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Volver</button>
+                <button type="button" class="btn btn-success btn-lg px-5" id="confirmarCompra">
+                    <i class="bi bi-printer"></i> CONFIRMAR Y FINALIZAR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
     const vendedor = '@ViewBag.nombreyApellido';
-    // Lista de productos para búsqueda rápida sin servidor
     const listaProductosData = @Html.Raw(Json.Serialize(Model));
 
-    // -------------------------------------------------------------------------
-    // 1. FUNCIÓN UNIFICADA PARA AGREGAR PRODUCTOS A LA TABLA (COMPACTA)
-    // -------------------------------------------------------------------------
-    function agregarFilaFactura(idproducto, codigo, nombre, precio, stock, cantidadSolicitada) {
-        let filaExistente = document.querySelector(`#tablaFactura tbody tr[data-idproducto="${idproducto}"]`);
-        
-        if (filaExistente) {
-            let inputCant = filaExistente.querySelector(".cantidad");
-            inputCant.value = parseInt(inputCant.value) + cantidadSolicitada;
-            inputCant.dispatchEvent(new Event('input', { bubbles: true }));
-            return;
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById("inputCodigoRapido").focus();
+        cargarNroFactura();
+        listarClientes(""); // Carga inicial de clientes
+    });
+
+    // --- LÓGICA DE CARGA RÁPIDA ---
+    const inputCodigo = document.getElementById("inputCodigoRapido");
+    const inputNombre = document.getElementById("inputNombreRapido");
+    const inputCantidad = document.getElementById("inputCantidadRapida");
+    const inputPrecio = document.getElementById("inputPrecioRapido");
+    const btnAgregar = document.getElementById("btnAgregarRapido");
+    let productoEncontrado = null;
+
+    inputCodigo.addEventListener("keyup", function(e) {
+        productoEncontrado = listaProductosData.find(p => p.codigo == this.value.trim());
+        if (productoEncontrado) {
+            inputNombre.value = productoEncontrado.nombre;
+            inputPrecio.value = "$" + parseFloat(productoEncontrado.precioVenta).toFixed(2);
+            inputNombre.classList.add("is-valid-custom");
+            if (e.key === "Enter") { inputCantidad.focus(); inputCantidad.select(); }
+        } else {
+            inputNombre.value = ""; inputPrecio.value = ""; inputNombre.classList.remove("is-valid-custom");
         }
+    });
 
-        const subtotal = precio * cantidadSolicitada;
-        const fila = document.createElement("tr");
-        fila.setAttribute("data-stock", stock);
-        fila.setAttribute("data-idproducto", idproducto);
+    inputCantidad.addEventListener("keypress", (e) => { if(e.key === "Enter") btnAgregar.click(); });
 
-        fila.innerHTML = `
-          <td class="col-codigo text-center small" style="padding: 4px;">${codigo}</td>
-          <td class="col-nombre small" style="padding: 4px;">${nombre}</td>
-          <td class="col-precio text-end small" style="padding: 4px;">$${precio.toFixed(2)}</td>
-          <td class="col-cantidad" style="padding: 4px;">
-            <div class="d-flex justify-content-center">
-              <input type="number" class="form-control form-control-sm text-center cantidad" 
-                     value="${cantidadSolicitada}" min="1" 
-                     style="width:55px; height:24px; font-size: 0.85rem;"/>
-            </div>
-          </td>
-          <td class="subtotal text-end small" style="padding: 4px;">$${subtotal.toFixed(2)}</td>
-          <td class="col-quitar text-center" style="padding: 4px;">
-            <button class="btn btn-danger btn-sm btn-quitar" style="padding: 0px 6px; font-size: 0.7rem;">x</button>
-          </td>
-        `;
+    btnAgregar.addEventListener("click", function() {
+        if (!productoEncontrado) return;
+        agregarFila(productoEncontrado.idProducto, productoEncontrado.codigo, productoEncontrado.nombre, productoEncontrado.precioVenta, inputCantidad.value);
+        inputCodigo.value = ""; inputNombre.value = ""; inputPrecio.value = ""; inputCantidad.value = "1";
+        inputCodigo.focus();
+    });
 
-        document.querySelector("#tablaFactura tbody").appendChild(fila);
-        actualizarTotales();
-        verificarStock();
+    function seleccionarDesdeModal(id, cod, nom, pre) {
+        agregarFila(id, cod, nom, pre, 1);
+        bootstrap.Modal.getInstance(document.getElementById("modalProductos")).hide();
+        inputCodigo.focus();
     }
 
-    // -------------------------------------------------------------------------
-    // 2. LÓGICA DE CARGA RÁPIDA (CON PRECIO Y SUBTOTAL)
-    // -------------------------------------------------------------------------
-    document.addEventListener("DOMContentLoaded", function() {
-        const inputCodigo = document.getElementById("inputCodigoRapido");
-        const inputNombre = document.getElementById("inputNombreRapido");
-        const inputCantidad = document.getElementById("inputCantidadRapida");
-        const inputPrecio = document.getElementById("inputPrecioRapido");
-        const inputSubtotal = document.getElementById("inputSubtotalRapido");
-        const btnAgregar = document.getElementById("btnAgregarRapido");
-
-        let productoEncontrado = null;
-
-        function calcularSubtotalRapido() {
-            const p = productoEncontrado ? productoEncontrado.precioVenta : 0;
-            const c = parseInt(inputCantidad.value) || 0;
-            inputSubtotal.value = '$' + (p * c).toFixed(2);
+    function agregarFila(id, cod, nom, pre, cant) {
+        let tbody = document.querySelector("#tablaFactura tbody");
+        let filaExistente = tbody.querySelector(`tr[data-id="${id}"]`);
+        
+        if (filaExistente) {
+            let input = filaExistente.querySelector(".cantidad");
+            input.value = parseInt(input.value) + parseInt(cant);
+            recalcularFila(input);
+        } else {
+            let tr = document.createElement("tr");
+            tr.setAttribute("data-id", id);
+            tr.innerHTML = `
+                <td class="small fw-bold">${cod}</td>
+                <td>${nom}</td>
+                <td class="pre text-end">$${parseFloat(pre).toFixed(2)}</td>
+                <td><input type="number" class="form-control form-control-sm text-center cantidad" value="${cant}" oninput="recalcularFila(this)" min="1"></td>
+                <td class="sub text-end fw-bold">$${(pre * cant).toFixed(2)}</td>
+                <td class="text-center"><button class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove(); actualizarTotales();"><i class="bi bi-x-lg"></i></button></td>`;
+            tbody.appendChild(tr);
         }
+        actualizarTotales();
+    }
 
-        inputCodigo.addEventListener("keyup", function(e) {
-            const busqueda = e.target.value.trim();
-            productoEncontrado = listaProductosData.find(p => p.codigo == busqueda);
+    function recalcularFila(input) {
+        let tr = input.closest("tr");
+        let precio = parseFloat(tr.querySelector(".pre").innerText.replace("$", ""));
+        tr.querySelector(".sub").innerText = "$" + (precio * input.value).toFixed(2);
+        actualizarTotales();
+    }
 
-            if (productoEncontrado) {
-                inputNombre.value = productoEncontrado.nombre;
-                inputPrecio.value = '$' + productoEncontrado.precioVenta.toFixed(2);
-                inputNombre.classList.add("is-valid");
-                calcularSubtotalRapido();
-                
-                if (e.key === "Enter") {
-                    inputCantidad.focus();
-                    inputCantidad.select();
-                }
-            } else {
-                inputNombre.value = "";
-                inputPrecio.value = "";
-                inputSubtotal.value = "";
-                inputNombre.classList.remove("is-valid");
-            }
-        });
+    function actualizarTotales() {
+        let sub = 0;
+        document.querySelectorAll(".sub").forEach(td => sub += parseFloat(td.innerText.replace("$", "")));
+        let desc = parseFloat(document.getElementById("descuento").value) || 0;
+        let total = sub - (sub * (desc / 100));
+        document.getElementById("subtotalFactura").innerText = "$" + sub.toFixed(2);
+        document.getElementById("totalFactura").innerText = "$" + total.toFixed(2);
+        document.getElementById("modalTotal").innerText = "$" + total.toFixed(2);
+    }
 
-        inputCantidad.addEventListener("input", calcularSubtotalRapido);
-
-        inputCantidad.addEventListener("keypress", function(e) {
-            if (e.key === "Enter") btnAgregar.click();
-        });
-
-        btnAgregar.addEventListener("click", function() {
-            if (!productoEncontrado) {
-                alert("Código no válido");
-                inputCodigo.focus();
-                return;
-            }
-
-            const cant = parseInt(inputCantidad.value);
-            if (isNaN(cant) || cant <= 0) {
-                alert("Ingrese una cantidad válida");
-                return;
-            }
-
-            agregarFilaFactura(
-                productoEncontrado.idProducto,
-                productoEncontrado.codigo,
-                productoEncontrado.nombre,
-                productoEncontrado.precioVenta,
-                productoEncontrado.stockActual,
-                cant
-            );
-
-            // Resetear panel y foco
-            inputCodigo.value = "";
-            inputNombre.value = "";
-            inputPrecio.value = "";
-            inputSubtotal.value = "";
-            inputCantidad.value = "1";
-            productoEncontrado = null;
-            inputCodigo.focus();
-        });
+    // --- COBRO Y VUELTO ---
+    document.getElementById("modalAbonar").addEventListener("shown.bs.modal", function() {
+        document.getElementById("montoAbonado").value = "";
+        document.getElementById("vuelto").innerText = "$0.00";
+        document.getElementById("montoAbonado").focus();
     });
 
-    // -------------------------------------------------------------------------
-    // 3. NUEVA FACTURA (LIMPIEZA TOTAL)
-    // -------------------------------------------------------------------------
-    document.getElementById('btnNuevaFactura').addEventListener('click', function () {
-        if (!confirm("¿Desea anular la carga actual y empezar una factura nueva?")) return;
-
-        // Limpiar tabla
-        document.querySelector('#tablaFactura tbody').innerHTML = "";
-
-        // Limpiar cliente
-        ["idCliente", "dniCliente", "nombreCliente", "direccionCliente", "localidadCliente", "telefonoCliente"].forEach(id => {
-            document.getElementById(id).value = "";
-        });
-
-        // Reiniciar totales
-        document.getElementById('subtotalFactura').textContent = "0.00";
-        document.getElementById('totalFactura').textContent = "0.00";
-        document.getElementById('descuento').value = 0;
-
-        // Limpiar panel carga rápida
-        document.getElementById("inputCodigoRapido").value = "";
-        document.getElementById("inputNombreRapido").value = "";
-        document.getElementById("inputNombreRapido").classList.remove("is-valid");
-        document.getElementById("inputCantidadRapida").value = "1";
-        if(document.getElementById("inputPrecioRapido")) document.getElementById("inputPrecioRapido").value = "";
-        if(document.getElementById("inputSubtotalRapido")) document.getElementById("inputSubtotalRapido").value = "";
-
-        // Refrescar Nro Factura y Foco
-        cargarNroFactura();
-        document.getElementById("inputCodigoRapido").focus();
+    document.getElementById("montoAbonado").addEventListener("input", function() {
+        let total = parseFloat(document.getElementById("totalFactura").innerText.replace("$", ""));
+        let pago = parseFloat(this.value) || 0;
+        let res = pago - total;
+        document.getElementById("vuelto").innerText = "$" + (res < 0 ? "0.00" : res.toFixed(2));
     });
 
-    // -------------------------------------------------------------------------
-    // 4. EVENTOS DE CLIENTES Y FACTURACIÓN
-    // -------------------------------------------------------------------------
-
-    document.querySelector('#tablaProductos tbody').addEventListener('click', function (e) {
-        if (e.target.classList.contains('seleccionarProducto')) {
-            const btn = e.target;
-            agregarFilaFactura(
-                btn.dataset.idproducto, btn.dataset.codigo, btn.dataset.nombre,
-                parseFloat(btn.dataset.precio), parseInt(btn.dataset.stock), 1
-            );
-            const modal = bootstrap.Modal.getInstance(document.getElementById("modalProductos"));
-            if (modal) modal.hide();
-        }
-    });
-
-    document.addEventListener("DOMContentLoaded", function () {
-        const modal = document.getElementById("clientesModal");
-        modal.addEventListener("show.bs.modal", function () {
-            fetch("/Clientes/ObtenerClientes").then(r => r.json()).then(clientes => {
-                const tbody = document.getElementById("tablaClientes");
-                tbody.innerHTML = "";
-                clientes.forEach(c => {
-                    const tr = document.createElement("tr");
-                    tr.dataset.id = c.idCliente; tr.dataset.nombre = c.nombreCliente;
-                    tr.dataset.dni = c.dniCliente; tr.dataset.domicilio = c.domicilio;
-                    tr.dataset.localidad = c.localidad; tr.dataset.telefono = c.telefonoCliente;
-                    tr.innerHTML = `<td>${c.dniCliente}</td><td>${c.nombreCliente}</td><td>${c.domicilio}</td><td>${c.localidad}</td><td>${c.telefonoCliente}</td><td><button type="button" class="btn btn-sm btn-success seleccionar-cliente">Seleccionar</button></td>`;
-                    tbody.appendChild(tr);
-                });
-            });
-        });
-
-        document.getElementById("filtroCliente").addEventListener("input", function () {
-            fetch("/Clientes/BuscarClientes?filtro=" + encodeURIComponent(this.value)).then(r => r.json()).then(clientes => {
-                const tbody = document.getElementById("tablaClientes");
-                tbody.innerHTML = "";
-                clientes.forEach(c => {
-                    const tr = document.createElement("tr");
-                    tr.dataset.id = c.idCliente; tr.dataset.nombre = c.nombreCliente;
-                    tr.dataset.dni = c.dniCliente; tr.dataset.domicilio = c.domicilio;
-                    tr.dataset.localidad = c.localidad; tr.dataset.telefono = c.telefonoCliente;
-                    tr.innerHTML = `<td>${c.dniCliente}</td><td>${c.nombreCliente}</td><td>${c.domicilio}</td><td>${c.localidad}</td><td>${c.telefonoCliente}</td><td><button type="button" class="btn btn-sm btn-success seleccionar-cliente">Seleccionar</button></td>`;
-                    tbody.appendChild(tr);
-                });
-            });
-        });
-
-        document.addEventListener("click", function (e) {
-            if (e.target.classList.contains("seleccionar-cliente")) {
-                const tr = e.target.closest("tr");
-                document.getElementById("idCliente").value = tr.dataset.id;
-                document.getElementById("nombreCliente").value = tr.dataset.nombre;
-                document.getElementById("dniCliente").value = tr.dataset.dni;
-                document.getElementById("direccionCliente").value = tr.dataset.domicilio;
-                document.getElementById("localidadCliente").value = tr.dataset.localidad;
-                document.getElementById("telefonoCliente").value = tr.dataset.telefono;
-                bootstrap.Modal.getInstance(modal).hide();
+    document.querySelectorAll('input[name="medioPago"]').forEach(r => {
+        r.addEventListener("change", function() {
+            document.getElementById("divVuelto").style.opacity = (this.value === "CtaCte") ? "0.3" : "1";
+            if(this.value === "CtaCte" && document.getElementById("idCliente").value === "8") {
+                alert("⚠️ Debe seleccionar un cliente de la lista para vender a Cuenta Corriente (Fiado).");
+                document.getElementById("rEf").checked = true;
+                document.getElementById("divVuelto").style.opacity = "1";
             }
         });
     });
 
-    document.getElementById("confirmarCompra").addEventListener("click", function () {
-        const filas = document.querySelectorAll("#tablaFactura tbody tr");
+    // --- REGISTRO FINAL (AQUÍ CORREGIMOS EL NOMBREPROD) ---
+    document.getElementById("confirmarCompra").addEventListener("click", function() {
+        const idCliente = document.getElementById("idCliente").value;
+        const medio = document.querySelector('input[name="medioPago"]:checked').value;
+        const totalVenta = document.getElementById("totalFactura").innerText.replace("$", "").replace(",", ".");
+        
         const productos = [];
-        filas.forEach(fila => {
-            const id = parseInt(fila.getAttribute("data-idproducto"));
-            const nombre = fila.querySelector("td:nth-child(2)").textContent.trim();
-            const precio = parseFloat(fila.querySelector("td:nth-child(3)").textContent.replace("$", ""));
-            const cantidad = parseInt(fila.querySelector(".cantidad").value);
-            if (cantidad > 0) productos.push({ IdProducto: id, NombreProd: nombre, Cantidad: cantidad, Precio: precio });
+        document.querySelectorAll("#tablaFactura tbody tr").forEach(tr => {
+            productos.push({ 
+                IdProducto: tr.dataset.id, 
+                Cantidad: tr.querySelector(".cantidad").value, 
+                Precio: tr.querySelector(".pre").innerText.replace("$", "").replace(",", "."),
+                NombreProd: tr.cells[1].innerText // <--- SOLUCIÓN AL ERROR DE SQL
+            });
         });
 
-        const totalFactura = parseFloat(document.getElementById("totalFactura").textContent) || 0;
-        const idCliente = parseInt(document.getElementById("idCliente").value || "0");
+        if(productos.length === 0) return alert("❌ Cargue productos para la venta.");
 
-        if (totalFactura <= 0 || productos.length === 0 || idCliente === 0) {
-            alert("Faltan datos para confirmar la compra."); return;
-        }
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando...';
 
         fetch("/Ventas/RegistrarVenta", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ idCliente, vendedor, montoVenta: totalFactura, productos })
-        })
-        .then(r => r.json()).then(data => {
-            if (data.success) {
-                alert("Venta guardada con éxito.");
-                document.querySelector("#tablaFactura tbody").innerHTML = "";
-                actualizarTotales();
-                ["dniCliente", "nombreCliente", "direccionCliente", "localidadCliente", "telefonoCliente", "idCliente"].forEach(id => document.getElementById(id).value = "");
-                cargarNroFactura();
-                bootstrap.Modal.getInstance(document.getElementById("modalAbonar")).hide();
+            body: JSON.stringify({
+                IdCliente: idCliente,
+                MontoVenta: totalVenta,
+                Vendedor: vendedor,
+                MedioPago: medio,
+                TipoVenta: (medio === "CtaCte" ? "Cuenta Corriente" : "Contado"),
+                Items: productos
+            })
+        }).then(r => r.json()).then(data => {
+            if(data.success) {
+                alert("✅ ¡Venta registrada correctamente!");
+                location.reload();
             } else {
-                alert("Error: " + data.message);
+                alert("❌ Error: " + data.message);
+                this.disabled = false;
+                this.innerText = "CONFIRMAR Y FINALIZAR";
             }
         });
     });
 
-    function cargarNroFactura() {
-        fetch('/Ventas/ObtenerProximoNroFactura')
-            .then(r => r.json())
-            .then(d => { if(d.success) document.getElementById("nroFacturaPrincipal").textContent = d.nroFactura; });
-    }
-
-    function actualizarTotales() {
-        let subtotal = 0;
-        document.querySelectorAll(".subtotal").forEach(s => subtotal += parseFloat(s.innerText.replace("$", "")));
-        document.getElementById("subtotalFactura").innerText = subtotal.toFixed(2);
-        let desc = parseFloat(document.getElementById("descuento").value) || 0;
-        document.getElementById("totalFactura").innerText = (subtotal - (subtotal * (desc / 100))).toFixed(2);
-    }
-
-    document.addEventListener("input", function (e) {
-        if (e.target.classList.contains("cantidad")) {
-            const fila = e.target.closest("tr");
-            const precio = parseFloat(fila.querySelector("td:nth-child(3)").innerText.replace("$", ""));
-            const cant = parseInt(e.target.value) || 0;
-            fila.querySelector(".subtotal").innerText = `$${(precio * cant).toFixed(2)}`;
-            actualizarTotales();
-        }
+    // --- FILTROS Y CLIENTES ---
+    document.getElementById("filtroCliente").addEventListener("input", function() {
+        listarClientes(this.value);
     });
 
-    document.addEventListener("click", function (e) {
-        if (e.target.classList.contains("btn-quitar")) {
-            e.target.closest("tr").remove();
-            actualizarTotales();
-        }
-    });
-
-    document.getElementById("descuento").addEventListener("input", actualizarTotales);
-
-    function verificarStock() {
-        document.querySelectorAll("#tablaProductos tbody tr").forEach(fila => {
-            const stock = parseInt(fila.children[2].textContent);
-            fila.style.color = stock <= 0 ? "red" : "";
+    function listarClientes(filtro) {
+        fetch("/Clientes/BuscarClientes?filtro=" + filtro)
+        .then(r => r.json())
+        .then(data => {
+            let html = "";
+            data.forEach(c => {
+                html += `<tr>
+                    <td>${c.dniCliente || '---'}</td>
+                    <td>${c.nombreCliente}</td>
+                    <td><button class="btn btn-success btn-sm" onclick="seleccionarCli(${c.idCliente}, '${c.nombreCliente}', '${c.dniCliente || ''}')">Ok</button></td>
+                </tr>`;
+            });
+            document.getElementById("tablaClientes").innerHTML = html;
         });
     }
 
-    document.getElementById("montoAbonado").addEventListener("input", function () {
-        const total = parseFloat(document.getElementById("modalTotal").innerText);
-        const abonado = parseFloat(this.value);
-        document.getElementById("vuelto").innerText = (abonado >= total) ? (abonado - total).toFixed(2) : "0.00";
+    function seleccionarCli(id, nom, dni) {
+        document.getElementById("idCliente").value = id;
+        document.getElementById("nombreCliente").value = nom;
+        document.getElementById("dniCliente").value = dni;
+        bootstrap.Modal.getInstance(document.getElementById("clientesModal")).hide();
+    }
+
+    document.getElementById("filtroProductosModal").addEventListener("input", function() {
+        let filtro = this.value.toLowerCase();
+        document.querySelectorAll("#tablaProductosModal tr").forEach(tr => {
+            tr.style.display = tr.innerText.toLowerCase().includes(filtro) ? "" : "none";
+        });
     });
 
-    document.getElementById("modalAbonar").addEventListener("shown.bs.modal", function () {
-        document.getElementById("modalTotal").innerText = document.getElementById("totalFactura").innerText;
-        document.getElementById("nroFactura").textContent = document.getElementById("nroFacturaPrincipal").textContent;
-        document.getElementById("montoAbonado").focus();
-    });
-
-    document.getElementById("buscarProducto").addEventListener("input", function () {
-        const f = this.value.toLowerCase();
-        document.querySelectorAll("#tablaProductos tbody tr").forEach(r => r.style.display = r.innerText.toLowerCase().includes(f) ? "" : "none");
-    });
-
-    cargarNroFactura();
+    function cargarNroFactura() {
+        fetch('/Ventas/ObtenerProximoNroFactura').then(r => r.json()).then(d => { 
+            document.getElementById("nroFacturaPrincipal").textContent = d.nroFactura; 
+        });
+    }
 </script>
 }

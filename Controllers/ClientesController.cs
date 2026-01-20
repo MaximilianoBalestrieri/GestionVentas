@@ -109,4 +109,25 @@ public class ClientesController : Controller
 
         return PartialView("_TablaClientes", clientesPagina);
     }
+
+[HttpGet]
+public JsonResult BuscarClientes(string filtro)
+{
+    // Reutilizamos tu método que ya trae todo de la DB
+    var clientes = conexion.ObtenerClientes();
+
+    if (!string.IsNullOrEmpty(filtro))
+    {
+        filtro = filtro.ToLower();
+        clientes = clientes.Where(c =>
+            (c.NombreCliente != null && c.NombreCliente.ToLower().Contains(filtro)) ||
+            (c.DniCliente != null && c.DniCliente.Contains(filtro))
+        ).ToList();
+    }
+
+    // Devolvemos la lista en formato JSON para que el modal la entienda
+    return Json(clientes);
+}
+
+
 }

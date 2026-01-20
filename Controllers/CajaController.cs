@@ -15,32 +15,55 @@ public class CajaController : Controller
     }
 
     // 1. Pantalla principal: Muestra el estado actual, el resumen y movimientos
-    public IActionResult Index()
+   public IActionResult Index()
+{
+    var cajaAbierta = conexion.Cajas.FirstOrDefault(c => c.EstaAbierta);
+
+    if (cajaAbierta == null)
     {
-        var cajaAbierta = conexion.Cajas
-            .FirstOrDefault(c => c.EstaAbierta);
-
-        if (cajaAbierta == null)
-        {
-            return RedirectToAction("AbrirCaja");
-        }
-
-        // Cargamos los movimientos de la caja actual para mostrar en una tabla
-        var movimientos = conexion.MovimientosCaja
-            .Where(m => m.CajaId == cajaAbierta.Id)
-            .OrderByDescending(m => m.Fecha)
-            .ToList();
-
-        // Calculamos el saldo acumulado en memoria para la vista
-       // Usamos el Enum para filtrar correctamente
-decimal ingresos = movimientos.Where(m => m.Tipo == TipoMovimiento.Ingreso).Sum(m => m.Monto);
-decimal egresos = movimientos.Where(m => m.Tipo == TipoMovimiento.Egreso).Sum(m => m.Monto);
-        
-        ViewBag.SaldoActual = cajaAbierta.MontoInicial + ingresos - egresos;
-        ViewBag.Movimientos = movimientos;
-
-        return View(cajaAbierta);
+        return RedirectToAction("AbrirCaja");
     }
+
+    var movimientos = conexion.MovimientosCaja
+        .Where(m => m.CajaId == cajaAbierta.Id)
+        .OrderByDescending(m => m.Fecha)
+        .ToList();
+
+    // --- CÁLCULOS FILTRADOS ---
+
+    // 1. EFECTIVO (Verde)
+    decimal ingresosEfectivo = movimientos
+        .Where(m => m.Tipo == TipoMovimiento.Ingreso && m.Concepto.Contains("(Efectivo)"))
+        .Sum(m => m.Monto);
+
+    decimal egresosEfectivo = movimientos
+        .Where(m => m.Tipo == TipoMovimiento.Egreso && m.Concepto.Contains("(Efectivo)"))
+        .Sum(m => m.Monto);
+
+    // 2. TRANSFERENCIA (Azul)
+    decimal ingresosTransferencia = movimientos
+        .Where(m => m.Tipo == TipoMovimiento.Ingreso && m.Concepto.Contains("(Transferencia)"))
+        .Sum(m => m.Monto);
+
+    decimal egresosTransferencia = movimientos
+        .Where(m => m.Tipo == TipoMovimiento.Egreso && m.Concepto.Contains("(Transferencia)"))
+        .Sum(m => m.Monto);
+
+    // --- ASIGNACIÓN A VIEWBUG ---
+
+    // Efectivo: Inicial + Entradas Efectivo - Salidas Efectivo
+    ViewBag.TotalEfectivo = cajaAbierta.MontoInicial + ingresosEfectivo - egresosEfectivo;
+    
+    // Transferencia: Entradas Transf - Salidas Transf
+    ViewBag.TotalTransferencia = ingresosTransferencia - egresosTransferencia;
+
+    // Saldo Total (La suma de lo que hay en ambos "bolsillos")
+    ViewBag.SaldoActual = ViewBag.TotalEfectivo + ViewBag.TotalTransferencia;
+    
+    ViewBag.Movimientos = movimientos;
+
+    return View(cajaAbierta);
+}
 
     // 2. GET: Formulario de Apertura
     [HttpGet]
@@ -75,49 +98,49 @@ decimal egresos = movimientos.Where(m => m.Tipo == TipoMovimiento.Egreso).Sum(m 
 
     // 4. POST: Registrar un Ingreso o Egreso manual (ej: pago a proveedor)
    [HttpPost]
-[ValidateAntiForgeryToken]
-public IActionResult NuevoMovimiento(decimal monto, string concepto, TipoMovimiento tipo) // Cambiado a TipoMovimiento
-{
-    var cajaActual = conexion.Cajas.FirstOrDefault(c => c.EstaAbierta);
-    
-    if (cajaActual != null)
-    {
-        var mov = new MovimientoCaja
-        {
-            CajaId = cajaActual.Id,
-            Fecha = DateTime.Now,
-            Monto = monto,
-            Concepto = concepto,
-            Tipo = tipo 
-        };
-
-        conexion.MovimientosCaja.Add(mov);
-        conexion.SaveChanges();
-    }
-
-    return RedirectToAction("Index");
-}
 
     // 5. GET: Formulario de Cierre (Arqueo)
-   [HttpGet]
+  [HttpGet]
 public IActionResult CerrarCaja()
 {
+    // Buscamos la caja que está abierta actualmente
     var caja = conexion.Cajas.FirstOrDefault(c => c.EstaAbierta);
-    if (caja == null) return RedirectToAction("Index");
 
-    // Obtenemos todos los movimientos de esta caja
-    var movimientos = conexion.MovimientosCaja.Where(m => m.CajaId == caja.Id).ToList();
-    
-    // Calculamos el neto: Sumamos si es Ingreso, restamos si es Egreso
-    decimal neto = movimientos.Sum(m => m.Tipo == TipoMovimiento.Ingreso ? m.Monto : -m.Monto);
-    
-    ViewBag.TotalEsperado = caja.MontoInicial + neto;
+    if (caja == null)
+    {
+        return RedirectToAction("Index");
+    }
+
+    // Traemos todos los movimientos de ESTA caja
+    var movimientos = conexion.MovimientosCaja
+        .Where(m => m.CajaId == caja.Id)
+        .ToList();
+
+    // Calculamos subtotales de EFECTIVO
+    decimal ingresosEfectivo = movimientos
+        .Where(m => m.Tipo == TipoMovimiento.Ingreso && m.Concepto.Contains("(Efectivo)"))
+        .Sum(m => m.Monto);
+
+    decimal egresosEfectivo = movimientos
+        .Where(m => m.Tipo == TipoMovimiento.Egreso && m.Concepto.Contains("(Efectivo)"))
+        .Sum(m => m.Monto);
+
+    // Calculamos subtotales de TRANSFERENCIA
+    decimal ingresosTransf = movimientos
+        .Where(m => m.Tipo == TipoMovimiento.Ingreso && m.Concepto.Contains("(Transferencia)"))
+        .Sum(m => m.Monto);
+
+    decimal egresosTransf = movimientos
+        .Where(m => m.Tipo == TipoMovimiento.Egreso && m.Concepto.Contains("(Transferencia)"))
+        .Sum(m => m.Monto);
+
+    // Enviamos los datos a la vista mediante ViewBag
+    ViewBag.TotalEsperadoEfectivo = caja.MontoInicial + ingresosEfectivo - egresosEfectivo;
+    ViewBag.TotalEsperadoTransferencia = ingresosTransf - egresosTransf;
 
     return View(caja);
 }
-
-    // 6. POST: Procesar Cierre
-    [HttpPost]
+[HttpPost]
 [ValidateAntiForgeryToken]
 public IActionResult CerrarCaja(decimal montoFisicoReal)
 {
@@ -127,15 +150,63 @@ public IActionResult CerrarCaja(decimal montoFisicoReal)
     {
         var movimientos = conexion.MovimientosCaja.Where(m => m.CajaId == caja.Id).ToList();
         
-        // Calculamos el neto correctamente antes de usarlo
-        decimal neto = movimientos.Sum(m => m.Tipo == TipoMovimiento.Ingreso ? m.Monto : -m.Monto);
+        // 1. Calculamos el esperado de EFECTIVO (para comparar contra lo que el usuario contó)
+        decimal ingresosEfectivo = movimientos.Where(m => m.Tipo == TipoMovimiento.Ingreso && m.Concepto.Contains("(Efectivo)")).Sum(m => m.Monto);
+        decimal egresosEfectivo = movimientos.Where(m => m.Tipo == TipoMovimiento.Egreso && m.Concepto.Contains("(Efectivo)")).Sum(m => m.Monto);
+        decimal esperadoEfectivo = caja.MontoInicial + ingresosEfectivo - egresosEfectivo;
 
-        caja.MontoEsperado = caja.MontoInicial + neto;
-        caja.MontoFinalReal = montoFisicoReal;
+        // 2. Calculamos el esperado de TRANSFERENCIAS
+        decimal ingresosTransf = movimientos.Where(m => m.Tipo == TipoMovimiento.Ingreso && m.Concepto.Contains("(Transferencia)")).Sum(m => m.Monto);
+        decimal egresosTransf = movimientos.Where(m => m.Tipo == TipoMovimiento.Egreso && m.Concepto.Contains("(Transferencia)")).Sum(m => m.Monto);
+        decimal esperadoTransf = ingresosTransf - egresosTransf;
+
+        // 3. Guardamos los valores en el modelo de Caja
+        // MontoEsperado: Es el total bruto que DEBERÍA haber sumando ambos medios
+        caja.MontoEsperado = esperadoEfectivo + esperadoTransf;
+        
+        // MontoFinalReal: Guardamos lo que el usuario contó físicamente + lo que ya sabemos que hay en el banco
+        // Así, la diferencia final de la caja se basará solo en el error de conteo del efectivo.
+        caja.MontoFinalReal = montoFisicoReal + esperadoTransf;
+        
         caja.FechaCierre = DateTime.Now;
         caja.EstaAbierta = false;
 
         conexion.Cajas.Update(caja);
+        conexion.SaveChanges();
+    }
+
+    return RedirectToAction("Index");
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public IActionResult NuevoMovimiento(decimal monto, string concepto, TipoMovimiento tipo, string medioPago)
+{
+    var cajaActual = conexion.Cajas.FirstOrDefault(c => c.EstaAbierta);
+    
+    if (cajaActual != null)
+    {
+        // Concatenamos el medio de pago para que las tarjetas de la vista funcionen
+        string conceptoFinal = $"{concepto} ({medioPago})";
+
+        var mov = new MovimientoCaja
+        {
+            CajaId = cajaActual.Id,
+            Fecha = DateTime.Now,
+            Monto = monto,
+            Concepto = conceptoFinal, 
+            Tipo = tipo 
+        };
+
+        conexion.MovimientosCaja.Add(mov);
+
+        // Actualizamos el MontoEsperado general de la caja
+        if (tipo == TipoMovimiento.Ingreso)
+            cajaActual.MontoEsperado += monto;
+        else
+            cajaActual.MontoEsperado -= monto;
+
+        conexion.Cajas.Update(cajaActual);
         conexion.SaveChanges();
     }
 

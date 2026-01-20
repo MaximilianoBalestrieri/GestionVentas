@@ -2,33 +2,46 @@
 
 @{
     ViewData["Title"] = "Cierre de Caja";
-    decimal totalEsperado = ViewBag.TotalEsperado;
+    // Traemos los subtotales desde el controlador
+    decimal totalEsperadoEfectivo = ViewBag.TotalEsperadoEfectivo ?? 0;
+    decimal totalEsperadoTransferencia = ViewBag.TotalEsperadoTransferencia ?? 0;
+    decimal totalGeneral = totalEsperadoEfectivo + totalEsperadoTransferencia;
 }
 
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-7">
             <div class="card shadow-lg border-0">
                 <div class="card-header bg-dark text-white text-center py-4">
                     <i class="fas fa-calculator fa-3x mb-3 text-warning"></i>
                     <h3 class="fw-bold mb-0">Arqueo y Cierre</h3>
-                    <p class="mb-0 opacity-75">Finalización del Turno</p>
+                    <p class="mb-0 opacity-75">Control de valores del turno</p>
                 </div>
                 
                 <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <div class="p-3 border rounded bg-light text-center">
+                                <small class="text-uppercase text-muted fw-bold d-block">Efectivo Esperado</small>
+                                <span class="h4 fw-bold text-success">$ @totalEsperadoEfectivo.ToString("N2")</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 border rounded bg-light text-center">
+                                <small class="text-uppercase text-muted fw-bold d-block">Transferencias</small>
+                                <span class="h4 fw-bold text-primary">$ @totalEsperadoTransferencia.ToString("N2")</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="alert alert-secondary border-0 shadow-sm mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span>Monto de Apertura:</span>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span>Apertura (Efectivo):</span>
                             <span class="fw-bold">$ @Model.MontoInicial.ToString("N2")</span>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2 text-primary">
-                            <span>Ventas e Ingresos:</span>
-                            <span class="fw-bold">+ $ @((totalEsperado - Model.MontoInicial >= 0 ? totalEsperado - Model.MontoInicial : 0).ToString("N2"))</span>
-                        </div>
-                        <hr>
                         <div class="d-flex justify-content-between align-items-center">
-                            <span class="h5 mb-0">Saldo Esperado:</span>
-                            <span class="h5 mb-0 fw-bold text-dark">$ @totalEsperado.ToString("N2")</span>
+                            <span class="h5 mb-0 fw-bold">Total General Bruto:</span>
+                            <span class="h5 mb-0 fw-bold text-dark">$ @totalGeneral.ToString("N2")</span>
                         </div>
                     </div>
 
@@ -44,10 +57,11 @@
                                        id="montoFisicoReal" 
                                        name="montoFisicoReal" 
                                        class="form-control border-warning fw-bold" 
-                                       placeholder="Ingrese el total contado" 
-                                       oninput="calcularDiferencia(@totalEsperado)"
+                                       placeholder="¿Cuánto dinero hay en el cajón?" 
+                                       oninput="calcularDiferencia(@totalEsperadoEfectivo.ToString().Replace(",","."))"
                                        required />
                             </div>
+                            <small class="text-muted">El sistema comparará esto contra los <b>$ @totalEsperadoEfectivo.ToString("N2")</b> esperados.</small>
                         </div>
 
                         <div id="resultadoDiferencia" class="p-3 rounded mb-4 d-none">
@@ -60,10 +74,10 @@
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-dark btn-lg">
-                                <i class="fas fa-lock me-2"></i>CONFIRMAR CIERRE
+                                <i class="fas fa-lock me-2"></i>CONFIRMAR Y FINALIZAR
                             </button>
                             <a asp-action="Index" class="btn btn-link text-muted text-decoration-none">
-                                <i class="fas fa-chevron-left me-1"></i> Volver sin cerrar
+                                <i class="fas fa-chevron-left me-1"></i> Volver al panel
                             </a>
                         </div>
                     </form>
@@ -87,15 +101,15 @@
             if (Math.abs(diferencia) < 0.01) {
                 divResultado.classList.add('alert-success');
                 valorSpan.innerText = "$ 0.00";
-                mensaje.innerText = "La caja cuadra perfectamente.";
+                mensaje.innerText = "El efectivo coincide perfectamente.";
             } else if (diferencia > 0) {
                 divResultado.classList.add('alert-warning');
                 valorSpan.innerText = "+ $ " + diferencia.toLocaleString('es-AR', {minimumFractionDigits: 2});
-                mensaje.innerText = "Hay un SOBRANTE de dinero.";
+                mensaje.innerText = "Hay un SOBRANTE en el cajón físico.";
             } else {
                 divResultado.classList.add('alert-danger');
                 valorSpan.innerText = "- $ " + Math.abs(diferencia).toLocaleString('es-AR', {minimumFractionDigits: 2});
-                mensaje.innerText = "Hay un FALTANTE de dinero.";
+                mensaje.innerText = "Hay un FALTANTE en el cajón físico.";
             }
         }
     </script>
