@@ -190,40 +190,40 @@
 </div>
 
 <div class="modal fade" id="modalAbonar" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-success border-3">
-            <div class="modal-header bg-success text-white">
-                <h4 class="modal-title w-100 text-center">Cobrar Venta</h4>
+    <div class="modal-dialog modal-dialog-centered modal-sm" style="max-width: 420px;">
+        <div class="modal-content border-success border-2">
+            <div class="modal-header bg-success text-white py-2">
+                <h5 class="modal-title w-100 text-center">Cobrar Venta</h5>
             </div>
-            <div class="modal-body text-center">
-                <h1 class="text-primary mb-4" style="font-size: 3.5rem;">Total: <span id="modalTotal">$0.00</span></h1>
+            <div class="modal-body text-center py-2">
+                <h2 class="text-primary mb-2" style="font-size: 2.2rem;">Total: <span id="modalTotal">$0.00</span></h2>
 
-                <label class="form-label fw-bold">Seleccione Medio de Pago:</label>
-                <div class="btn-group w-100 mb-4 shadow-sm" role="group">
+                <p class="small fw-bold mb-1">Medio de Pago:</p>
+                <div class="btn-group w-100 mb-3 shadow-sm" role="group">
                     <input type="radio" class="btn-check" name="medioPago" id="rEf" value="Efectivo" checked>
-                    <label class="btn btn-outline-success py-3" for="rEf"><i class="bi bi-cash fs-3"></i><br>Efectivo</label>
+                    <label class="btn btn-outline-success py-2" for="rEf"><i class="bi bi-cash fs-4"></i><br><small>Efectivo</small></label>
 
                     <input type="radio" class="btn-check" name="medioPago" id="rTr" value="Transferencia">
-                    <label class="btn btn-outline-primary py-3" for="rTr"><i class="bi bi-bank fs-3"></i><br>Transf.</label>
+                    <label class="btn btn-outline-primary py-2" for="rTr"><i class="bi bi-bank fs-4"></i><br><small>Transf.</small></label>
 
                     <input type="radio" class="btn-check" name="medioPago" id="rCc" value="CtaCte">
-                    <label class="btn btn-outline-warning py-3" for="rCc"><i class="bi bi-person-vcard fs-3"></i><br>Fiado</label>
+                    <label class="btn btn-outline-warning py-2" for="rCc"><i class="bi bi-person-vcard fs-4"></i><br><small>Cta Cte</small></label>
                 </div>
 
                 <div id="divVuelto">
-                    <div class="form-group mb-3">
-                        <label class="fs-4">¿Con cuánto paga?</label>
-                        <input type="number" class="form-control form-control-lg text-center fw-bold" id="montoAbonado" style="font-size: 2.5rem; color: #198754;">
+                    <div class="form-group mb-2">
+                        <label class="small fw-bold">¿Con cuánto paga?</label>
+                        <input type="number" class="form-control form-control-sm text-center fw-bold" id="montoAbonado" style="font-size: 1.8rem; color: #198754; height: 50px;">
                     </div>
-                    <div class="alert alert-danger py-2">
-                        <h3 class="mb-0">Vuelto: <span id="vuelto">$0.00</span></h3>
+                    <div class="alert alert-danger py-1 mb-0">
+                        <h4 class="mb-0">Vuelto: <span id="vuelto">$0.00</span></h4>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer justify-content-center">
-                <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Volver</button>
-                <button type="button" class="btn btn-success btn-lg px-5" id="confirmarCompra">
-                    <i class="bi bi-printer"></i> CONFIRMAR Y FINALIZAR
+            <div class="modal-footer justify-content-center py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Volver</button>
+                <button type="button" class="btn btn-success btn-sm px-4" id="confirmarCompra">
+                    <i class="bi bi-printer"></i> CONFIRMAR
                 </button>
             </div>
         </div>

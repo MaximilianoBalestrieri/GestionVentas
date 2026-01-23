@@ -16,11 +16,8 @@ namespace GestionVentas.Controllers
             db = new ConexionDB(config);
         }
 
-        // --- VISTA PRINCIPAL DE VENTA ---
         public ActionResult Create()
         {
-            // Intentamos obtener la caja abierta usando la lógica que ya tenés en ConexionDB
-            // Si el método RegistrarVenta puede encontrar una caja, nosotros lo simulamos aquí
             bool hayCaja = db.VerificarSiHayCajaAbierta(); 
 
             if (!hayCaja)
@@ -30,43 +27,77 @@ namespace GestionVentas.Controllers
             }
 
             var productos = db.ObtenerProductos() ?? new List<Productos>();
-            
-            // Nombre del vendedor para la vista
             ViewBag.nombreyApellido = User.Identity.Name ?? "Vendedor"; 
             return View(productos);
         }
 
-        // --- PROCESAR LA VENTA ---
-        [HttpPost]
-        public JsonResult RegistrarVenta([FromBody] VentaCompleta datos)
+      [HttpPost]
+public JsonResult RegistrarVenta([FromBody] VentaCompleta datos)
+{
+    try
+    {
+        if (datos == null || datos.Items == null || datos.Items.Count == 0)
+            return Json(new { success = false, message = "No hay productos seleccionados." });
+
+        // 1. Registramos la venta en la DB (Factura, Items, Stock, y Saldo de Cliente)
+        var resultado = db.RegistrarVenta(datos);
+
+        if (resultado.success) 
         {
-            try
+            // --- LÓGICA DE IMPACTO EN CAJA ---
+            var cajaAbierta = db.Cajas.FirstOrDefault(c => c.EstaAbierta);
+            
+            if (cajaAbierta != null)
             {
-                if (datos == null || datos.Items == null || datos.Items.Count == 0)
-                    return Json(new { success = false, message = "No hay productos seleccionados." });
+                string medio = datos.MedioPago ?? "Efectivo";
 
-                // Llamamos al método de ConexionDB que ya modificamos juntos
-                // Este ya maneja: Factura, Items, Stock, Caja (si es efectivo) y CtaCte
-                var resultado = db.RegistrarVenta(datos);
+                // FILTRO CLAVE: Solo impacta en caja si NO es Fiado/CtaCte
+                // Agregamos todas las variantes posibles por seguridad
+                bool esCtaCte = medio.Equals("CtaCte", StringComparison.OrdinalIgnoreCase) || 
+                                medio.Equals("Cuenta Corriente", StringComparison.OrdinalIgnoreCase);
 
-                if (!resultado.success) 
-                    return Json(new { success = false, message = resultado.error });
+                if (!esCtaCte)
+                {
+                    // Si llegamos acá, es Efectivo o Transferencia
+                    string etiquetaMedio = medio.Contains("Transferencia") ? "(Transferencia)" : "(Efectivo)";
+                    
+                    var mov = new MovimientoCaja
+                    {
+                        CajaId = cajaAbierta.Id,
+                        Fecha = DateTime.Now,
+                        Monto = datos.MontoVenta,
+                        Concepto = $"Venta Factura N° {resultado.idFactura} {etiquetaMedio}",
+                        Tipo = TipoMovimiento.Ingreso
+                    };
 
-                string nroFacturaFormateado = "0001-" + resultado.idFactura.ToString("D8");
-                
-                return Json(new { 
-                    success = true, 
-                    idFactura = resultado.idFactura, 
-                    nroFactura = nroFacturaFormateado 
-                });
+                    db.MovimientosCaja.Add(mov);
+
+                    // Solo sumamos al esperado si entró dinero físico o banco
+                    cajaAbierta.MontoEsperado += datos.MontoVenta;
+                    
+                    db.Cajas.Update(cajaAbierta);
+                    db.SaveChanges();
+                }
             }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = "Error: " + ex.Message });
-            }
+
+            string nroFacturaFormateado = "0001-" + resultado.idFactura.ToString("D8");
+            return Json(new { 
+                success = true, 
+                idFactura = resultado.idFactura, 
+                nroFactura = nroFacturaFormateado 
+            });
         }
+        else
+        {
+            return Json(new { success = false, message = resultado.error });
+        }
+    }
+    catch (Exception ex)
+    {
+        return Json(new { success = false, message = "Error: " + ex.Message });
+    }
+}
 
-        // --- UTILIDAD PARA LA VISTA ---
         [HttpGet]
         public JsonResult ObtenerProximoNroFactura()
         {
