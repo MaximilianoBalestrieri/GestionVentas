@@ -1,0 +1,129 @@
+@{
+    Layout = null; // Usamos null para que no herede estilos viejos que puedan romper el diseño
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <title>Ferretería Santiago - Inicio</title>
+    <link rel="stylesheet" href="~/css/inicio.css" />
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="logo">Ferretería <span>Santiago</span></div>
+        <nav>
+            <a href="@Url.Action("Index", "Login")" class="btn-login">Login</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1>Bienvenidos a Ferretería Santiago</h1>
+            <p>Calidad, confianza y los mejores precios para tu hogar o empresa.</p>
+        </section>
+
+<div class="ticker-wrapper">
+    <div class="ticker">
+        <div class="ticker-group">
+            <span class="ticker-item">HERRAMIENTAS</span>
+            <span class="ticker-item">JARDINERÍA</span>
+            <span class="ticker-item">CORRALÓN</span>
+            <span class="ticker-item">SANITARIOS</span>
+            <span class="ticker-item">ELECTRICIDAD</span>
+            <span class="ticker-item">PINTURAS</span>
+        </div>
+        <div class="ticker-group">
+            <span class="ticker-item">HERRAMIENTAS</span>
+            <span class="ticker-item">JARDINERÍA</span>
+            <span class="ticker-item">CORRALÓN</span>
+            <span class="ticker-item">SANITARIOS</span>
+            <span class="ticker-item">ELECTRICIDAD</span>
+            <span class="ticker-item">PINTURAS</span>
+        </div>
+    </div>
+</div>
+
+      <section class="ofertas-container">
+    <div class="container">
+        <h2 class="titulo-seccion">Ofertas Imperdibles</h2>
+        <div class="grid-ofertas">
+
+            <div class="card-producto">
+                <div class="badge-oferta">OFERTA</div>
+                <div class="img-container">
+                    <img src="~/imagenes/productos/taladroElectrico.jpg" alt="Taladro">
+                </div>
+                <div class="info-producto">
+                    <h3>Taladro Percutor 13mm</h3>
+                    <p>Potencia y precisión para tus trabajos en casa. Incluye maletín y accesorios.</p>
+                    <div class="precio-box">
+                        <span class="precio-anterior">$45.000</span>
+                        <span class="precio-actual">$38.500</span>
+                    </div>
+                    <!-- <button class="btn-ver-mas">Consultar</button> -->
+                </div>
+            </div>
+
+            <div class="card-producto">
+                <div class="badge-oferta">OFERTA</div>
+                <div class="img-container">
+                    <img src="~/imagenes/productos/pintura.jpg" alt="Pintura">
+                </div>
+                <div class="info-producto">
+                    <h3>Pintura Látex Interior 20L</h3>
+                    <p>Máximo cubrimiento y lavable. Disponible en blanco y colores pasteles.</p>
+                    <div class="precio-box">
+                        <span class="precio-anterior">$32.000</span>
+                        <span class="precio-actual">$27.900</span>
+                    </div>
+                 <!-- <button class="btn-ver-mas">Consultar</button> -->
+                </div>
+            </div>
+
+            <div class="card-producto">
+                <div class="badge-oferta">OFERTA</div>
+                <div class="img-container">
+                    <img src="~/imagenes/productos/juegoLlaves.jpg" alt="Herramientas">
+                </div>
+                <div class="info-producto">
+                    <h3>Set Llaves Combinadas</h3>
+                    <p>Juego de 12 piezas de acero cromo vanadio. Garantía de por vida.</p>
+                    <div class="precio-box">
+                        <span class="precio-anterior">$18.500</span>
+                        <span class="precio-actual">$14.200</span>
+                    </div>
+                    <!-- <button class="btn-ver-mas">Consultar</button> -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+  <section class="contacto-breve">
+    <div class="contacto-container">
+        <span class="contacto-dato">
+            <i class="fa-solid fa-location-dot"></i> Av. Velez Sarsfield N° 123 , La Paz, Córdoba
+        </span>
+        
+        <a href="https://wa.me/5491112345678" target="_blank" class="contacto-link whatsapp">
+            <i class="fa-brands fa-whatsapp"></i> WhatsApp: 11 1234-5678
+        </a>
+        
+        <a href="https://instagram.com/ferreteriasantiago" target="_blank" class="contacto-link instagram">
+            <i class="fa-brands fa-instagram"></i> @@ferreteriasantiago
+        </a>
+    </div>
+</section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; @DateTime.Now.Year - Ferretería Santiago. Todos los derechos reservados.</p>
+    </footer>
+
+</body>
+</html>

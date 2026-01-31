@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace GestionVentas.Controllers
 {
-    [Authorize] 
+  //  [Authorize] 
     public class HomeController : Controller
     {
         private readonly ConexionDB db;
@@ -15,6 +15,13 @@ namespace GestionVentas.Controllers
             this.db = db;
         }
 
+[AllowAnonymous] // Esto asegura que cualquiera pueda ver la landing
+        public IActionResult Inicio()
+        {
+            return View();
+        }
+
+        [Authorize]
         public IActionResult Index()
         {
             var usuario = HttpContext.Session.GetString("Usuario");
@@ -35,6 +42,7 @@ namespace GestionVentas.Controllers
             return View();
         }
 
+        [Authorize]
         public IActionResult Perfil()
         {
             var usuarioNombre = HttpContext.Session.GetString("Usuario");

@@ -1,0 +1,130 @@
+/* Configuración Base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #fdfdfd;
+    color: #333;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 5%;
+    background-color: #2c3e50;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.logo {
+    font-size: 1.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.logo span {
+    color: #f39c12; /* Color naranja industrial */
+}
+
+/* BOTÓN LOGIN VERDE */
+.btn-login {
+    background-color: #28a745;
+    color: white !important;
+    padding: 8px 18px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background 0.3s ease;
+    border: none;
+}
+
+.btn-login:hover {
+    background-color: #218838;
+}
+
+/* Hero Section */
+.hero {
+    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
+                url('https://images.unsplash.com/photo-1581244276891-83393a899f2a?q=80&w=1200') no-repeat center center/cover;
+    height: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: white;
+    padding: 0 20px;
+}
+
+.hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+/* Promociones */
+.info-section {
+    padding: 50px 5%;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.container h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2rem;
+}
+
+.grid-promos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    border-left: 5px solid #f39c12;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.tag {
+    background: #e74c3c;
+    color: white;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+.card h3 {
+    margin: 10px 0;
+}
+
+/* Footer y Contacto */
+.contacto-breve {
+    background: #eee;
+    text-align: center;
+    padding: 20px;
+    font-size: 0.9rem;
+}
+
+.footer {
+    background: #2c3e50;
+    color: #bdc3c7;
+    text-align: center;
+    padding: 15px;
+    font-size: 0.8rem;
+}

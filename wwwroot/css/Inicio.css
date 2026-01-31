@@ -1,0 +1,379 @@
+/* Configuración Base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #fdfdfd;
+    color: #333;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 5%;
+    background-color: #2c3e50;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.logo {
+    font-size: 1.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.logo span {
+    color: #f39c12; /* Color naranja industrial */
+}
+
+/* BOTÓN LOGIN VERDE */
+.btn-login {
+    background-color: #28a745;
+    color: white !important;
+    padding: 8px 18px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background 0.3s ease;
+    border: none;
+}
+
+.btn-login:hover {
+    background-color: #218838;
+}
+
+/* Hero Section */
+.hero {
+    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
+                url('https://images.unsplash.com/photo-1581244276891-83393a899f2a?q=80&w=1200') no-repeat center center/cover;
+    height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: white;
+    padding: 0 20px;
+}
+
+.hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+/* Promociones */
+.info-section {
+    padding: 50px 5%;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.container h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2rem;
+}
+
+.grid-promos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    border-left: 5px solid #f39c12;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.tag {
+    background: #e74c3c;
+    color: white;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+.card h3 {
+    margin: 10px 0;
+}
+
+/* Footer y Contacto */
+.contacto-breve {
+    background: #eee;
+    text-align: center;
+    padding: 20px;
+    font-size: 0.9rem;
+}
+
+.footer {
+    background: #2c3e50;
+    color: #bdc3c7;
+    text-align: center;
+    padding: 15px;
+    font-size: 0.8rem;
+}
+
+/* Sección de Ofertas */
+.ofertas-container {
+    padding: 60px 5%;
+    background-color: #f8f9fa;
+}
+
+.titulo-seccion {
+    text-align: center;
+    margin-bottom: 40px;
+    font-size: 2.2rem;
+    color: #2c3e50;
+    text-transform: uppercase;
+    font-weight: 800;
+}
+
+.grid-ofertas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Estilo de la Card */
+.card-producto {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-producto:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+/* Badge de Oferta */
+.badge-oferta {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background-color: #e74c3c;
+    color: white;
+    padding: 5px 12px;
+    font-weight: bold;
+    font-size: 0.8rem;
+    border-radius: 5px;
+    z-index: 10;
+}
+
+/* Imagen del Producto */
+.img-container {
+    height: 150px;       /* Bajamos de 200px a 150px para que sea más pequeña */
+    overflow: hidden;
+    background-color: #fff; /* Blanco queda mejor si la imagen es chica */
+    display: flex;       /* Centra la imagen */
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+}
+
+.img-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.5s ease;
+}
+
+.card-producto:hover .img-container img {
+    transform: scale(1.1);
+}
+
+/* Información del Producto */
+.info-producto {
+    padding: 20px;
+    text-align: center;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.info-producto h3 {
+    font-size: 1.25rem;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.info-producto p {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+/* Precios */
+.precio-box {
+    margin-bottom: 15px;
+}
+
+.precio-anterior {
+    text-decoration: line-through;
+    color: #999;
+    font-size: 0.9rem;
+    margin-right: 10px;
+}
+
+.precio-actual {
+    color: #28a745;
+    font-size: 1.4rem;
+    font-weight: bold;
+}
+
+/* Botón Consultar */
+.btn-ver-mas {
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+
+.btn-ver-mas:hover {
+    background-color: #f39c12;
+    color: #2c3e50;
+}
+
+.ticker-wrapper {
+    width: 100%;
+    overflow: hidden;
+    background-color: #2c3e50;
+    padding: 15px 0;
+    border-bottom: 3px solid #f39c12;
+    display: flex;
+}
+
+.ticker {
+    display: flex;
+    width: fit-content; /* Se ajusta al tamaño de las palabras */
+    animation: moverTicker 25s linear infinite; /* Un poco más lento para más elegancia */
+}
+
+.ticker-group {
+    display: flex;
+    flex-shrink: 0; /* Evita que las palabras se amontonen */
+}
+
+.ticker-item {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #f39c12;
+    padding: 0 40px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    white-space: nowrap;
+}
+
+/* Animación sin saltos */
+@keyframes moverTicker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); } /* Mueve exactamente la mitad (un grupo completo) */
+}
+
+.ticker-wrapper:hover .ticker {
+    animation-play-state: paused;
+}
+.contacto-breve {
+    background: #f1f1f1;
+    padding: 25px 0;
+    border-top: 1px solid #ddd;
+}
+
+.contacto-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px; /* Espacio entre los datos */
+    flex-wrap: wrap; /* Para que en celulares se pongan uno abajo del otro */
+}
+
+.contacto-dato, .contacto-link {
+    font-size: 1rem;
+    color: #444;
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    transition: color 0.3s ease;
+}
+
+.contacto-link:hover {
+    color: #2c3e50;
+}
+
+/* Colores específicos para que resalten al pasar el mouse */
+.whatsapp:hover {
+    color: #25d366; /* Verde WhatsApp */
+}
+
+.instagram:hover {
+    color: #e1306c; /* Rosa Instagram */
+}
+
+.icono {
+    margin-right: 8px;
+    font-style: normal;
+}
+
+/* Ajuste para pantallas chicas */
+@media (max-width: 600px) {
+    .contacto-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+
+/* Estilo para los iconos */
+.contacto-container i {
+    margin-right: 10px;
+    font-size: 1.2rem;
+}
+
+/* Color oficial de WhatsApp */
+.whatsapp i {
+    color: #25D366;
+}
+
+/* Color oficial de Instagram (un degrade o el rosa clásico) */
+.instagram i {
+    color: #E1306C;
+}
+
+/* Ubicación en gris azulado */
+.fa-location-dot {
+    color: #2c3e50;
+}
+
+/* Efecto al pasar el mouse sobre el link entero */
+.contacto-link:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}

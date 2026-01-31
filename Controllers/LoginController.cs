@@ -58,7 +58,7 @@ namespace GestionVentas.Controllers
         {
             await HttpContext.SignOutAsync("MiCookieAuth");
             HttpContext.Session.Clear();
-            return RedirectToAction("Index", "Login");
+            return RedirectToAction("Inicio", "Home");
         }
 
         [HttpGet]
