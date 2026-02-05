@@ -3,7 +3,7 @@
 @{
     ViewBag.Title = "Detalle del Presupuesto";
 }
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <head>
     <link rel="stylesheet" href="/css/presupuesto.css" />
 </head>
@@ -73,23 +73,135 @@
     </div>
 </div>
 
-<div class="text-end mt-2 d-print-none">
-    <button onclick="window.print()" class="btn btn-primary">Imprimir</button>
-    <div class="d-flex justify-content-end mt-4">
-        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Volver</a>
-    </div>
+<div class="text-end mt-4 d-print-none">
+   <button onclick="imprimirLindo()" class="btn btn-primary">Imprimir</button>
+<button onclick="enviarPorWhatsApp()" class="btn btn-success">Enviar x WhatsApp</button>
+    
+    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Volver</a>
 </div>
 
+<style>
+    @@media print {
+        .d-print-none { display: none !important; }
+    }
+    /* Estabiliza el renderizado del PDF */
+    #facturaImprimible {
+        background-color: white !important;
+        padding: 15px !important;
+    }
+    .table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+</style>
 <script>
-    function imprimirFactura() {
-        const factura = document.querySelector('.card');
+    // 1. Función unificada con parámetro de "margen extra"
+    function generarHTMLPresupuesto(conEspacioExtra = false) {
+        const nro = "@Model.IdPresupuesto";
+        const cliente = "@Model.NombreCliente";
+        const telefono = "@Model.TelefonoCliente";
+        const totalCalculado = "@Model.Items.Sum(p => p.Subtotal).ToString("N2")";
+
+        let html = `
+            <div style="font-family: Arial, sans-serif; padding: 20px 40px; color: #000; background-color: white;">
+                <div style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
+                    <h1 style="margin:0; font-size: 28px;">Ferretería Santiago</h1>
+                    <p style="margin:0; font-size: 14px;">📍 La Paz, Córdoba</p>
+                </div>
+                <table style="width: 100%; margin-bottom: 20px; font-size: 14px;">
+                    <tr>
+                        <td style="width: 50%;"><strong>Presupuesto Nro:</strong> ${nro}</td>
+                        <td style="text-align: right; width: 50%;"><strong>Fecha:</strong> ${new Date().toLocaleDateString()}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cliente:</strong> ${cliente}</td>
+                        <td><strong>Teléfono:</strong> ${telefono}</td>
+                    </tr>
+                </table>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;" border="1">
+                    <thead style="background-color: #f2f2f2;">
+                        <tr>
+                            <th style="padding: 10px; text-align: left;">Producto</th>
+                            <th style="padding: 10px; text-align: center; width: 60px;">Cant.</th>
+                            <th style="padding: 10px; text-align: right; width: 100px;">Precio Unit.</th>
+                            <th style="padding: 10px; text-align: right; width: 100px;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        const items = [
+            @foreach (var item in Model.Items) {
+                <text>{ nombre: "@item.Nombre", cant: "@item.Cantidad", precio: "@item.PrecioUnitario.ToString("N2")", sub: "@item.Subtotal.ToString("N2")" },</text>
+            }
+        ];
+
+        items.forEach(item => {
+            html += `
+                <tr>
+                    <td style="padding: 8px;">${item.nombre}</td>
+                    <td style="padding: 8px; text-align: center;">${item.cant}</td>
+                    <td style="padding: 8px; text-align: right;">$${item.precio}</td>
+                    <td style="padding: 8px; text-align: right;">$${item.sub}</td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                    <tfoot>
+                        <tr style="background-color: #333; color: #fff;">
+                            <td colspan="3" style="padding: 12px; text-align: right; font-weight: bold; font-size: 15px;">TOTAL</td>
+                            <td style="padding: 12px; text-align: right; font-weight: bold; font-size: 15px;">$${totalCalculado}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #555;">
+                    <p>Este presupuesto   tiene una validez de 15 días.</p>
+                    <p><strong>Gracias por elegirnos.</strong></p>
+                </div>
+                ${conEspacioExtra ? '<div style="height: 60px;"></div>' : ''}
+            </div>
+        `;
+        return html;
+    }
+
+    // 2. Imprimir (Sin espacio extra para no gastar hoja)
+    function imprimirLindo() {
+        const contenido = generarHTMLPresupuesto(false);
+        const ventana = window.open('', '_blank');
+        ventana.document.write('<html><head><title>Imprimir</title></head><body>' + contenido + '</body></html>');
+        ventana.document.close();
+        setTimeout(() => { ventana.print(); ventana.close(); }, 500);
+    }
+
+    // 3. WhatsApp (CON espacio extra para que no corte el TOTAL)
+    function enviarPorWhatsApp() {
+        const nro = "@Model.IdPresupuesto";
+        const cliente = "@Model.NombreCliente";
+        const telefono = "@Model.TelefonoCliente";
+        const totalCalculado = "@Model.Items.Sum(p => p.Subtotal).ToString("N2")";
+
+        if (!telefono || telefono.trim() === "") {
+            alert("El cliente no tiene teléfono.");
+            return;
+        }
+
+        // Pasamos 'true' para agregar el margen de seguridad abajo
+        const contenido = generarHTMLPresupuesto(true);
+        
         const opciones = {
-            margin: 10,
-            filename: 'Presupuesto.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
+            margin: [10, 5, 10, 5],
+            filename: 'Presupuesto_' + nro + '.pdf',
+            image: { type: 'jpeg', quality: 1 },
+            html2canvas: { scale: 3, scrollY: 0 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
-        html2pdf().set(opciones).from(factura).save();
+
+        html2pdf().from(contenido).set(opciones).save().then(() => {
+            const telLimpio = telefono.replace(/\D/g, '');
+            const texto = `Hola *${cliente}*!\nTe envío el presupuesto solicitado de *Ferretería Santiago*.\n\nNro: ${nro}\nTotal: $${totalCalculado}`;
+            window.open(`https://wa.me/${telLimpio}?text=${encodeURIComponent(texto)}`, '_blank');
+        });
     }
 </script>

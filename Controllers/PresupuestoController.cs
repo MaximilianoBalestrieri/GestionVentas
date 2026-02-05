@@ -44,22 +44,47 @@ namespace GestionVentas.Controllers
         }
 
         // POST: Presupuesto/Create
-        [HttpPost]
-        public ActionResult Create(Presupuesto presupuesto)
+      [HttpPost]
+public ActionResult Create(Presupuesto presupuesto)
+{
+    try
+    {
+        // 1. CORRECCIÓN DE DECIMALES:
+        // Recorremos los items para arreglar el precio que .NET entendió mal
+        for (int i = 0; i < presupuesto.Items.Count; i++)
         {
-            try
-            {
-                presupuesto.Fecha = DateTime.Now;
-                db.AgregarPresupuesto(presupuesto);
+            // Buscamos el nombre exacto que tiene el input en el HTML
+            string key = $"Items[{i}].PrecioUnitario";
+            string precioRaw = Request.Form[key];
 
-                return RedirectToAction("Index");
-            }
-            catch (Exception ex)
+            if (!string.IsNullOrEmpty(precioRaw))
             {
-                ViewBag.Error = "Ocurrió un error al guardar el presupuesto: " + ex.Message;
-                return View(presupuesto);
+                // Reemplazamos cualquier coma por punto (por si las dudas) 
+                // y parseamos usando InvariantCulture para que el punto SIEMPRE sea decimal.
+                string precioLimpio = precioRaw.Replace(",", ".");
+                
+                if (decimal.TryParse(precioLimpio, 
+                    System.Globalization.NumberStyles.Any, 
+                    System.Globalization.CultureInfo.InvariantCulture, 
+                    out decimal precioCorrecto))
+                {
+                    presupuesto.Items[i].PrecioUnitario = precioCorrecto;
+                }
             }
         }
+
+        // 2. Lógica normal de guardado
+        presupuesto.Fecha = DateTime.Now;
+        db.AgregarPresupuesto(presupuesto);
+
+        return RedirectToAction("Index");
+    }
+    catch (Exception ex)
+    {
+        ViewBag.Error = "Ocurrió un error al guardar el presupuesto: " + ex.Message;
+        return View(presupuesto);
+    }
+}
 
         [HttpGet]
         public IActionResult ObtenerSiguienteNroPresupuesto()
