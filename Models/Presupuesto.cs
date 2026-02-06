@@ -1,8 +1,10 @@
+using System.ComponentModel.DataAnnotations;
 namespace GestionVentas.Models
 {
 
     public class Presupuesto
     {
+       [Key]
         public int IdPresupuesto { get; set; }
         public string NombreCliente { get; set; }
         public string? TelefonoCliente { get; set; }
@@ -14,6 +16,7 @@ namespace GestionVentas.Models
 
     public class PresupuestoItem
     {
+       [Key]
         public int IdItem { get; set; }
         public int IdPresupuesto { get; set; }
          public string Nombre { get; set; }

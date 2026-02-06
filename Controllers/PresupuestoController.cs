@@ -86,6 +86,21 @@ public ActionResult Create(Presupuesto presupuesto)
     }
 }
 
+[HttpPost]
+[IgnoreAntiforgeryToken]
+public IActionResult ActualizarTelefono(int id, string telefono)
+{
+    try 
+    {
+        db.ActualizarTelefonoPresupuesto(id, telefono);
+        return Ok();
+    }
+    catch (Exception ex)
+    {
+        // Esto ayuda a ver si hay un error de conexión o de nombre de tabla
+        return BadRequest("Error: " + ex.Message);
+    }
+}
         [HttpGet]
         public IActionResult ObtenerSiguienteNroPresupuesto()
         {
@@ -136,5 +151,7 @@ public ActionResult Create(Presupuesto presupuesto)
 
             return Json(lista);
         }
+
+        
     }
 }

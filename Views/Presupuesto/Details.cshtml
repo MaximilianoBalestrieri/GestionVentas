@@ -4,6 +4,7 @@
     ViewBag.Title = "Detalle del Presupuesto";
 }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 <head>
     <link rel="stylesheet" href="/css/presupuesto.css" />
 </head>
@@ -35,8 +36,12 @@
             <div class="col-md-6">
                 <strong>Cliente:</strong> @Model.NombreCliente
             </div>
-            <div class="col-md-6 text-end">
-                <strong>Teléfono:</strong> @Model.TelefonoCliente
+            <div class="col-6 text-end">
+                <span onclick="abrirModalTelefono()" style="cursor: pointer; color: #007bff;"
+                    title="Click para editar o agregar teléfono">
+                    <strong>Teléfono:</strong>
+                    <span id="displayTelefono">@(string.IsNullOrEmpty(Model.TelefonoCliente) ? "Sin cargar (click aquí)" : Model.TelefonoCliente)</span>
+                </span>
             </div>
         </div>
 
@@ -74,21 +79,44 @@
 </div>
 
 <div class="text-end mt-4 d-print-none">
-   <button onclick="imprimirLindo()" class="btn btn-primary">Imprimir</button>
-<button onclick="enviarPorWhatsApp()" class="btn btn-success">Enviar x WhatsApp</button>
-    
+    <button onclick="imprimirLindo()" class="btn btn-primary">Imprimir</button>
+    <button onclick="enviarPorWhatsApp()" class="btn btn-success">Enviar x WhatsApp</button>
+
     <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Volver</a>
+</div>
+
+<div class="modal fade" id="modalTelefono" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Teléfono</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="nuevoTelefono" class="form-control" value="@Model.TelefonoCliente"
+                    placeholder="Ej: 1165954613">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarTelefono()">Guardar</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>
     @@media print {
-        .d-print-none { display: none !important; }
+        .d-print-none {
+            display: none !important;
+        }
     }
+
     /* Estabiliza el renderizado del PDF */
     #facturaImprimible {
         background-color: white !important;
         padding: 15px !important;
     }
+
     .table {
         width: 100% !important;
         border-collapse: collapse !important;
@@ -114,8 +142,8 @@
                         <td style="text-align: right; width: 50%;"><strong>Fecha:</strong> ${new Date().toLocaleDateString()}</td>
                     </tr>
                     <tr>
-                        <td><strong>Cliente:</strong> ${cliente}</td>
-                        <td><strong>Teléfono:</strong> ${telefono}</td>
+                         <td><strong>Cliente:</strong> ${cliente}</td>
+                         <td style="text-align: right;"><strong>Teléfono:</strong> ${telefonoActual}</td>
                     </tr>
                 </table>
                 <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;" border="1">
@@ -131,8 +159,9 @@
         `;
 
         const items = [
-            @foreach (var item in Model.Items) {
-                <text>{ nombre: "@item.Nombre", cant: "@item.Cantidad", precio: "@item.PrecioUnitario.ToString("N2")", sub: "@item.Subtotal.ToString("N2")" },</text>
+            @foreach (var item in Model.Items)
+            {
+                <text>{nombre: "@item.Nombre", cant: "@item.Cantidad", precio: "@item.PrecioUnitario.ToString("N2")", sub: "@item.Subtotal.ToString("N2")" },</text>
             }
         ];
 
@@ -176,32 +205,81 @@
     }
 
     // 3. WhatsApp (CON espacio extra para que no corte el TOTAL)
-    function enviarPorWhatsApp() {
-        const nro = "@Model.IdPresupuesto";
-        const cliente = "@Model.NombreCliente";
-        const telefono = "@Model.TelefonoCliente";
-        const totalCalculado = "@Model.Items.Sum(p => p.Subtotal).ToString("N2")";
+   function enviarPorWhatsApp() {
+    const nro = "@Model.IdPresupuesto";
+    const cliente = "@Model.NombreCliente";
+    
+    // CAMBIO CLAVE: Quitamos las comillas y el @Model, usamos la variable dinámica
+    const telefono = telefonoActual; 
 
-        if (!telefono || telefono.trim() === "") {
-            alert("El cliente no tiene teléfono.");
-            return;
-        }
+    const totalCalculado = "@Model.Items.Sum(p => p.Subtotal).ToString("N2")";
 
-        // Pasamos 'true' para agregar el margen de seguridad abajo
-        const contenido = generarHTMLPresupuesto(true);
-        
-        const opciones = {
-            margin: [10, 5, 10, 5],
-            filename: 'Presupuesto_' + nro + '.pdf',
-            image: { type: 'jpeg', quality: 1 },
-            html2canvas: { scale: 3, scrollY: 0 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdf().from(contenido).set(opciones).save().then(() => {
-            const telLimpio = telefono.replace(/\D/g, '');
-            const texto = `Hola *${cliente}*!\nTe envío el presupuesto solicitado de *Ferretería Santiago*.\n\nNro: ${nro}\nTotal: $${totalCalculado}`;
-            window.open(`https://wa.me/${telLimpio}?text=${encodeURIComponent(texto)}`, '_blank');
-        });
+    // Validamos con la variable actualizada
+    if (!telefono || telefono.trim() === "" || telefono.includes("Sin cargar")) {
+        alert("El cliente no tiene un teléfono válido. Cargalo haciendo clic en 'Teléfono:'.");
+        return;
     }
+
+    const contenido = generarHTMLPresupuesto(true);
+
+    const opciones = {
+        margin: [10, 5, 10, 5],
+        filename: 'Presupuesto_' + nro + '.pdf',
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 3, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().from(contenido).set(opciones).save().then(() => {
+        // Ahora telLimpio usará el número que acabás de guardar
+        const telLimpio = telefono.replace(/\D/g, '');
+        const texto = `Hola *${cliente}*!\nTe envío el presupuesto solicitado de *Ferretería Santiago*.\n\nNro: ${nro}\nTotal: $${totalCalculado}`;
+        
+        // Usamos api.whatsapp.com que es más estable para estas cosas
+        window.open(`https://api.whatsapp.com/send?phone=${telLimpio}&text=${encodeURIComponent(texto)}`, '_blank');
+    });
+}
+
+    // Variable global para mantener el teléfono actualizado en la sesión actual
+   // 1. Variable global (se inicia con el valor del modelo o vacío)
+let telefonoActual = "@Model.TelefonoCliente";
+
+function abrirModalTelefono() {
+    // Ponemos el valor actual en el input del modal para que sea fácil editar
+    document.getElementById('nuevoTelefono').value = telefonoActual;
+    var myModal = new bootstrap.Modal(document.getElementById('modalTelefono'));
+    myModal.show();
+}
+
+function guardarTelefono() {
+    const nuevoTel = document.getElementById('nuevoTelefono').value;
+    const idPresu = @Model.IdPresupuesto; // Sin comillas para que sea número
+
+    // Armamos la URL con los parámetros exactos
+    const url = `/Presupuesto/ActualizarTelefono?id=${idPresu}&telefono=${encodeURIComponent(nuevoTel)}`;
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(async response => {
+        if (response.ok) {
+            // ÉXITO: Actualizamos la pantalla
+            telefonoActual = nuevoTel;
+            document.getElementById('displayTelefono').innerText = nuevoTel;
+            
+            // Cerramos el modal
+            var modalElement = document.getElementById('modalTelefono');
+            var modalInstance = bootstrap.Modal.getInstance(modalElement);
+            modalInstance.hide();
+        } else {
+            // ERROR: Leemos qué dice el servidor
+            const msg = await response.text();
+            alert("Error del servidor: " + msg);
+        }
+    })
+    .catch(error => alert("Error de conexión: " + error));
+}
 </script>

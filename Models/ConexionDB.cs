@@ -451,9 +451,13 @@ namespace GestionVentas.Models
             }
         }
 
-
-
-
+// Asegurate de que el nombre aquí sea "Presupuesto" (singular)
+public void ActualizarTelefonoPresupuesto(int id, string nuevoTelefono)
+{
+    // Ejecutamos una sentencia SQL directa para no pasar por el validador de llaves de EF
+    string sql = "UPDATE presupuesto SET telefonoCliente = @p0 WHERE idPresupuesto = @p1";
+    this.Database.ExecuteSqlRaw(sql, nuevoTelefono, id);
+}
         // 1. VENTAS POR FECHA (DIARIO)
         public List<object> ObtenerTotalVentasPorFecha(DateTime desde, DateTime hasta)
         {
