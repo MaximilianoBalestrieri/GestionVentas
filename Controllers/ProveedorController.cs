@@ -54,31 +54,27 @@ namespace GestionVentas.Controllers
             return View();
         }
 
-        [HttpPost]
-        [Route("Proveedores/ActualizarPrecios")]
-        [ValidateAntiForgeryToken]
-        public IActionResult ActualizarPrecios(string nombreProveedor, string porcentajeAumento)
+       [HttpPost]
+[Route("Proveedores/ActualizarPrecios")]
+[IgnoreAntiforgeryToken] // Agregamos esto para que el fetch/post funcione sin problemas de tokens
+public IActionResult ActualizarPrecios(string nombreProveedor, decimal porcentajeAumento) // <--- Cambiado a decimal directamente
+{
+    try
+    {
+        if (!string.IsNullOrEmpty(nombreProveedor))
         {
-            try
-            {
-                var culturaArg = new System.Globalization.CultureInfo("es-AR");
-                if (decimal.TryParse(porcentajeAumento, System.Globalization.NumberStyles.Any, culturaArg, out decimal porcentajeLimpio))
-                {
-                    int cantidadAfectados = db.ActualizarPreciosPorProveedor(nombreProveedor, porcentajeLimpio);
-                    TempData["Mensaje"] = $"Se actualizaron los precios de {cantidadAfectados} productos del proveedor {nombreProveedor}.";
-                }
-                else
-                {
-                    ViewBag.Error = "El formato del porcentaje no es válido.";
-                }
-            }
-            catch (Exception ex)
-            {
-                ViewBag.Error = "Error al actualizar precios: " + ex.Message;
-            }
-
-            ViewBag.Proveedores = db.ObtenerProveedores();
-            return View();
+            int cantidadAfectados = db.ActualizarPreciosPorProveedor(nombreProveedor, porcentajeAumento);
+            TempData["Mensaje"] = $"Se actualizaron los precios de {cantidadAfectados} productos del proveedor {nombreProveedor}.";
         }
+    }
+    catch (Exception ex)
+    {
+        ViewBag.Error = "Error al actualizar precios: " + ex.Message;
+    }
+
+    ViewBag.Proveedores = db.ObtenerProveedores();
+    return View();
+}
+
     }
 }

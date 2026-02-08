@@ -1007,7 +1007,7 @@ public void ActualizarTelefonoPresupuesto(int id, string nuevoTelefono)
                     // comando.Parameters.AddWithValue("@PrecioVenta", producto.PrecioVenta);
                     comando.Parameters.AddWithValue("@StockActual", producto.StockActual);
                     comando.Parameters.AddWithValue("@StockMinimo", producto.StockMinimo);
-                    comando.Parameters.AddWithValue("@nombreProveedor", producto.NombreProveedor);
+                    comando.Parameters.AddWithValue("@NombreProveedor", producto.NombreProveedor);
                     comando.Parameters.AddWithValue("@Imagen", producto.Imagen ?? (object)DBNull.Value);
                     comando.Parameters.AddWithValue("@IdProducto", producto.IdProducto);
 
@@ -1506,26 +1506,30 @@ public void ActualizarTelefonoPresupuesto(int id, string nuevoTelefono)
             }
         }
 
-
-        public int ActualizarPreciosPorProveedor(string proveedor, decimal porcentaje)
-        {
-            using (SqlConnection conn = ObtenerConexion())
-            {
-                conn.Open();
-                // SQL: Sumamos el nuevo porcentaje al que ya existe en la columna RecargoPorcentaje
-                string sql = @"UPDATE productos 
-                       SET RecargoPorcentaje = RecargoPorcentaje + @porcentaje 
+public int ActualizarPreciosPorProveedor(string proveedor, decimal porcentaje)
+{
+    using (SqlConnection conn = ObtenerConexion())
+    {
+        conn.Open();
+        
+        // Explicación de la fórmula:
+        // 1. Multiplicamos el PrecioCosto por el factor de aumento (ej: 1.10 para un 10%)
+        // 2. Recalculamos el PrecioVenta usando el NUEVO PrecioCosto y el Recargo actual
+        string sql = @"UPDATE productos 
+                       SET PrecioCosto = PrecioCosto * (1 + (@porcentaje / 100)),
+                           PrecioVenta = (PrecioCosto * (1 + (@porcentaje / 100))) * (1 + (RecargoPorcentaje / 100))
                        WHERE NombreProveedor = @proveedor";
 
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
-                {
-                    // Pasamos el porcentaje (ejemplo: 10)
-                    cmd.Parameters.AddWithValue("@porcentaje", porcentaje);
-                    cmd.Parameters.AddWithValue("@proveedor", proveedor);
-                    return cmd.ExecuteNonQuery();
-                }
-            }
+        using (SqlCommand cmd = new SqlCommand(sql, conn))
+        {
+            // Importante: El porcentaje viene como número entero (ej: 10)
+            cmd.Parameters.AddWithValue("@porcentaje", porcentaje);
+            cmd.Parameters.AddWithValue("@proveedor", proveedor);
+            
+            return cmd.ExecuteNonQuery();
         }
+    }
+}
 
 
         public bool VerificarSiHayCajaAbierta()

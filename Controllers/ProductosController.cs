@@ -92,19 +92,33 @@ namespace GestionVentas.Controllers
             return View(productos);
 
         }
-        [HttpGet]
-        public JsonResult Buscar(string term)
-        {
-            var productos = db.ObtenerProductos();
-            if (!string.IsNullOrWhiteSpace(term))
-            {
-                productos = productos.Where(p =>
-                    p.Nombre.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                    p.Codigo.Contains(term, StringComparison.OrdinalIgnoreCase)
-                ).ToList();
-            }
-            return Json(productos);
-        }
+       [HttpGet]
+public JsonResult Buscar(string term, string proveedor)
+{
+    // Traemos todos los productos inicialmente
+    var productos = db.ObtenerProductos();
+
+    // Filtro por Nombre o Código (el primer input)
+    if (!string.IsNullOrWhiteSpace(term))
+    {
+        productos = productos.Where(p =>
+            p.Nombre.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+            (p.Codigo != null && p.Codigo.Contains(term, StringComparison.OrdinalIgnoreCase))
+        ).ToList();
+    }
+
+    // Filtro por Proveedor (el segundo input que agregamos)
+    if (!string.IsNullOrWhiteSpace(proveedor))
+    {
+        productos = productos.Where(p =>
+            p.NombreProveedor != null && 
+            p.NombreProveedor.Contains(proveedor, StringComparison.OrdinalIgnoreCase)
+        ).ToList();
+    }
+
+    return Json(productos);
+}
+        
 
         public ActionResult ObtenerProductos()
         {

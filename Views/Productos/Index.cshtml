@@ -7,8 +7,17 @@
 <div class="container mt-4">
 
     <form class="mb-3 d-flex align-items-center gap-2" onsubmit="return false;">
-    <input type="text" id="inputBusqueda" placeholder="Buscar productos..." class="form-control form-control-sm w-50" />
+  <div class="mb-3 d-flex align-items-center gap-2">
+    <div class="input-group input-group-sm" style="width: 250px;">
+        <span class="input-group-text bg-white border-end-0">🔍</span>
+        <input type="text" id="inputBusqueda" placeholder="Producto o código..." class="form-control border-start-0" />
+    </div>
 
+    <div class="input-group input-group-sm" style="width: 200px;">
+        <span class="input-group-text bg-white border-end-0">🚚</span>
+        <input type="text" id="inputProveedor" placeholder="Filtrar proveedor..." class="form-control border-start-0" />
+    </div>
+</div>
    <!--   <button class="btn btn-sm btn-outline-primary" onclick="buscarProductos()">🔍</button>  -->
 </form>
 
@@ -51,8 +60,7 @@
                 <td class="text-end">$@prod.PrecioCosto.ToString("0.00")</td>
                 <td class="text-center">@prod.RecargoPorcentaje %</td>
                 <td class="text-end"><strong>$@prod.PrecioVenta.ToString("0.00")</strong></td>
-               <td class="text-center @stockClass">@prod.StockActual</td>
-
+                <td class="text-center @stockClass">@prod.StockActual</td>
                 <td>@prod.NombreProveedor</td>
                 <td>
                     <a href="@Url.Action("Edit", "Productos", new { id = prod.IdProducto })" class="btn btn-sm btn-warning">✏️</a>
@@ -117,6 +125,7 @@
 
 @section Scripts {
 <script>
+    // --- Lógica del Modal de Imagen ---
     const modalImagen = document.getElementById('modalImagen');
     modalImagen.addEventListener('show.bs.modal', function (event) {
         const button = event.relatedTarget;
@@ -135,71 +144,81 @@
         mensajeImagen.style.display = 'none';
     });
 
-// <!-- Busqueda de productos -->
+    // --- Busqueda de productos (Doble Filtro) ---
+    const inputBusqueda = document.getElementById('inputBusqueda');
+    const inputProveedor = document.getElementById('inputProveedor'); // Asegurate que el id en el HTML coincida
 
- const inputBusqueda = document.getElementById('inputBusqueda');
+    function realizarBusqueda() {
+        const valorTerm = inputBusqueda.value.trim();
+        const valorProv = inputProveedor ? inputProveedor.value.trim() : "";
 
-inputBusqueda.addEventListener('input', function () {
-    const valor = this.value.trim();
+        // Enviamos ambos parámetros al servidor
+        fetch(`/Productos/Buscar?term=${encodeURIComponent(valorTerm)}&proveedor=${encodeURIComponent(valorProv)}`)
+            .then(response => {
+                if (!response.ok) throw new Error("Error en la respuesta del servidor");
+                return response.json();
+            })
+            .then(data => {
+                const tbody = document.querySelector("table tbody");
+                tbody.innerHTML = ""; // Limpiar resultados actuales
 
-    fetch(`/Productos/Buscar?term=${encodeURIComponent(valor)}`)
-        .then(response => {
-            if (!response.ok) throw new Error("Error en la respuesta del servidor");
-            return response.json();
-        })
-        .then(data => {
-            const tbody = document.querySelector("table tbody");
-            tbody.innerHTML = ""; // Limpiar resultados actuales
+                if (data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No se encontraron productos</td></tr>`;
+                    return;
+                }
 
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No se encontraron productos</td></tr>`;
-                return;
-            }
-console.log("Productos encontrados:", data);
+                console.log("Productos encontrados:", data);
 
-            data.forEach(prod => {
-               let fila = `<tr>
-    <td>${prod.codigo}</td>
-    <td>${prod.nombre}</td>
-    <td class="text-end">$${prod.precioCosto.toFixed(2)}</td>
-    <td class="text-center">${prod.recargoPorcentaje} %</td>
-    <td class="text-end"><strong>$${prod.precioVenta.toFixed(2)}</strong></td>
-    <td class="text-center ${prod.stockActual <= 3 ? 'text-danger fw-bold' : ''}">${prod.stockActual}</td>
-    <td>${prod.proveedor}</td>
-    <td>
-        <a href="/Productos/Edit/${prod.idProducto}" class="btn btn-sm btn-warning">✏️</a>
-        <a href="/Productos/Delete/${prod.idProducto}" class="btn btn-sm btn-danger">🗑️</a>
-        <button type="button"
-                class="btn btn-sm btn-info"
-                data-bs-toggle="modal"
-                data-bs-target="#modalImagen"
-                data-img="${prod.imagen?.replaceAll("\\\\", "/").trim()}"
-                data-nombre="${prod.nombre}"
-                data-descripcion="${prod.descripcion}">
-            🖼️ Ver Imagen
-        </button>
-    </td>
-</tr>`;
+                data.forEach(prod => {
+                    // Manejo del nombre del proveedor (ajustado según lo que vimos antes)
+                    let proveedorStr = prod.nombreProveedor || prod.NombreProveedor || "Sin Proveedor";
+                    
+                    // Limpieza de ruta de imagen
+                    let rutaImg = prod.imagen ? prod.imagen.replaceAll("\\\\", "/").trim() : "";
 
-                tbody.innerHTML += fila;
+                    let fila = `<tr>
+                        <td class="text-center">${prod.codigo}</td>
+                        <td>${prod.nombre}</td>
+                        <td class="text-end">$${prod.precioCosto.toFixed(2)}</td>
+                        <td class="text-center">${prod.recargoPorcentaje} %</td>
+                        <td class="text-end"><strong>$${prod.precioVenta.toFixed(2)}</strong></td>
+                        <td class="text-center ${prod.stockActual <= 3 ? 'text-danger fw-bold' : ''}">${prod.stockActual}</td>
+                        <td>${proveedorStr}</td>
+                        <td>
+                            <a href="/Productos/Edit/${prod.idProducto}" class="btn btn-sm btn-warning">✏️</a>
+                            <a href="/Productos/Delete/${prod.idProducto}" class="btn btn-sm btn-danger">🗑️</a>
+                            <button type="button"
+                                    class="btn btn-sm btn-info"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalImagen"
+                                    data-img="${rutaImg}"
+                                    data-nombre="${prod.nombre}"
+                                    data-descripcion="${prod.descripcion}">
+                                🖼️ Ver Imagen
+                            </button>
+                        </td>
+                    </tr>`;
+
+                    tbody.innerHTML += fila;
+                });
+            })
+            .catch(error => {
+                console.error("Error al cargar productos:", error);
             });
-        })
-        .catch(error => {
-            console.error("Error al cargar productos:", error);
-        });
-});
+    }
 
-function buscarProductos() {
-    inputBusqueda.dispatchEvent(new Event("input"));
-}
+    // Escuchamos ambos inputs
+    inputBusqueda.addEventListener('input', realizarBusqueda);
+    if (inputProveedor) {
+        inputProveedor.addEventListener('input', realizarBusqueda);
+    }
 
+    // Función por si el botón de la lupa sigue existiendo
+    function buscarProductos() {
+        realizarBusqueda();
+    }
 
-
-    // ------------------ fin busqueda de productos -----------------------------------
-
-
-    //----------------------------------- ordena por proveedor -----------------------------------
-
+    // --- Ordenar por proveedor ---
     let ordenAscendente = true;
 
     document.getElementById('ordenarProveedor').addEventListener('click', function () {
@@ -207,7 +226,7 @@ function buscarProductos() {
         const filas = Array.from(tbody.querySelectorAll("tr"));
 
         filas.sort((a, b) => {
-            const provA = a.children[6].textContent.trim().toLowerCase(); // Columna proveedor
+            const provA = a.children[6].textContent.trim().toLowerCase(); 
             const provB = b.children[6].textContent.trim().toLowerCase();
 
             if (provA < provB) return ordenAscendente ? -1 : 1;
@@ -215,13 +234,10 @@ function buscarProductos() {
             return 0;
         });
 
-        // Limpiar y volver a insertar
         tbody.innerHTML = "";
         filas.forEach(f => tbody.appendChild(f));
 
         ordenAscendente = !ordenAscendente;
-
-        // Cambiar ícono visual (opcional)
         this.textContent = `Proveedor ${ordenAscendente ? "🔽" : "🔼"}`;
     });
 </script>
