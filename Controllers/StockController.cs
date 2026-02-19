@@ -23,35 +23,38 @@ namespace GestionVentas.Controllers
 
         // Retorna la lista de productos para el buscador de Vue.js
         [HttpGet]
-        public JsonResult ObtenerProductos()
+public JsonResult ObtenerProductos()
+{
+    List<Productos> productos = new List<Productos>();
+
+    using (SqlConnection conn = db.ObtenerConexion())
+    {
+        conn.Open();
+        
+        // 1. Agregamos NombreProveedor a la consulta SQL
+        string consulta = "SELECT IdProducto, Nombre, Codigo, StockActual, NombreProveedor FROM productos ORDER BY Nombre ASC";
+
+        using (SqlCommand cmd = new SqlCommand(consulta, conn))
         {
-            List<Productos> productos = new List<Productos>();
-
-            using (SqlConnection conn = db.ObtenerConexion())
+            using (var reader = cmd.ExecuteReader())
             {
-                conn.Open();
-                // Traemos solo lo necesario para la vista de stock
-                string consulta = "SELECT IdProducto, Nombre, Codigo, StockActual FROM productos ORDER BY Nombre ASC";
-
-                using (SqlCommand cmd = new SqlCommand(consulta, conn))
+                while (reader.Read())
                 {
-                    using (var reader = cmd.ExecuteReader())
+                    productos.Add(new Productos
                     {
-                        while (reader.Read())
-                        {
-                            productos.Add(new Productos
-                            {
-                                IdProducto = reader.GetInt32(0),
-                                Nombre = reader.GetString(1),
-                                Codigo = reader.GetString(2),
-                                StockActual = reader.IsDBNull(3) ? 0 : reader.GetInt32(3)
-                            });
-                        }
-                    }
+                        IdProducto = reader.GetInt32(0),
+                        Nombre = reader.GetString(1),
+                        Codigo = reader.GetString(2),
+                        StockActual = reader.IsDBNull(3) ? 0 : reader.GetInt32(3),
+                        // 2. Mapeamos la nueva columna (es la posición 4)
+                        NombreProveedor = reader.IsDBNull(4) ? "Sin Proveedor" : reader.GetString(4)
+                    });
                 }
             }
-            return Json(productos);
         }
+    }
+    return Json(productos);
+}
 
         // Método para sumar stock a la base de datos
         [HttpPost]

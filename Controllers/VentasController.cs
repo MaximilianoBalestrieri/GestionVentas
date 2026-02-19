@@ -31,72 +31,75 @@ namespace GestionVentas.Controllers
             return View(productos);
         }
 
-      [HttpPost]
-public JsonResult RegistrarVenta([FromBody] VentaCompleta datos)
-{
-    try
-    {
-        if (datos == null || datos.Items == null || datos.Items.Count == 0)
-            return Json(new { success = false, message = "No hay productos seleccionados." });
-
-        // 1. Registramos la venta en la DB (Factura, Items, Stock, y Saldo de Cliente)
-        var resultado = db.RegistrarVenta(datos);
-
-        if (resultado.success) 
+        [HttpPost]
+        public JsonResult RegistrarVenta([FromBody] VentaCompleta datos)
         {
-            // --- LÓGICA DE IMPACTO EN CAJA ---
-            var cajaAbierta = db.Cajas.FirstOrDefault(c => c.EstaAbierta);
-            
-            if (cajaAbierta != null)
+            try
             {
-                string medio = datos.MedioPago ?? "Efectivo";
+                if (datos == null || datos.Items == null || datos.Items.Count == 0)
+                    return Json(new { success = false, message = "No hay productos seleccionados." });
 
-                // FILTRO CLAVE: Solo impacta en caja si NO es Fiado/CtaCte
-                // Agregamos todas las variantes posibles por seguridad
-                bool esCtaCte = medio.Equals("CtaCte", StringComparison.OrdinalIgnoreCase) || 
-                                medio.Equals("Cuenta Corriente", StringComparison.OrdinalIgnoreCase);
+                // 1. Registramos la venta en la DB. 
+                // IMPORTANTE: Asegúrate que db.RegistrarVenta guarde la factura con Estado = 'Pendiente' si es CtaCte
+                var resultado = db.RegistrarVenta(datos);
 
-                if (!esCtaCte)
+                if (resultado.success) 
                 {
-                    // Si llegamos acá, es Efectivo o Transferencia
-                    string etiquetaMedio = medio.Contains("Transferencia") ? "(Transferencia)" : "(Efectivo)";
+                    // --- LÓGICA DE IMPACTO EN CAJA ---
+                    var cajaAbierta = db.Cajas.FirstOrDefault(c => c.EstaAbierta);
                     
-                    var mov = new MovimientoCaja
+                    if (cajaAbierta != null)
                     {
-                        CajaId = cajaAbierta.Id,
-                        Fecha = DateTime.Now,
-                        Monto = datos.MontoVenta,
-                        Concepto = $"Venta Factura N° {resultado.idFactura} {etiquetaMedio}",
-                        Tipo = TipoMovimiento.Ingreso
-                    };
+                        string medio = datos.MedioPago ?? "Efectivo";
 
-                    db.MovimientosCaja.Add(mov);
+                        // FILTRO CLAVE: Solo impacta en caja si NO es CtaCte/Fiado
+                        bool esCtaCte = medio.Equals("CtaCte", StringComparison.OrdinalIgnoreCase) || 
+                                        medio.Equals("Cuenta Corriente", StringComparison.OrdinalIgnoreCase) ||
+                                        medio.Equals("Fiado", StringComparison.OrdinalIgnoreCase);
 
-                    // Solo sumamos al esperado si entró dinero físico o banco
-                    cajaAbierta.MontoEsperado += datos.MontoVenta;
-                    
-                    db.Cajas.Update(cajaAbierta);
-                    db.SaveChanges();
+                        if (!esCtaCte)
+                        {
+                            // Si es Efectivo o Transferencia, registramos el movimiento de dinero ahora
+                            string etiquetaMedio = medio.Contains("Transferencia") ? "(Transferencia)" : "(Efectivo)";
+                            
+                            var mov = new MovimientoCaja
+                            {
+                                CajaId = cajaAbierta.Id,
+                                Fecha = DateTime.Now,
+                                Monto = datos.MontoVenta,
+                                Concepto = $"Venta Factura N° {resultado.idFactura} {etiquetaMedio}",
+                                Tipo = TipoMovimiento.Ingreso
+                            };
+
+                            db.MovimientosCaja.Add(mov);
+
+                            // Sumamos al esperado porque el dinero (o el saldo bancario) entró realmente
+                            cajaAbierta.MontoEsperado += datos.MontoVenta;
+                            
+                            db.Cajas.Update(cajaAbierta);
+                            db.SaveChanges();
+                        }
+                        // NOTA: Si es esCtaCte == true, NO entra en este bloque. 
+                        // El dinero se registrará en caja recién cuando el cliente pague su deuda en CtaCte/Index.
+                    }
+
+                    string nroFacturaFormateado = "0001-" + resultado.idFactura.ToString("D8");
+                    return Json(new { 
+                        success = true, 
+                        idFactura = resultado.idFactura, 
+                        nroFactura = nroFacturaFormateado 
+                    });
+                }
+                else
+                {
+                    return Json(new { success = false, message = resultado.error });
                 }
             }
-
-            string nroFacturaFormateado = "0001-" + resultado.idFactura.ToString("D8");
-            return Json(new { 
-                success = true, 
-                idFactura = resultado.idFactura, 
-                nroFactura = nroFacturaFormateado 
-            });
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Error: " + ex.Message });
+            }
         }
-        else
-        {
-            return Json(new { success = false, message = resultado.error });
-        }
-    }
-    catch (Exception ex)
-    {
-        return Json(new { success = false, message = "Error: " + ex.Message });
-    }
-}
 
         [HttpGet]
         public JsonResult ObtenerProximoNroFactura()

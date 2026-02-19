@@ -140,21 +140,28 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <input type="text" id="filtroProductosModal" class="form-control mb-3" placeholder="Buscar por nombre o código...">
+                <input type="text" id="filtroProductosModal" class="form-control mb-3" placeholder="Buscar por nombre, código o proveedor (F2 para abrir)...">
                 <div style="max-height: 400px; overflow-y: auto;">
                     <table class="table table-hover table-sm">
                         <thead class="table-light">
-                            <tr><th>Código</th><th>Nombre</th><th>Stock</th><th>Precio</th><th>Acción</th></tr>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Proveedor</th> <th>Stock</th>
+                                <th>Precio</th>
+                                <th>Acción</th>
+                            </tr>
                         </thead>
                         <tbody id="tablaProductosModal">
                             @foreach (var p in Model) {
                                 <tr>
                                     <td>@p.Codigo</td>
                                     <td>@p.Nombre</td>
-                                    <td class="@(p.StockActual <= 5 ? "text-danger fw-bold" : "")">@p.StockActual</td>
+                                    <td class="text-muted small">@p.NombreProveedor</td> <td class="@(p.StockActual <= 5 ? "text-danger fw-bold" : "")">@p.StockActual</td>
                                     <td>$@p.PrecioVenta.ToString("F2")</td>
                                     <td>
-                                        <button class="btn btn-primary btn-sm" onclick="seleccionarDesdeModal('@p.IdProducto', '@p.Codigo', '@p.Nombre', @p.PrecioVenta.ToString().Replace(",", "."))">
+                                        <button class="btn btn-primary btn-sm btn-seleccionar" 
+                                                onclick="seleccionarDesdeModal('@p.IdProducto', '@p.Codigo', '@p.Nombre', @p.PrecioVenta.ToString().Replace(",", "."))">
                                             Seleccionar
                                         </button>
                                     </td>
@@ -405,6 +412,54 @@
             document.getElementById("tablaClientes").innerHTML = html;
         });
     }
+
+// 1. Detectar la tecla F2 para abrir el modal
+   document.addEventListener('keydown', function (event) {
+    if (event.key === "F2") {
+        event.preventDefault();
+        var myModal = new bootstrap.Modal(document.getElementById('modalProductos'));
+        myModal.show();
+    }
+});
+
+var miModal = document.getElementById('modalProductos');
+miModal.addEventListener('shown.bs.modal', function () {
+    const inputBusqueda = document.getElementById('filtroProductosModal');
+    if (inputBusqueda) {
+        setTimeout(() => {
+            inputBusqueda.focus();
+            inputBusqueda.value = ""; // Limpiamos búsqueda anterior
+        }, 100);
+    }
+});
+
+// Lógica de filtrado + Auto-selección con Enter
+document.getElementById('filtroProductosModal').addEventListener('keyup', function (e) {
+    var valor = this.value.toLowerCase();
+    var filas = document.querySelectorAll('#tablaProductosModal tr');
+    var filasVisibles = [];
+
+    filas.forEach(fila => {
+        var texto = fila.textContent.toLowerCase();
+        if (texto.includes(valor)) {
+            fila.style.display = '';
+            filasVisibles.push(fila);
+        } else {
+            fila.style.display = 'none';
+        }
+    });
+
+    // Si presiona ENTER y hay exactamente un resultado visible
+    if (e.key === "Enter" && filasVisibles.length === 1) {
+        // Buscamos el botón de esa única fila y le hacemos clic
+        var boton = filasVisibles[0].querySelector('.btn-seleccionar');
+        if (boton) {
+            boton.click();
+            // Cerramos el modal (opcional, ya que seleccionarDesdeModal suele hacerlo)
+            bootstrap.Modal.getInstance(miModal).hide();
+        }
+    }
+});
 
     function seleccionarCli(id, nom, dni) {
         document.getElementById("idCliente").value = id;

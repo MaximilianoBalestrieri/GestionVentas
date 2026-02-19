@@ -1,11 +1,20 @@
 @model IEnumerable<GestionVentas.Models.Cliente>
+@{
+    ViewData["Title"] = "Deudores Cta. Cte.";
+}
 
 <div class="container mt-4">
     <div class="card shadow border-0">
-        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center p-3">
             <h4 class="mb-0"><i class="bi bi-person-vcard me-2"></i>Deudores en Cuenta Corriente</h4>
+            <div>
+                <button type="button" class="btn btn-primary btn-sm" onclick="abrirModalBusquedaClientes()">
+                    <i class="bi bi-person-plus-fill"></i> Agregar Cliente a Libreta
+                </button>
+            </div>
         </div>
         <div class="card-body">
+            @* ... (Mantené tu tabla de deudores igual que antes) ... *@
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
@@ -17,16 +26,32 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var item in Model)
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="fw-bold">@item.NombreCliente</td>
+                                    <td>@(string.IsNullOrEmpty(item.TelefonoCliente) ? "Sin teléfono" : item.TelefonoCliente)</td>
+                                    <td class="text-danger fw-bold fs-5">$ @item.SaldoActual.ToString("N2")</td>
+                                    <td class="text-center">
+                                        <a href="@Url.Action("Index", "CtaCte", new { idCliente = item.IdCliente })" 
+                                           class="btn btn-outline-dark btn-sm me-1">
+                                             <i class="bi bi-eye"></i> Detalle
+                                        </a>
+                                        <button class="btn btn-success btn-sm" 
+                                                onclick="abrirModalCobro(@item.IdCliente, '@item.NombreCliente', @item.SaldoActual.ToString().Replace(",", "."))">
+                                             <i class="bi bi-cash-coin"></i> Registrar Pago
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
                         {
                             <tr>
-                                <td class="fw-bold">@item.NombreCliente</td>
-                                <td>@item.TelefonoCliente</td>
-                                <td class="text-danger fw-bold fs-5">$ @item.SaldoActual.ToString("N2")</td>
-                                <td class="text-center">
-                                    <button class="btn btn-success btn-sm" onclick="abrirModalCobro(@item.IdCliente, '@item.NombreCliente', @item.SaldoActual)">
-                                        <i class="bi bi-cash-coin"></i> Registrar Pago
-                                    </button>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    No hay clientes con deuda pendiente.
                                 </td>
                             </tr>
                         }
@@ -37,47 +62,70 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalCobro" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-primary border-2">
-            <form asp-action="CobrarDeuda" method="post">
-                <div class="modal-header bg-primary text-white py-2">
-                    <h5 class="modal-title">Registrar Pago</h5>
+@* --- MODAL PARA BUSCAR Y AGREGAR CLIENTE --- *@
+<div class="modal fade" id="modalBusquedaClientes" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Seleccionar Cliente para Cta. Cte.</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">Solo se muestran clientes que aún no tienen cuenta corriente activa.</p>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover" id="tablaClientesGenerales">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Teléfono</th>
+                                <th>DNI/CUIT</th>
+                                <th class="text-end">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ViewBag.TodosLosClientes != null)
+                            {
+                                foreach (var c in (IEnumerable<GestionVentas.Models.Cliente>)ViewBag.TodosLosClientes)
+                                {
+                                    <tr>
+                                        <td>@c.NombreCliente</td>
+                                        <td>@c.TelefonoCliente</td>
+                                        <td>@c.DniCliente</td>
+                                        <td class="text-end">
+                                            <form asp-action="HabilitarCtaCte" method="post" style="display:inline;">
+                                                <input type="hidden" name="idClienteOriginal" value="@c.IdCliente" />
+                                                <button type="submit" class="btn btn-sm btn-success">
+                                                    <i class="bi bi-plus-lg"></i> Agregar
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
                 </div>
-                <div class="modal-body text-center">
-                    <input type="hidden" name="idCliente" id="idCliCobro" />
-                    <p class="mb-1 small">Cliente: <strong id="nombreCliCobro"></strong></p>
-                    <h4 class="text-danger mb-3">Debe: $<span id="saldoCliCobro"></span></h4>
-
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">¿Cuánto paga?</label>
-                        <input type="number" step="0.01" name="montoPagado" class="form-control form-control-lg text-center fw-bold" required />
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label small fw-bold">Medio de Pago:</label>
-                        <select name="medioPago" class="form-select form-select-sm">
-                            <option value="Efectivo">Efectivo</option>
-                            <option value="Transferencia">Transferencia</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer py-2">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary btn-sm px-4">Confirmar Pago</button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
 
+@* ... (Mantené tu Modal de Cobro aquí debajo) ... *@
+
 @section Scripts {
     <script>
+        function abrirModalBusquedaClientes() {
+            var myModal = new bootstrap.Modal(document.getElementById('modalBusquedaClientes'));
+            myModal.show();
+        }
+
         function abrirModalCobro(id, nombre, saldo) {
             document.getElementById('idCliCobro').value = id;
             document.getElementById('nombreCliCobro').innerText = nombre;
-            document.getElementById('saldoCliCobro').innerText = saldo.toLocaleString('es-AR');
-            new bootstrap.Modal(document.getElementById('modalCobro')).show();
+            document.getElementById('saldoCliCobro').innerText = saldo.toLocaleString('es-AR', { minimumFractionDigits: 2 });
+            document.getElementById('inputMonto').value = saldo;
+            var miModal = new bootstrap.Modal(document.getElementById('modalCobro'));
+            miModal.show();
         }
     </script>
 }

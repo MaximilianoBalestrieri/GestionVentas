@@ -19,35 +19,35 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
     <style>
-        html,
-        body {
-            height: 100%;
-            margin: 0;
-        }
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+            }
 
-        .body-content {
-            flex: 1 0 auto;
-        }
+            .body-content {
+                flex: 1 0 auto;
+            }
 
-        footer {
-            text-align: center;
-            padding: 10px 0;
-            background-color: #f0f0f0;
-            color: #333;
-        }
+            footer {
+                text-align: center;
+                padding: 10px 0;
+                background-color: #f0f0f0;
+                color: #333;
+            }
 
-        body {
-            display: flex;
-            flex-direction: column;
-        }
+            body {
+                display: flex;
+                flex-direction: column;
+            }
 
-        .Bien {
-            color: #f0f0f0;
-            max-width: 300px;
-            margin: 0 auto;
-            text-align: center;
-            font-size: 0.9rem;
-        }
+            .Bien {
+                color: #f0f0f0;
+                max-width: 300px;
+                margin: 0 auto;
+                text-align: center;
+                font-size: 0.9rem;
+            }
     </style>
 </head>
 
@@ -80,8 +80,8 @@
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index"> </a>
                 <div class="d-flex align-items-center">
                     <img src="@(!string.IsNullOrEmpty(ViewBag.FotoPerfil) ? ViewBag.FotoPerfil : Url.Content("~/imagenes/usuarios/default.png"))"
-                        alt="Foto de perfil"
-                        style="width:50px; height:50px; object-fit:cover; border-radius:50%; border:1px solid #ccc; margin-right:10px;" />
+                         alt="Foto de perfil"
+                         style="width:50px; height:50px; object-fit:cover; border-radius:50%; border:1px solid #ccc; margin-right:10px;" />
 
                     <div class="Bien">
                         <p class="mb-0">
@@ -99,16 +99,16 @@
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item dropdown">
 
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index">Inicio</a>
-                        </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Home" asp-action="Index">Inicio</a>
+                            </li>
 
-                        <a class="nav-link" href="@Url.Action("Index", "Productos")">
-                            Productos
-                        </a>
+                            <a class="nav-link" href="@Url.Action("Index", "Productos")">
+                                Productos
+                            </a>
 
 
-                        @*  <ul class="dropdown-menu" aria-labelledby="navbarDropdownInicio">
+                            @*  <ul class="dropdown-menu" aria-labelledby="navbarDropdownInicio">
                                 <li><a class="dropdown-item" asp-controller="Productos" asp-action="Index">Propietarios</a>
                                 </li>
                                 <li><a class="dropdown-item" asp-controller="Ventas" asp-action="Index">Inquilinos</a></li>
@@ -120,16 +120,27 @@
                         </li>
 
 
-                        <li class="nav-item">
-                            <a class="nav-link" href="@Url.Action("Index", "Facturas")">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarVentas" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
                                 Ventas
                             </a>
-
+                            <ul class="dropdown-menu" aria-labelledby="navbarVentas">
+                                <li>
+                                    <a class="dropdown-item" href="@Url.Action("Create", "Ventas")">Nueva Venta</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="@Url.Action("Index", "Facturas")">Listado de Facturas</a>
+                                </li>
+                                 <li>
+                                    <a class="dropdown-item" href="@Url.Action("Index", "ClientesCtaCte")">Cta Cte</a>
+                                </li>
+                            </ul>
                         </li>
 
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownInformes" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false">
+                                   data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-chart-bar me-1"></i> Informes
                             </a>
                             <ul class="dropdown-menu shadow" aria-labelledby="navbarDropdownInformes">
@@ -172,7 +183,7 @@
                         </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProveedores" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false">
+                                   data-bs-toggle="dropdown" aria-expanded="false">
                                 Proveedores
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="navbarDropdownProveedores">
