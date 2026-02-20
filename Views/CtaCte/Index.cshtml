@@ -86,7 +86,7 @@
         </div>
     </div>
 
-    @* --- HISTORIAL (Tabla que se imprime) --- *@
+    @* --- HISTORIAL --- *@
     <div class="card shadow border-0">
         <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Movimientos de Cuenta</h5>
@@ -105,22 +105,34 @@
                         <th class="text-end pe-3">Saldo</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach (var item in Model) {
-                        <tr>
-                            <td class="ps-3">@item.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td class="small">@item.Concepto</td>
-                            <td class="text-end text-danger fw-bold">$@item.Monto.ToString("N2")</td>
-                            <td class="text-end pe-3 text-muted">$@item.SaldoResultante.ToString("N2")</td>
-                        </tr>
-                    }
-                </tbody>
+               <tbody>
+    @foreach (var item in Model) {
+        <tr>
+            <td class="ps-3">@item.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+            <td class="small">@item.Concepto</td>
+            
+            @if (item.Monto < 0) {
+                @* Si el monto es negativo, es un PAGO (VERDE) *@
+                <td class="text-end text-success fw-bold">
+                    -$@Math.Abs(item.Monto).ToString("N2")
+                </td>
+            } else {
+                @* Si el monto es positivo, es una DEUDA (ROJO) *@
+                <td class="text-end text-danger fw-bold">
+                    $@item.Monto.ToString("N2")
+                </td>
+            }
+
+            <td class="text-end pe-3 text-muted">$@item.SaldoResultante.ToString("N2")</td>
+        </tr>
+    }
+</tbody>
             </table>
         </div>
     </div>
 </div>
 
-@* --- MODAL DE PRODUCTOS --- *@
+@* --- MODAL DE PRODUCTOS CON COLUMNA STOCK --- *@
 <div class="modal fade" id="modalProductos" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -133,7 +145,7 @@
                     <div class="input-group">
                         <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
                         <input type="text" id="buscarProductoModal" class="form-control" 
-                               placeholder="Escribí nombre o código para filtrar..." 
+                               placeholder="Escribí nombre o código..." 
                                onkeyup="filtrarProductosModal()">
                     </div>
                 </div>
@@ -143,6 +155,7 @@
                             <tr>
                                 <th>Código</th>
                                 <th>Nombre</th>
+                                <th class="text-center">Stock</th>
                                 <th>Precio</th>
                                 <th class="text-center">Acción</th>
                             </tr>
@@ -150,13 +163,16 @@
                         <tbody>
                             @if (ViewBag.ListaProductos != null) {
                                 foreach (var p in ViewBag.ListaProductos) {
+                                    // Definimos un color para el stock: rojo si es 0, naranja si es poco, verde si hay.
+                                    string stockColor = p.StockActual <= 0 ? "text-danger fw-bold" : (p.StockActual < 5 ? "text-warning fw-bold" : "text-success");
                                     <tr>
                                         <td>@p.Codigo</td>
                                         <td>@p.Nombre</td>
+                                        <td class="text-center @stockColor">@p.StockActual</td>
                                         <td>$@p.PrecioVenta.ToString("N2")</td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-sm btn-primary" 
-                                                    onclick="seleccionarDesdeModal('@p.IdProducto', '@p.Codigo', '@p.Nombre', @p.PrecioVenta.ToString().Replace(',','.'))">
+                                                    onclick="seleccionarDesdeModal('@p.IdProducto', '@p.Codigo', '@p.Nombre', @p.PrecioVenta.ToString().Replace(',','.'), @p.StockActual)">
                                                 Seleccionar
                                             </button>
                                         </td>
@@ -184,8 +200,7 @@
             let filter = document.getElementById("buscarProductoModal").value.toLowerCase();
             let trs = document.querySelectorAll("#tablaProductosModal tbody tr");
             trs.forEach(tr => {
-                let texto = tr.innerText.toLowerCase();
-                tr.style.display = texto.includes(filter) ? "" : "none";
+                tr.style.display = tr.innerText.toLowerCase().includes(filter) ? "" : "none";
             });
         }
 
@@ -196,42 +211,70 @@
                 fetch(`/CtaCte/BuscarProductoPorCodigo?codigo=${codigo}`)
                     .then(res => res.json())
                     .then(data => {
-                        if (data.success) seleccionarProducto(data.id, codigo, data.nombre, data.precio);
+                        if (data.success) {
+                            // Suponiendo que tu API de búsqueda también devuelve 'stock'
+                            seleccionarProducto(data.id, codigo, data.nombre, data.precio, data.stock);
+                        }
                     });
             }, 300);
         }
 
-        function seleccionarProducto(id, cod, nom, precio) {
-            prodSeleccionado = { id, cod, nom, precio };
+        function seleccionarProducto(id, cod, nom, precio, stock) {
+            prodSeleccionado = { id, cod, nom, precio, stock };
             document.getElementById('txtCodigo').value = cod;
-            document.getElementById('txtNombreProd').value = nom;
+            document.getElementById('txtNombreProd').value = nom + " (Stock: " + stock + ")";
             document.getElementById('txtPrecio').value = precio.toFixed(2);
+            
+            // Si no hay stock, avisar visualmente
+            if(stock <= 0) {
+                document.getElementById('txtNombreProd').classList.add('is-invalid');
+            } else {
+                document.getElementById('txtNombreProd').classList.remove('is-invalid');
+            }
+
             document.getElementById('txtCant').focus();
             document.getElementById('txtCant').select();
         }
 
-        function seleccionarDesdeModal(id, cod, nom, precio) {
-            seleccionarProducto(id, cod, nom, precio);
+        function seleccionarDesdeModal(id, cod, nom, precio, stock) {
+            seleccionarProducto(id, cod, nom, precio, stock);
             bootstrap.Modal.getInstance(document.getElementById('modalProductos')).hide();
         }
 
         function agregarATablaTemporal() {
             if (!prodSeleccionado) return;
+            
+            let cant = parseFloat(document.getElementById('txtCant').value);
+            
+            // VALIDACIÓN DE STOCK
+            if (cant > prodSeleccionado.stock) {
+                if (!confirm(`Ojo: Solo tenés ${prodSeleccionado.stock} en stock. ¿Querés cargar ${cant} de todas formas?`)) {
+                    return;
+                }
+            }
+
             document.getElementById('cardTemporal').style.display = 'block';
-            let cant = document.getElementById('txtCant').value;
             let subtotal = prodSeleccionado.precio * cant;
-            let fila = `<tr>
-                <td><input type="hidden" name="ids" value="${prodSeleccionado.id}">${prodSeleccionado.cod}</td>
-                <td>${prodSeleccionado.nom}</td>
-                <td class="text-end precio-unitario">$${prodSeleccionado.precio.toFixed(2)}</td>
-                <td><input type="number" name="cants" class="form-control form-control-sm input-cantidad" value="${cant}" oninput="recalcular()"></td>
-                <td class="text-end fw-bold sub">$${subtotal.toFixed(2)}</td>
-                <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove(); recalcular();">X</button></td>
-            </tr>`;
+
+            let fila = `
+                <tr>
+                    <td><input type="hidden" name="ids" value="${prodSeleccionado.id}">${prodSeleccionado.cod}</td>
+                    <td>${prodSeleccionado.nom}</td>
+                    <td class="text-end precio-unitario">$${prodSeleccionado.precio.toFixed(2)}</td>
+                    <td><input type="number" name="cants" class="form-control form-control-sm input-cantidad" value="${cant}" oninput="recalcular()"></td>
+                    <td class="text-end fw-bold sub"> $${subtotal.toFixed(2)} </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove(); recalcular();">X</button>
+                    </td>
+                </tr>`;
+            
             document.getElementById('cuerpoTemporal').innerHTML += fila;
             recalcular();
+            
+            prodSeleccionado = null;
             document.getElementById('txtCodigo').value = "";
             document.getElementById('txtNombreProd').value = "";
+            document.getElementById('txtNombreProd').classList.remove('is-invalid');
             document.getElementById('txtPrecio').value = "";
             document.getElementById('txtCant').value = 1;
             document.getElementById('txtCodigo').focus();
@@ -240,7 +283,7 @@
         function recalcular() {
             let total = 0;
             document.querySelectorAll("#cuerpoTemporal tr").forEach(tr => {
-                let p = parseFloat(tr.querySelector('.precio-unitario').innerText.replace('$', ''));
+                let p = parseFloat(tr.querySelector('.precio-unitario').innerText.replace('$', '').trim());
                 let c = parseFloat(tr.querySelector('.input-cantidad').value) || 0;
                 let sub = p * c;
                 tr.querySelector('.sub').innerText = "$" + sub.toFixed(2);
@@ -256,7 +299,6 @@
             myModal.show();
             setTimeout(() => document.getElementById('buscarProductoModal').focus(), 500);
         }
-
         // --- FUNCIÓN DE IMPRESIÓN CORREGIDA ---
         function imprimirEstadoCuenta() {
             const nombre = "@ViewBag.NombreCliente";

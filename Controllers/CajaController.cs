@@ -140,34 +140,56 @@ public class CajaController : Controller
     }
 
     // 6. POST: Procesar Cierre
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult CerrarCaja(decimal montoFisicoReal)
+  [HttpPost]
+[ValidateAntiForgeryToken]
+public IActionResult CerrarCaja(decimal montoFisicoReal)
+{
+    // Buscamos la caja abierta
+    var caja = conexion.Cajas.FirstOrDefault(c => c.EstaAbierta);
+
+    if (caja != null)
     {
-        var caja = conexion.Cajas.FirstOrDefault(c => c.EstaAbierta);
-
-        if (caja != null)
-        {
-            var movimientos = conexion.MovimientosCaja.Where(m => m.CajaId == caja.Id).ToList();
+        // Traemos los movimientos de la base de datos
+        var movimientos = conexion.MovimientosCaja.Where(m => m.CajaId == caja.Id).ToList();
+        
+        // EFECTIVO: Usamos ToUpper() para que no falle si dice "(efectivo)" o "(EFECTIVO)"
+        decimal ingEf = movimientos
+            .Where(m => m.Tipo == TipoMovimiento.Ingreso && m.Concepto.ToUpper().Contains("(EFECTIVO)"))
+            .Sum(m => m.Monto);
             
-            decimal ingEf = movimientos.Where(m => m.Tipo == TipoMovimiento.Ingreso && m.Concepto.Contains("(Efectivo)")).Sum(m => m.Monto);
-            decimal egEf = movimientos.Where(m => m.Tipo == TipoMovimiento.Egreso && m.Concepto.Contains("(Efectivo)")).Sum(m => m.Monto);
-            decimal espEf = caja.MontoInicial + ingEf - egEf;
-
-            decimal ingTr = movimientos.Where(m => m.Tipo == TipoMovimiento.Ingreso && m.Concepto.Contains("(Transferencia)")).Sum(m => m.Monto);
-            decimal egTr = movimientos.Where(m => m.Tipo == TipoMovimiento.Egreso && m.Concepto.Contains("(Transferencia)")).Sum(m => m.Monto);
-            decimal espTr = ingTr - egTr;
-
-            caja.MontoEsperado = espEf + espTr;
-            caja.MontoFinalReal = montoFisicoReal + espTr; 
+        decimal egEf = movimientos
+            .Where(m => m.Tipo == TipoMovimiento.Egreso && m.Concepto.ToUpper().Contains("(EFECTIVO)"))
+            .Sum(m => m.Monto);
             
-            caja.FechaCierre = DateTime.Now;
-            caja.EstaAbierta = false;
+        decimal espEf = caja.MontoInicial + ingEf - egEf;
 
-            conexion.Cajas.Update(caja);
-            conexion.SaveChanges();
-        }
+        // TRANSFERENCIAS
+        decimal ingTr = movimientos
+            .Where(m => m.Tipo == TipoMovimiento.Ingreso && m.Concepto.ToUpper().Contains("(TRANSFERENCIA)"))
+            .Sum(m => m.Monto);
+            
+        decimal egTr = movimientos
+            .Where(m => m.Tipo == TipoMovimiento.Egreso && m.Concepto.ToUpper().Contains("(TRANSFERENCIA)"))
+            .Sum(m => m.Monto);
+            
+        decimal espTr = ingTr - egTr;
 
-        return RedirectToAction("Index");
+        // --- ASIGNACIÓN DE RESULTADOS ---
+        
+        // El Monto Esperado es la suma total (Efectivo que debe haber + Transferencias recibidas)
+        caja.MontoEsperado = espEf + espTr;
+
+        // El Monto Final Real es lo que el usuario contó físicamente (efectivo) 
+        // más lo que entró por transferencia (que no se cuenta en el cajón)
+        caja.MontoFinalReal = montoFisicoReal + espTr; 
+        
+        caja.FechaCierre = DateTime.Now;
+        caja.EstaAbierta = false;
+
+        conexion.Cajas.Update(caja);
+        conexion.SaveChanges();
     }
+
+    return RedirectToAction("Index");
+}
 }

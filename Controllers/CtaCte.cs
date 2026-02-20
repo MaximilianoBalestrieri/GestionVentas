@@ -18,45 +18,49 @@ namespace GestionVentas.Controllers
         }
 
         // 1. Detalle de la Libreta de Cuenta Corriente
-    public IActionResult Index(int idCliente)
+   public IActionResult Index(int idCliente)
 {
-    // 1. Buscamos al cliente
+    // 1. Buscamos al cliente en la tabla ClientesCtaCte
     var cliente = db.ObtenerClienteCtaCtePorId(idCliente);
     if (cliente == null) return RedirectToAction("Index", "ClientesCtaCte");
 
-    // 2. Traemos sus movimientos (aquellos que son DEUDAS, no pagos)
-    List<MovimientoCtaCte> historial = db.ObtenerHistorialCtaCte(idCliente);
+    // 2. Usamos el IdClienteOriginal (el "cable" a la tabla maestra)
+    int idReal = cliente.IdClienteOriginal;
 
-    // 3. RECALCULO DE DEUDA EN TIEMPO REAL
+    // Validación de seguridad: Si no hay vínculo, la lista vendrá vacía
+    List<MovimientoCtaCte> historial = new List<MovimientoCtaCte>();
+    if (idReal > 0)
+    {
+        historial = db.ObtenerHistorialCtaCte(idReal);
+    }
+
     decimal totalActualizado = 0;
-
     foreach (var mov in historial)
     {
-        // Solo recalculamos si es un producto (Monto > 0) y tiene un IdProducto asociado
+        // Solo recalculamos si es un producto cargado con ID
         if (mov.IdProducto > 0) 
         {
             var prodActual = db.ObtenerProductoPorId(mov.IdProducto);
             if (prodActual != null)
             {
-                // Actualizamos el monto del movimiento en la lista para que la vista lo vea nuevo
                 mov.Monto = prodActual.PrecioVenta * mov.Cantidad;
             }
         }
         totalActualizado += mov.Monto;
     }
 
-    // 4. GUARDAR EL NUEVO SALDO EN LA BASE DE DATOS (Para que en el listado general salga bien)
+    // 3. Actualizamos el saldo en la tabla de la libreta
     db.SobreescribirSaldoCliente(idCliente, totalActualizado);
 
-    // 5. PASAR LOS DATOS A LA VISTA
-    ViewBag.NombreCliente = cliente.NombreCliente;
-    ViewBag.IdCliente = idCliente;
+    // 4. Pasamos los datos a la Vista
+    // IMPORTANTE: Uso cliente.Nombre porque así está en tu SELECT de ClientesCtaCte
+    ViewBag.NombreCliente = cliente.NombreCliente; 
+    ViewBag.IdCliente = idCliente; 
     ViewBag.TotalDeuda = totalActualizado; 
     ViewBag.ListaProductos = db.ObtenerProductos();
 
     return View(historial); 
 }
-
 
 [HttpGet]
 public JsonResult BuscarProductoPorCodigo(string codigo)
@@ -75,7 +79,7 @@ public JsonResult BuscarProductoPorCodigo(string codigo)
 }
         // 2. Acción para agregar un producto a la libreta
         [HttpPost]
-        public IActionResult AgregarItemCuenta(int idCliente, int idProducto, int cantidad, string vendedor)
+        public IActionResult AgregarItemCuenta(int idCliente, int idProducto, int cantidad, string vendedor, DateTime fecha)
         {
             if (idCliente > 0 && idProducto > 0 && cantidad > 0)
             {
@@ -91,7 +95,7 @@ public JsonResult BuscarProductoPorCodigo(string codigo)
 
                     // REGISTRAMOS EL GASTO
                     // Asegurate que en ConexionDB, el método use @idCli, @monto, @vendedor, @detalle
-                    db.InsertarGastoCtaCte(idCliente, totalItem, vendedor, detalleParaDB);
+                    db.InsertarGastoCtaCte(idCliente, totalItem, vendedor, detalleParaDB, fecha);
                     
                     // IMPORTANTE: También deberías insertar el FacturaItem correspondiente 
                     // si querés que aparezca en el desglose de la tabla.
@@ -121,14 +125,28 @@ public JsonResult BuscarProductoPorCodigo(string codigo)
             }
         }
 
-
 [HttpPost]
 public IActionResult GuardarVentaCtaCte(int idCliente, List<int> ids, List<int> cants)
 {
+    // 1. Validación de seguridad: si no hay productos, volvemos al índice
     if (ids == null || ids.Count == 0) return RedirectToAction("Index", new { idCliente });
 
+    // 2. Buscamos al cliente en la libreta (ClientesCtaCte) para obtener el "Id Real"
+    var clienteCta = db.ObtenerClienteCtaCtePorId(idCliente);
+    
+    // 3. Verificamos que el cable esté conectado (que el IdClienteOriginal no sea 0)
+    if (clienteCta == null || clienteCta.IdClienteOriginal == 0)
+    {
+        // Si entra aquí, es porque ese cliente no se vinculó correctamente con la tabla maestra
+        TempData["Error"] = "Error: El cliente no tiene un ID maestro vinculado en la base de datos.";
+        return RedirectToAction("Index", new { idCliente });
+    }
+
+    // Este es el ID de la tabla 'clientes' (el 10, 9, 8, etc.) que SQL sí acepta
+    int idMaestro = clienteCta.IdClienteOriginal; 
     decimal totalVentaGeneral = 0;
 
+    // 4. Procesamos cada producto de la venta
     for (int i = 0; i < ids.Count; i++)
     {
         var p = db.ObtenerProductoPorId(ids[i]);
@@ -137,19 +155,23 @@ public IActionResult GuardarVentaCtaCte(int idCliente, List<int> ids, List<int> 
             decimal subtotalItem = p.PrecioVenta * cants[i];
             totalVentaGeneral += subtotalItem;
             
-            // 1. Registramos en el historial (lo que ya hicimos)
+            // Armamos el concepto (Ej: "Coca Cola (x2)")
             string conceptoIndividual = $"{p.Nombre} (x{cants[i]})";
-            db.RegistrarEnHistorialCtaCte(idCliente, conceptoIndividual, subtotalItem, p.IdProducto, cants[i]);
+            
+            // REGISTRAMOS EN EL HISTORIAL usando el ID MAESTRO
+            db.RegistrarEnHistorialCtaCte(idMaestro, conceptoIndividual, subtotalItem, p.IdProducto, cants[i]);
 
-            // 2. NUEVO: Restamos del stock de la tabla Productos
+            // RESTAMOS DEL STOCK
             db.RestarStockProducto(p.IdProducto, cants[i]);
         }
     }
 
-    // Actualizamos el saldo total del cliente
+    // 5. Actualizamos el saldo acumulado en la tabla de la libreta (usando el id de libreta)
     db.ActualizarSaldoClienteCtaCte(idCliente, totalVentaGeneral);
 
+    TempData["Success"] = "Venta guardada con éxito.";
     return RedirectToAction("Index", new { idCliente = idCliente });
 }
+
     }
 }

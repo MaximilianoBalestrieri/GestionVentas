@@ -36,58 +36,61 @@ namespace GestionVentas.Controllers
         }
 
         // NUEVA ACCIÓN: Habilita un cliente existente para usar Cuenta Corriente
-        [HttpPost]
-        public IActionResult HabilitarCtaCte(int idClienteOriginal)
-        {
-            // Buscamos los datos en la tabla de clientes general
-            var clienteGeneral = db.ObtenerClienteGeneralPorId(idClienteOriginal);
-            
-            if (clienteGeneral != null)
-            {
-                // Insertamos en la tabla ClientesCtaCte con saldo 0
-                db.InsertarClienteCtaCte(clienteGeneral.NombreCliente, clienteGeneral.TelefonoCliente);
-                TempData["Success"] = "Cliente habilitado para cuenta corriente.";
-            }
+       [HttpPost]
+public IActionResult HabilitarCtaCte(int idClienteOriginal)
+{
+    var clienteGeneral = db.ObtenerClienteGeneralPorId(idClienteOriginal);
+    
+    if (clienteGeneral != null)
+    {
+        // Pasamos el ID original para que queden vinculados desde el segundo cero
+        db.InsertarClienteCtaCte(clienteGeneral.NombreCliente, clienteGeneral.TelefonoCliente, idClienteOriginal);
+        TempData["Success"] = "Cliente habilitado para cuenta corriente.";
+    }
 
-            return RedirectToAction("Index");
+    return RedirectToAction("Index");
+}
+
+[HttpPost]
+public IActionResult CobrarDeuda(int idCliente, decimal montoPagado, string medioPago)
+{
+    try 
+    {
+        int idCaja = db.ObtenerIdCajaAbierta();
+        if (idCaja == 0) {
+            TempData["Error"] = "Caja cerrada.";
+            return RedirectToAction("Index", new { idCliente });
         }
 
-        // Proceso para cobrar una deuda (Corregido para usar ConexionDB)
-        [HttpPost]
-        public IActionResult CobrarDeuda(int idCliente, decimal montoPagado, string medioPago)
-        {
-            try 
-            {
-                int idCaja = db.ObtenerIdCajaAbierta();
-                
-                if (idCaja == 0)
-                {
-                    TempData["Error"] = "No hay una caja abierta.";
-                    return RedirectToAction("Index");
-                }
-
-                if (montoPagado <= 0) return RedirectToAction("Index");
-
-                // Registramos el pago usando los métodos de tu ConexionDB
-                // 1. Registramos el ingreso en la tabla HistorialCtaCte (como un Pago)
-                db.RegistrarPagoEnHistorial(idCliente, montoPagado, medioPago);
-
-                // 2. Restamos el saldo al cliente
-                db.ActualizarSaldoPorPago(idCliente, montoPagado);
-
-                // 3. Registramos el movimiento en la caja abierta
-                string concepto = $"Cobro CtaCte - ID:{idCliente} ({medioPago})";
-                
-                db.RegistrarMovimientoCaja(idCaja, montoPagado, concepto, "Ingreso");
-
-                TempData["Success"] = "Pago registrado y caja actualizada.";
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Error al procesar: " + ex.Message;
-            }
-
-            return RedirectToAction("Index");
+        var cliente = db.ObtenerClienteCtaCtePorId(idCliente);
+        if (cliente == null || cliente.IdClienteOriginal == 0) {
+            TempData["Error"] = "Cliente no vinculado.";
+            return RedirectToAction("Index", new { idCliente });
         }
+
+        int idMaestro = cliente.IdClienteOriginal;
+
+        // 2. REGISTRO EN HISTORIAL (Libreta)
+        // Ya incluimos el medio de pago aquí para la tabla del cliente
+        db.RegistrarEnHistorialCtaCte(idMaestro, $"PAGO - {medioPago.ToUpper()}", -montoPagado, 0, 0);
+
+        // 3. ACTUALIZAR SALDO
+        db.ActualizarSaldoClienteCtaCte(idCliente, -montoPagado);
+
+        // 4. REGISTRO EN CAJA (MovimientosCaja)
+        // MODIFICADO: Agregamos el medio de pago al concepto que verás en la tabla de Caja
+        string conceptoCaja = $"COBRO CTA CTE - {cliente.NombreCliente} ({medioPago.ToUpper()})";
+        
+        db.RegistrarMovimientoEnCajaReal(idCaja, conceptoCaja, montoPagado, 0, User.Identity.Name ?? "Cajero", medioPago);
+
+        TempData["Success"] = "¡Cobro registrado!";
+    }
+    catch (Exception ex)
+    {
+        TempData["Error"] = "Error: " + ex.Message;
+    }
+    return RedirectToAction("Index", new { idCliente });
+}
+
     }
 }

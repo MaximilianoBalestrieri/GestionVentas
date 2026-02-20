@@ -16,5 +16,7 @@ namespace GestionVentas.Models
         
         // Propiedad vital para la Cuenta Corriente
         public decimal SaldoActual { get; set; } 
+
+        public int IdClienteOriginal { get; set; }
     }
 }

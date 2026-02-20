@@ -20,6 +20,7 @@ namespace GestionVentas.Models
         public decimal MontoEsperado { get; set; }
         public bool EstaAbierta { get; set; }
         public string UsuarioId { get; set; }
+        
 
         // Tip: Agregá esta propiedad para que la relación sea más fácil de usar
         public virtual ICollection<MovimientoCaja> Movimientos { get; set; }

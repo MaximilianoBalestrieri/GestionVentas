@@ -2,7 +2,6 @@
 
 @{
     ViewData["Title"] = "Cierre de Caja";
-    // Traemos los subtotales desde el controlador
     decimal totalEsperadoEfectivo = ViewBag.TotalEsperadoEfectivo ?? 0;
     decimal totalEsperadoTransferencia = ViewBag.TotalEsperadoTransferencia ?? 0;
     decimal totalGeneral = totalEsperadoEfectivo + totalEsperadoTransferencia;
@@ -48,6 +47,10 @@
                     <form asp-action="CerrarCaja" method="post" id="formCierre">
                         @Html.AntiForgeryToken()
                         
+                        <input type="hidden" name="Id" value="@Model.Id" />
+                        <input type="hidden" name="MontoEfectivo" value="@totalEsperadoEfectivo.ToString("0.00").Replace(",", ".")" />
+                        <input type="hidden" name="MontoTransferencia" value="@totalEsperadoTransferencia.ToString("0.00").Replace(",", ".")" />
+
                         <div class="mb-4">
                             <label class="form-label fw-bold">Efectivo Real en Caja (Conteo Físico)</label>
                             <div class="input-group input-group-lg">
@@ -57,11 +60,11 @@
                                        id="montoFisicoReal" 
                                        name="montoFisicoReal" 
                                        class="form-control border-warning fw-bold" 
-                                       placeholder="¿Cuánto dinero hay en el cajón?" 
-                                       oninput="calcularDiferencia(@totalEsperadoEfectivo.ToString().Replace(",","."))"
+                                       placeholder="¿Cuánto dinero hay?" 
+                                       oninput="calcularDiferencia(@totalEsperadoEfectivo.ToString("0.00").Replace(",","."))"
                                        required />
                             </div>
-                            <small class="text-muted">El sistema comparará esto contra los <b>$ @totalEsperadoEfectivo.ToString("N2")</b> esperados.</small>
+                            <small class="text-muted">Comparación contra: <b>$ @totalEsperadoEfectivo.ToString("N2")</b></small>
                         </div>
 
                         <div id="resultadoDiferencia" class="p-3 rounded mb-4 d-none">

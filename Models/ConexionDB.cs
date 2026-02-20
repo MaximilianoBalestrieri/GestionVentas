@@ -260,30 +260,27 @@ public List<Factura> ObtenerFacturasPendientesPorCliente(int idCliente)
 }
 
 
-public void InsertarGastoCtaCte(int idCliente, decimal total, string vendedor, string detalle)
+public void InsertarGastoCtaCte(int idCliente, decimal total, string vendedor, string detalle, DateTime fecha)
 {
     using (var conn = ObtenerConexion())
     {
-        // 1. Corregimos el SQL para que use las columnas correctas. 
-        // Si tu tabla tiene una columna para el nombre del producto, usala (supongamos que se llama NombreCliente o agregamos una para el detalle si existe)
-        // Por ahora, lo guardamos en las columnas que tenés seguras:
+        // 1. Usamos @DiaVenta en el SQL para que coincida con el nombre de la columna
         string sql = @"INSERT INTO Facturas (DiaVenta, MontoVenta, Vendedor, IdCliente, MedioPago, TipoVenta) 
-                       VALUES (GETDATE(), @total, @vendedor, @idCliente, 'CtaCte', 'Cuenta Corriente')";
+                       VALUES (@DiaVenta, @total, @vendedor, @idCliente, 'CtaCte', 'Cuenta Corriente')";
 
         conn.Open();
         using (var cmd = new SqlCommand(sql, conn))
         {
-            // 2. Los nombres aquí deben coincidir EXACTAMENTE con los del string 'sql' de arriba
+            // 2. Aquí usamos @DiaVenta para que coincida con el string de arriba
+            cmd.Parameters.AddWithValue("@DiaVenta", fecha);
+            
             cmd.Parameters.AddWithValue("@idCliente", idCliente);
             cmd.Parameters.AddWithValue("@total", total);
-            cmd.Parameters.AddWithValue("@vendedor", vendedor ?? (object)DBNull.Value);
-            
-            // Nota: Si en tu tabla 'Facturas' no existe una columna 'Detalle', 
-            // este parámetro @detalle no se puede usar en el INSERT.
-            // Si querés guardar qué producto compró, deberías tener esa columna en SQL.
+            cmd.Parameters.AddWithValue("@vendedor", (object)vendedor ?? DBNull.Value);
             
             cmd.ExecuteNonQuery();
         }
+
     }
 }
 
@@ -353,19 +350,20 @@ public void ActualizarStock(int idProducto, int cantidad)
         conn.Open();
         cmd.ExecuteNonQuery();
     }
-}
-public void RegistrarEnHistorialCtaCte(int idCliente, string concepto, decimal monto, int idProducto, int cantidad)
+}public void RegistrarEnHistorialCtaCte(int idCliente, string concepto, decimal monto, int idProducto, int cantidad)
 {
     using (var conn = ObtenerConexion())
     {
-        // Agregamos IdProducto y Cantidad al INSERT
-        string sql = @"INSERT INTO HistorialCtaCte (IdCliente, Concepto, Monto, Fecha, IdProducto, Cantidad) 
-                       VALUES (@idCli, @concepto, @monto, GETDATE(), @idProd, @cant)";
+        // Corregimos el orden: IdCliente, Fecha, Concepto, Monto, IdProducto, Cantidad
+        string sql = @"INSERT INTO HistorialCtaCte (IdCliente, Fecha, Concepto, Monto, IdProducto, Cantidad) 
+                       VALUES (@id, @fecha, @conc, @monto, @idProd, @cant)";
         
         var cmd = new SqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("@idCli", idCliente);
-        cmd.Parameters.AddWithValue("@concepto", concepto);
-        cmd.Parameters.AddWithValue("@monto", monto);
+        
+        cmd.Parameters.AddWithValue("@id", idCliente);
+        cmd.Parameters.AddWithValue("@fecha", DateTime.Now); // Ahora coincide con la 2da columna
+        cmd.Parameters.AddWithValue("@conc", concepto);     // Ahora coincide con la 3ra columna
+        cmd.Parameters.Add("@monto", System.Data.SqlDbType.Decimal).Value = monto; // Coincide con la 4ta
         cmd.Parameters.AddWithValue("@idProd", idProducto);
         cmd.Parameters.AddWithValue("@cant", cantidad);
         
@@ -508,29 +506,40 @@ public Cliente ObtenerClienteGeneralPorId(int id)
     }
     return null;
 }
-
-public void RegistrarPagoEnHistorial(int idCliente, decimal monto, string medio) {
-    using (var conn = ObtenerConexion()) {
-        // En el historial de la libreta, el pago entra como monto negativo o simplemente se aclara en concepto
+public void RegistrarPagoEnHistorial(int idCliente, decimal monto, string medio) 
+{
+    using (var conn = ObtenerConexion()) 
+    {
         string sql = "INSERT INTO HistorialCtaCte (IdCliente, Fecha, Concepto, Monto, IdProducto, Cantidad) " +
-                     "VALUES (@id, GETDATE(), @conc, @monto, 0, 0)";
+                     "VALUES (@id, @fecha, @conc, @monto, 0, 0)";
+        
         var cmd = new SqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("@id", idCliente);
-        cmd.Parameters.AddWithValue("@conc", "PAGO EN " + medio.ToUpper());
-        cmd.Parameters.AddWithValue("@monto", monto * -1); // Lo guardamos restando
+        
+        // Definimos tipos de datos para evitar errores de conversión
+        cmd.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = idCliente;
+        cmd.Parameters.Add("@fecha", System.Data.SqlDbType.DateTime).Value = DateTime.Now;
+        cmd.Parameters.Add("@conc", System.Data.SqlDbType.NVarChar).Value = "PAGO (" + medio.ToUpper() + ")";
+        
+        // Forzamos el tipo Decimal para que no lo confunda con texto
+        cmd.Parameters.Add("@monto", System.Data.SqlDbType.Decimal).Value = monto * -1;
+
         conn.Open();
         cmd.ExecuteNonQuery();
     }
 }
-public void InsertarClienteCtaCte(string nombre, string telefono)
+public void InsertarClienteCtaCte(string nombre, string telefono, int idOriginal)
 {
     using (var conn = ObtenerConexion())
     {
-        // Importante: Empezamos con SaldoActual en 0
-        string sql = "INSERT INTO ClientesCtaCte (Nombre, Telefono, SaldoActual) VALUES (@nom, @tel, 0)";
+        // Agregamos la columna IdClienteOriginal al INSERT
+        string sql = "INSERT INTO ClientesCtaCte (Nombre, Telefono, SaldoActual, IdClienteOriginal) " +
+                     "VALUES (@nom, @tel, 0, @idOrig)";
+        
         var cmd = new SqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("@nom", nombre);
         cmd.Parameters.AddWithValue("@tel", (object)telefono ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@idOrig", idOriginal); // El ID de la tabla dbo.clientes
+        
         conn.Open();
         cmd.ExecuteNonQuery();
     }
@@ -540,38 +549,36 @@ public Cliente ObtenerClienteCtaCtePorId(int id)
 {
     using (var conn = ObtenerConexion())
     {
-        // Buscamos específicamente en la tabla de Cuenta Corriente
-        string sql = "SELECT IdCliente, Nombre, SaldoActual FROM ClientesCtaCte WHERE IdCliente = @id";
-        var cmd = new SqlCommand(sql, conn);
+        // Agregamos IdClienteOriginal al SELECT
+        string sql = "SELECT IdCliente, Nombre, IdClienteOriginal, SaldoActual FROM ClientesCtaCte WHERE IdCliente = @id";
+        SqlCommand cmd = new SqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("@id", id);
         conn.Open();
         using (var reader = cmd.ExecuteReader())
         {
             if (reader.Read())
             {
-                return new Cliente
-                {
-                    IdCliente = (int)reader["IdCliente"],
+                return new Cliente {
+                    IdCliente = Convert.ToInt32(reader["IdCliente"]),
                     NombreCliente = reader["Nombre"].ToString(),
-                    SaldoActual = (decimal)reader["SaldoActual"]
+                    SaldoActual = Convert.ToDecimal(reader["SaldoActual"]),
+                    // LEEMOS EL NUEVO CAMPO:
+                    IdClienteOriginal = reader["IdClienteOriginal"] != DBNull.Value 
+                                        ? Convert.ToInt32(reader["IdClienteOriginal"]) 
+                                        : 0 
                 };
             }
         }
     }
-    return null; // Si no lo encuentra
-}
-
-public void ActualizarSaldoClienteCtaCte(int idCliente, decimal monto)
+    return null;
+}public void ActualizarSaldoClienteCtaCte(int idCliente, decimal monto)
 {
     using (var conn = ObtenerConexion())
     {
-        // Importante: Usamos la tabla ClientesCtaCte y sumamos el monto al saldo actual
         string sql = "UPDATE ClientesCtaCte SET SaldoActual = SaldoActual + @monto WHERE IdCliente = @id";
-        
         var cmd = new SqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("@monto", monto);
+        cmd.Parameters.AddWithValue("@monto", monto); // SQL maneja la conversión de la coma/punto solo
         cmd.Parameters.AddWithValue("@id", idCliente);
-        
         conn.Open();
         cmd.ExecuteNonQuery();
     }
@@ -626,6 +633,52 @@ public List<MovimientoCtaCte> ObtenerHistorialCtaCte(int idCliente)
         }
     }
     return lista;
+}
+
+// Método para la Libreta
+public void RegistrarMovimientoCtaCte(int idCliente, decimal monto, string concepto, decimal saldoRes)
+{
+    using (var conn = ObtenerConexion())
+    {
+        string sql = "INSERT INTO HistorialCtaCte (IdCliente, Fecha, Concepto, Monto, SaldoResultante) VALUES (@id, GETDATE(), @con, @mon, @sal)";
+        SqlCommand cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@id", idCliente);
+        cmd.Parameters.AddWithValue("@con", concepto);
+        cmd.Parameters.AddWithValue("@mon", monto);
+        cmd.Parameters.AddWithValue("@sal", saldoRes);
+        conn.Open();
+        cmd.ExecuteNonQuery();
+    }
+}
+// MÉTODO PARA LA CAJA (Corregido con hora local y parámetros seguros)
+public void RegistrarMovimientoEnCajaReal(int idCaja, string concepto, decimal monto, int tipo, string usuario, string medioPago)
+{
+    using (var conn = ObtenerConexion())
+    {
+        // 1. Reemplazamos GETDATE() por @fecha
+        string sql = @"INSERT INTO MovimientosCaja (CajaId, Fecha, Concepto, Monto, Tipo, Usuario, MedioPago) 
+                       VALUES (@cajaId, @fecha, @concepto, @monto, @tipo, @usuario, @medioPago)";
+        
+        SqlCommand cmd = new SqlCommand(sql, conn);
+        
+        // 2. Mapeo de parámetros
+        cmd.Parameters.AddWithValue("@cajaId", idCaja);
+        
+        // Enviamos la hora de C# (tu PC) en lugar de la del servidor SQL
+        cmd.Parameters.AddWithValue("@fecha", DateTime.Now); 
+        
+        cmd.Parameters.AddWithValue("@concepto", concepto);
+        
+        // Forzamos el tipo decimal para el monto por seguridad
+        cmd.Parameters.Add("@monto", System.Data.SqlDbType.Decimal).Value = monto;
+        
+        cmd.Parameters.AddWithValue("@tipo", tipo); // 0 para Ingreso, 1 para Egreso
+        cmd.Parameters.AddWithValue("@usuario", usuario);
+        cmd.Parameters.AddWithValue("@medioPago", medioPago);
+        
+        conn.Open();
+        cmd.ExecuteNonQuery();
+    }
 }
 public void RestarStockProducto(int idProducto, int cantidad)
 {

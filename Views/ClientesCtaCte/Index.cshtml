@@ -4,6 +4,22 @@
 }
 
 <div class="container mt-4">
+    @* --- ALERTAS DE CAJA Y COBRO --- *@
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
     <div class="card shadow border-0">
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center p-3">
             <h4 class="mb-0"><i class="bi bi-person-vcard me-2"></i>Deudores en Cuenta Corriente</h4>
@@ -13,13 +29,12 @@
                 </button>
             </div>
         </div>
-        <div class="card-body">
-            @* ... (Mantené tu tabla de deudores igual que antes) ... *@
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
+                <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Cliente</th>
+                            <th class="ps-3">Cliente</th>
                             <th>Teléfono</th>
                             <th>Saldo Deudor</th>
                             <th class="text-center">Acciones</th>
@@ -28,20 +43,25 @@
                     <tbody>
                         @if (Model != null && Model.Any())
                         {
-                            foreach (var item in Model)
+                            @foreach (var item in Model)
                             {
                                 <tr>
-                                    <td class="fw-bold">@item.NombreCliente</td>
-                                    <td>@(string.IsNullOrEmpty(item.TelefonoCliente) ? "Sin teléfono" : item.TelefonoCliente)</td>
-                                    <td class="text-danger fw-bold fs-5">$ @item.SaldoActual.ToString("N2")</td>
+                                    <td class="fw-bold ps-3">@item.NombreCliente</td>
+                                    <td>@(string.IsNullOrEmpty(item.TelefonoCliente) ? "Sin teléfono" : item.TelefonoCliente)
+                                    </td>
+
+                                    <td class="@(item.SaldoActual < 0 ? "text-success" : "text-danger") fw-bold fs-5">
+                                        $ @item.SaldoActual.ToString("N2")
+                                    </td>
+
                                     <td class="text-center">
-                                        <a href="@Url.Action("Index", "CtaCte", new { idCliente = item.IdCliente })" 
-                                           class="btn btn-outline-dark btn-sm me-1">
-                                             <i class="bi bi-eye"></i> Detalle
+                                        <a href="@Url.Action("Index", "CtaCte", new { idCliente = item.IdCliente })"
+                                               class="btn btn-outline-dark btn-sm me-1">
+                                            <i class="bi bi-eye"></i> Detalle
                                         </a>
-                                        <button class="btn btn-success btn-sm" 
+                                        <button class="btn btn-success btn-sm"
                                                 onclick="abrirModalCobro(@item.IdCliente, '@item.NombreCliente', @item.SaldoActual.ToString().Replace(",", "."))">
-                                             <i class="bi bi-cash-coin"></i> Registrar Pago
+                                            <i class="bi bi-cash-coin"></i> Registrar Pago
                                         </button>
                                     </td>
                                 </tr>
@@ -71,14 +91,12 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted small">Solo se muestran clientes que aún no tienen cuenta corriente activa.</p>
                 <div class="table-responsive">
                     <table class="table table-sm table-hover" id="tablaClientesGenerales">
                         <thead class="table-secondary">
                             <tr>
                                 <th>Nombre</th>
                                 <th>Teléfono</th>
-                                <th>DNI/CUIT</th>
                                 <th class="text-end">Acción</th>
                             </tr>
                         </thead>
@@ -90,7 +108,6 @@
                                     <tr>
                                         <td>@c.NombreCliente</td>
                                         <td>@c.TelefonoCliente</td>
-                                        <td>@c.DniCliente</td>
                                         <td class="text-end">
                                             <form asp-action="HabilitarCtaCte" method="post" style="display:inline;">
                                                 <input type="hidden" name="idClienteOriginal" value="@c.IdCliente" />
@@ -110,22 +127,81 @@
     </div>
 </div>
 
-@* ... (Mantené tu Modal de Cobro aquí debajo) ... *@
+@* --- MODAL DE COBRO (ESTE ES EL QUE FALTABA) --- *@
+<div class="modal fade" id="modalCobro" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-cash-coin me-2"></i>Registrar Pago de Cliente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            @* Apunta a tu método CobrarDeuda del controlador *@
+            <form asp-action="CobrarDeuda" method="post">
+                <div class="modal-body">
+                    <input type="hidden" name="idCliente" id="idCliCobro" />
+
+                    <div class="text-center mb-4">
+                        <h4 id="nombreCliCobro" class="text-primary mb-1"></h4>
+                        <div class="badge bg-light text-danger fs-6 border border-danger">
+                            Deuda: $ <span id="saldoCliCobro"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Monto a Entregar:</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-success text-white">$</span>
+                            <input type="number" step="any" name="montoPagado" id="inputMonto"
+                                   class="form-control fw-bold text-success border-success" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Medio de Pago:</label>
+                        <select name="medioPago" class="form-select form-select-lg">
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Transferencia">Transferencia</option>
+                            <option value="Mercado Pago">Mercado Pago</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success px-4 fw-bold">
+                        <i class="bi bi-check-lg"></i> CONFIRMAR PAGO
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <script>
-        function abrirModalBusquedaClientes() {
-            var myModal = new bootstrap.Modal(document.getElementById('modalBusquedaClientes'));
-            myModal.show();
-        }
+            function abrirModalBusquedaClientes() {
+                var myModal = new bootstrap.Modal(document.getElementById('modalBusquedaClientes'));
+                myModal.show();
+            }
 
-        function abrirModalCobro(id, nombre, saldo) {
-            document.getElementById('idCliCobro').value = id;
-            document.getElementById('nombreCliCobro').innerText = nombre;
-            document.getElementById('saldoCliCobro').innerText = saldo.toLocaleString('es-AR', { minimumFractionDigits: 2 });
-            document.getElementById('inputMonto').value = saldo;
-            var miModal = new bootstrap.Modal(document.getElementById('modalCobro'));
-            miModal.show();
-        }
+            function abrirModalCobro(id, nombre, saldo) {
+                // Asignar datos al modal
+                document.getElementById('idCliCobro').value = id;
+                document.getElementById('nombreCliCobro').innerText = nombre;
+                document.getElementById('saldoCliCobro').innerText = saldo.toLocaleString('es-AR', { minimumFractionDigits: 2 });
+
+                // Sugerir el pago total
+                document.getElementById('inputMonto').value = saldo;
+
+                // Abrir modal
+                var miModal = new bootstrap.Modal(document.getElementById('modalCobro'));
+                miModal.show();
+
+                // Foco automático en el monto
+                setTimeout(() => {
+                    const input = document.getElementById('inputMonto');
+                    input.focus();
+                    input.select();
+                }, 500);
+            }
     </script>
 }
