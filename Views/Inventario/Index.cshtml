@@ -2,72 +2,135 @@
 
 @{
     ViewData["Title"] = "Inventario";
-    decimal sumaTotal = 0;
 }
-<!-- DataTables CSS -->
+
+<style>
+    /* Filas delgadas y prolijas */
+    #tablaInventario td,
+    #tablaInventario th {
+        padding: 4px 8px !important;
+        font-size: 0.85rem;
+        vertical-align: middle;
+    }
+
+    .dataTables_wrapper .dataTables_filter {
+        margin-bottom: 10px;
+    }
+</style>
+
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
-<!-- jQuery y DataTables JS -->
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<div class="container-fluid mt-3">
+    <h2 class="mb-4">Inventario de Productos</h2>
 
-
-<h2 class="mb-4">Inventario de Productos</h2>
-
-<table id="tablaInventario" class="table table-bordered table-striped table-sm">
-
-    <thead class="table-dark">
-        <tr>
-            <th>ID</th>
-            <th>Código</th>
-            <th>Nombre</th>
-            <th>Stock Actual</th>
-            <th>Precio Costo</th>
-            <th>Subtotal</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var producto in Model)
-        {
-            var subtotal = producto.StockActual * producto.PrecioCosto;
-            sumaTotal += subtotal;
-            <tr>
-                <td>@producto.IdProducto</td>
-                <td>@producto.Codigo</td>
-                <td>@producto.Nombre</td>
-                <td>@producto.StockActual</td>
-                <td>$@producto.PrecioCosto.ToString("N2")</td>
-                <td>$@subtotal.ToString("N2")</td>
-            </tr>
-        }
-    </tbody>
-    <tfoot>
-        <tr>
-            <td colspan="5" class="text-end"><strong>Total General:</strong></td>
-            <td><strong>$@sumaTotal.ToString("N2")</strong></td>
-        </tr>
-    </tfoot>
-</table>
-
-<script>
-    $(document).ready(function () {
-        $('#tablaInventario').DataTable({
-            "language": {
-                "lengthMenu": "Mostrar _MENU_ registros por página",
-                "zeroRecords": "No se encontraron resultados",
-                "info": "Mostrando página _PAGE_ de _PAGES_",
-                "infoEmpty": "No hay registros disponibles",
-                "infoFiltered": "(filtrado de _MAX_ registros totales)",
-                "search": "Buscar:",
-                "paginate": {
-                    "first": "Primera",
-                    "last": "Última",
-                    "next": "Siguiente",
-                    "previous": "Anterior"
+    <div class="table-responsive">
+        <table id="tablaInventario" class="table table-bordered table-striped align-middle w-100">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width: 150px;">Código</th>
+                    <th>Nombre</th>
+                    <th class="text-center" style="width: 100px;">Stock</th>
+                    <th class="text-end" style="width: 130px;">Costo Unit.</th>
+                    <th class="text-end" style="width: 140px;">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var producto in Model)
+                {
+                    var subtotal = producto.StockActual * producto.PrecioCosto;
+                    <tr>
+                        <td>@producto.Codigo</td>
+                        <td>@producto.Nombre</td>
+                        <td class="text-center">@producto.StockActual</td>
+                        <td class="text-end">$ @producto.PrecioCosto.ToString("N2")</td>
+                        <td class="text-end">$ @subtotal.ToString("N2")</td>
+                    </tr>
                 }
-            },
-            "order": [[0, "asc"]]
+            </tbody>
+            <tfoot class="table-secondary">
+                <tr>
+                    <td colspan="4" class="text-end"><strong>VALOR TOTAL DEL STOCK:</strong></td>
+                    <td class="text-end"><strong id="totalCalculado">$ 0,00</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+       $('#tablaInventario').DataTable({
+    "pageLength": 80,
+    "autoWidth": false, // Desactivamos el cálculo automático para mandar nosotros
+    "columnDefs": [
+        { "width": "100px", "targets": 0 }, // Código
+        { "width": "auto",  "targets": 1 }, // Nombre (flexible)
+        { "width": "100px", "targets": 2 }, // Stock (los 10 caracteres que pediste)
+        { "width": "130px", "targets": 3 }, // Costo
+        { "width": "140px", "targets": 4 }  // Subtotal
+    ],
+    "lengthMenu": [[50, 80, 100, -1], [50, 80, 100, "Todos"]],
+    "language": {
+        "url": "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+    },
+    "order": [[1, "asc"]],
+    "dom": '<"d-flex justify-content-between mb-2"Bf>rt<"d-flex justify-content-between mt-2"lp>',
+    "buttons": [
+        {
+        extend: 'excelHtml5',
+        text: '📗 Excel',
+        className: 'btn btn-success btn-sm',
+        exportOptions: { columns: [0, 1, 2, 3, 4] } // Ajustado a 5 columnas totales
+        },
+        {
+        extend: 'pdfHtml5',
+        text: '📕 PDF',
+        className: 'btn btn-danger btn-sm',
+        exportOptions: { columns: [0, 1, 2, 3, 4] }
+        },
+        {
+        extend: 'print',
+        text: '🖨️ Imprimir',
+        exportOptions: { columns: [0, 1, 2, 3, 4] }
+        }
+        ],
+
+        "footerCallback": function (row, data, start, end, display) {
+        var api = this.api();
+        var intVal = function (i) {
+        if (typeof i === 'string') {
+        let clean = i.replace(/[^\d,-]/g, '').replace(',', '.');
+        return parseFloat(clean) || 0;
+        }
+        return typeof i === 'number' ? i : 0;
+        };
+
+        // IMPORTANTE: Cambiamos a column(4) porque el Subtotal se movió a la izquierda
+        var total = api
+        .column(4, { filter: 'applied' })
+        .data()
+        .reduce(function (a, b) {
+        return intVal(a) + intVal(b);
+        }, 0);
+
+        $('#totalCalculado').html('$ ' + total.toLocaleString('es-AR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+        }));
+        }
         });
-    });
-</script>
+        });
+    </script>
+}

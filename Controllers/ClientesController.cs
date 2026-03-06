@@ -18,7 +18,7 @@ public class ClientesController : Controller
     {
         var clientes = conexion.ObtenerClientes();
 
-        int registrosPorPagina = 5;
+        int registrosPorPagina = 50;
         var clientesPagina = clientes.Take(registrosPorPagina).ToList();
 
         ViewBag.PaginaActual = 1;
@@ -83,7 +83,7 @@ public class ClientesController : Controller
     [HttpGet]
     public IActionResult Buscar(string filtro, int pagina = 1)
     {
-        int registrosPorPagina = 5;
+        int registrosPorPagina = 50;
         var clientes = conexion.ObtenerClientes();
 
         if (!string.IsNullOrEmpty(filtro))

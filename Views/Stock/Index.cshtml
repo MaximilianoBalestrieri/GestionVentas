@@ -3,81 +3,32 @@
 }
 
 <style>
-    .contenedor-stock {
-        max-width: 1000px;
-        margin: 30px auto;
-        padding: 20px;
+    .contenedor-stock { max-width: 1200px; margin: 20px auto; padding: 20px; }
+    .titulo-stock { color: #003366; font-weight: 700; margin-bottom: 20px; border-bottom: 3px solid #1409f3; display: inline-block; padding-bottom: 5px; }
+    
+    /* Buscador más compacto */
+    .buscador-stock { border-radius: 10px; padding: 8px 15px; border: 2px solid #ddd; transition: all 0.3s ease; }
+    .buscador-stock:focus { border-color: #1409f3; box-shadow: 0 0 8px rgba(20, 9, 243, 0.2); outline: none; }
+
+    /* Estilos para achicar las filas */
+    .tabla-stock { border-radius: 8px; overflow: hidden; background: white; }
+    .tabla-stock thead { background-color: #003366; color: white; }
+    
+    /* Reducimos el padding de las celdas para que no sean altas */
+    .table-sm-custom td, .table-sm-custom th {
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
+        font-size: 0.85rem; /* Texto un poco más chico para ganar espacio */
+        vertical-align: middle;
     }
 
-    .titulo-stock {
-        color: #003366;
-        font-weight: 700;
-        margin-bottom: 25px;
-        border-bottom: 3px solid #1409f3;
-        display: inline-block;
-        padding-bottom: 5px;
-    }
+    .nombre-producto { font-weight: 600; color: #333; line-height: 1.2; }
+    
+    /* Badges más pequeños para que no estiren la fila */
+    .badge-stock { padding: 4px 10px; border-radius: 4px; font-weight: 600; min-width: 80px; font-size: 0.75rem; }
 
-    .buscador-stock {
-        border-radius: 20px;
-        padding: 12px 20px;
-        border: 2px solid #ddd;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-
-    .buscador-stock:focus {
-        border-color: #1409f3;
-        box-shadow: 0 4px 12px rgba(20, 9, 243, 0.2);
-        outline: none;
-    }
-
-    .tabla-stock {
-        border-radius: 12px;
-        overflow: hidden;
-        background: white;
-    }
-
-    .tabla-stock thead {
-        background-color: #003366;
-        color: white;
-    }
-
-    .nombre-producto {
-        font-weight: 400;
-        color: #333;
-    }
-
-    .badge-stock {
-        padding: 8px 15px;
-        border-radius: 50px;
-        font-weight: 600;
-        min-width: 100px;
-    }
-
-    .modal-content {
-        border-radius: 15px;
-        border: none;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-
-    .display-stock {
-        font-size: 3rem;
-        font-weight: 800;
-        color: #003366;
-    }
-
-    .input-suma {
-        font-size: 1.5rem;
-        text-align: center;
-        font-weight: bold;
-    }
-
-    .text-proveedor {
-        font-size: 0.85rem;
-        color: #666;
-        font-style: italic;
-    }
+    .display-stock { font-size: 2.5rem; font-weight: 800; color: #003366; }
+    .input-suma { font-size: 1.5rem; text-align: center; font-weight: bold; }
 </style>
 
 <div id="app" class="contenedor-stock">
@@ -85,96 +36,92 @@
         <i class="bi bi-box-seam"></i> Control de Stock
     </h2>
 
-    <div class="mb-4">
+    <div class="mb-3">
         <input type="text" 
                class="form-control buscador-stock" 
                placeholder="🔍 Buscar producto o proveedor..." 
-               v-model="busqueda" />
+               v-model="busqueda" 
+               @@input="paginaActual = 1" />
     </div>
 
     <div class="table-responsive shadow-sm tabla-stock">
-        <table class="table table-hover mb-0">
+        @* Agregamos table-sm para reducir espacios *@
+        <table class="table table-hover table-bordered table-sm table-sm-custom mb-0">
             <thead>
                 <tr>
-                    <th>Producto</th>
-                    <th class="text-center">Proveedor</th> <th class="text-center">Stock Actual</th>
-                    <th class="text-center">Acciones</th>
+                    <th style="width: 40%;">Producto</th>
+                    <th class="text-center">Proveedor</th> 
+                    <th class="text-center" style="width: 150px;">Stock Actual</th>
+                    <th class="text-center" style="width: 200px;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="p in productosFiltrados" :key="p.idProducto">
-                    <td class="align-middle">
+                <tr v-for="p in productosPaginados" :key="p.idProducto">
+                    <td>
                         <div class="nombre-producto">{{ p.nombre }}</div>
-                        <small class="text-muted" style="font-size: 0.7rem;">Cod: {{ p.codigo }}</small>
+                        <small class="text-muted">Cod: {{ p.codigo }}</small>
                     </td>
-                    <td class="text-center align-middle text-proveedor">
+                    <td class="text-center text-proveedor">
                         {{ p.nombreProveedor || 'Sin Proveedor' }}
                     </td>
-                    <td class="text-center align-middle">
+                    <td class="text-center">
                         <span :class="p.stockActual <= 5 ? 'badge bg-danger badge-stock' : 'badge bg-success badge-stock'">
-                            {{ p.stockActual }} unidades
+                            {{ p.stockActual }} Unidades
                         </span>
                     </td>
-                    <td class="text-center align-middle">
+                    <td class="text-center">
                         <div class="btn-group">
-                            <button class="btn btn-primary btn-sm px-3" v-on:click="abrirAjuste(p, 'suma')">
-                                <i class="bi bi-plus-circle"></i> Agregar
+                            <button class="btn btn-primary btn-sm py-0 px-2" v-on:click="abrirAjuste(p, 'suma')">
+                                <i class="bi bi-plus"></i> Sumar
                             </button>
-                            <button class="btn btn-outline-danger btn-sm px-3" v-on:click="abrirAjuste(p, 'resta')">
-                                <i class="bi bi-dash-circle"></i> Restar
+                            <button class="btn btn-outline-danger btn-sm py-0 px-2" v-on:click="abrirAjuste(p, 'resta')">
+                                <i class="bi bi-dash"></i> Restar
                             </button>
                         </div>
                     </td>
-                </tr>
-                <tr v-if="productosFiltrados.length === 0">
-                    <td colspan="4" class="text-center py-4 text-muted">No se encontraron resultados.</td>
                 </tr>
             </tbody>
         </table>
     </div>
 
-    <div class="modal fade" id="modalStock" tabindex="-1" data-bs-backdrop="static">
+    <nav v-if="totalPaginas > 1" class="mt-3">
+        <ul class="pagination pagination-sm justify-content-center">
+            <li class="page-item" :class="{ disabled: paginaActual === 1 }">
+                <a class="page-link" href="#" @@click.prevent="paginaActual--">Ant.</a>
+            </li>
+            <li v-for="n in totalPaginas" :key="n" class="page-item" :class="{ active: paginaActual === n }">
+                <a class="page-link" href="#" @@click.prevent="paginaActual = n" 
+                   v-if="n >= paginaActual - 3 && n <= paginaActual + 3">{{ n }}</a>
+            </li>
+            <li class="page-item" :class="{ disabled: paginaActual === totalPaginas }">
+                <a class="page-link" href="#" @@click.prevent="paginaActual++">Sig.</a>
+            </li>
+        </ul>
+        <div class="text-center text-muted">
+            <small>Página {{ paginaActual }} de {{ totalPaginas }} (Mostrando de a 80 productos)</small>
+        </div>
+    </nav>
+
+    <div class="modal fade" id="modalStock" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" v-if="seleccionado">
                 <div :class="['modal-header text-white', modoAjuste === 'suma' ? 'bg-primary' : 'bg-danger']">
-                    <h5 class="modal-title">
-                        {{ modoAjuste === 'suma' ? '📦 Ingreso de Mercadería' : '📉 Salida de Mercadería' }}
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" v-on:click="cerrar"></button>
+                    <h5 class="modal-title">{{ modoAjuste === 'suma' ? '📦 Carga de Stock' : '📉 Ajuste de Salida' }}</h5>
+                    <button type="button" class="btn-close btn-close-white" @@click="cerrar"></button>
                 </div>
                 <div class="modal-body text-center p-4">
-                    <h4 class="fw-normal mb-1">{{ seleccionado.nombre }}</h4>
-                    <span class="badge bg-light text-dark border mb-3">Proveedor: {{ seleccionado.nombreProveedor }}</span>
-                    
-                    <div class="mb-4">
-                        <small class="text-secondary text-uppercase" style="letter-spacing: 1px;">Stock actual</small>
-                        <div class="display-stock">{{ seleccionado.stockActual }}</div>
-                    </div>
-                    
-                    <div class="form-group px-4">
-                        <label class="form-label fw-bold">Cantidad a {{ modoAjuste === 'suma' ? 'SUMAR' : 'RESTAR' }}:</label>
-                        <input type="number" 
-                               class="form-control form-control-lg input-suma" 
-                               :class="modoAjuste === 'suma' ? 'text-primary' : 'text-danger'"
-                               v-model.number="cantidadIngresada" 
-                               min="1"
-                               id="inputCantidad" />
-                        
-                        <div class="mt-3 p-2 bg-light rounded border">
-                            <small class="text-muted">Nuevo Stock proyectado:</small><br>
-                            <span :class="['h5 fw-bold', modoAjuste === 'suma' ? 'text-primary' : 'text-danger']">
-                                {{ nuevoStockProyectado }} unidades
-                            </span>
-                        </div>
+                    <h5 class="mb-3">{{ seleccionado.nombre }}</h5>
+                    <div class="display-stock mb-3">{{ seleccionado.stockActual }}</div>
+                    <div class="form-group px-5">
+                        <label class="mb-2 fw-bold">Cantidad:</label>
+                        <input type="number" id="inputCantidad" class="form-control input-suma" v-model.number="cantidadIngresada" />
                     </div>
                 </div>
-                <div class="modal-footer border-0 justify-content-center pb-4">
-                    <button type="button" class="btn btn-outline-secondary px-4 rounded-pill" v-on:click="cerrar">Cancelar</button>
-                    <button type="button" 
-                            :class="['btn px-5 rounded-pill shadow-sm', modoAjuste === 'suma' ? 'btn-success' : 'btn-danger']" 
-                            :disabled="!cantidadIngresada || cantidadIngresada <= 0 || (modoAjuste === 'resta' && nuevoStockProyectado < 0)"
-                            v-on:click="confirmarGuardado">
-                        Confirmar {{ modoAjuste === 'suma' ? 'Ingreso' : 'Descuento' }}
+                <div class="modal-footer justify-content-center">
+                    <button class="btn btn-secondary px-4" @@click="cerrar">Cancelar</button>
+                    <button :class="modoAjuste === 'suma' ? 'btn btn-success' : 'btn btn-danger'" 
+                            class="px-4" @@click="confirmarGuardado">
+                        Confirmar
                     </button>
                 </div>
             </div>
@@ -193,7 +140,9 @@
                 seleccionado: null,
                 cantidadIngresada: 0,
                 modoAjuste: 'suma',
-                modalBS: null
+                modalBS: null,
+                paginaActual: 1,
+                itemsPorPagina: 80 // CAMBIO: Ahora muestra 80 líneas
             },
             computed: {
                 productosFiltrados() {
@@ -201,74 +150,42 @@
                     return this.productos.filter(p => 
                         (p.nombre && p.nombre.toLowerCase().includes(f)) || 
                         (p.codigo && p.codigo.toLowerCase().includes(f)) ||
-                        (p.nombreProveedor && p.nombreProveedor.toLowerCase().includes(f)) // Filtro por proveedor agregado
+                        (p.nombreProveedor && p.nombreProveedor.toLowerCase().includes(f))
                     );
                 },
-                nuevoStockProyectado() {
-                    if (!this.seleccionado) return 0;
-                    const cantidad = this.cantidadIngresada || 0;
-                    return this.modoAjuste === 'suma' 
-                        ? this.seleccionado.stockActual + cantidad 
-                        : this.seleccionado.stockActual - cantidad;
-                }
+                productosPaginados() {
+                    const inicio = (this.paginaActual - 1) * this.itemsPorPagina;
+                    return this.productosFiltrados.slice(inicio, inicio + this.itemsPorPagina);
+                },
+                totalPaginas() { return Math.ceil(this.productosFiltrados.length / this.itemsPorPagina); }
             },
             methods: {
                 cargar() {
-                    fetch('/Stock/ObtenerProductos')
-                        .then(r => r.json())
-                        .then(data => {
-                            this.productos = data;
-                        });
+                    fetch('/Stock/ObtenerProductos').then(r => r.json()).then(data => { this.productos = data; });
                 },
                 abrirAjuste(p, modo) {
                     this.modoAjuste = modo;
                     this.seleccionado = Object.assign({}, p);
                     this.cantidadIngresada = 0;
-                    if (!this.modalBS) {
-                        this.modalBS = new bootstrap.Modal(document.getElementById('modalStock'));
-                    }
+                    if (!this.modalBS) this.modalBS = new bootstrap.Modal(document.getElementById('modalStock'));
                     this.modalBS.show();
-                    setTimeout(() => {
-                        const input = document.getElementById('inputCantidad');
-                        if(input) input.focus();
-                    }, 500);
                 },
-                confirmarGuardado() {
-                    if (this.modoAjuste === 'resta') {
-                        if (confirm(`⚠️ ¿Está seguro que desea DESCONTAR ${this.cantidadIngresada} unidades de "${this.seleccionado.nombre}" del proveedor "${this.seleccionado.nombreProveedor}"?`)) {
-                            this.guardarStock();
-                        }
-                    } else {
-                        this.guardarStock();
-                    }
-                },
-                guardarStock() {
+                confirmarGuardado() { 
                     const cantidadFinal = this.modoAjuste === 'suma' ? this.cantidadIngresada : this.cantidadIngresada * -1;
-                    const data = { idProducto: this.seleccionado.idProducto, cantidad: cantidadFinal };
-
                     fetch('/Stock/SumarStock', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    })
-                    .then(r => {
-                        if (r.ok) {
-                            this.cargar();
-                            this.cerrar();
-                        } else {
-                            alert("Error al actualizar el stock.");
-                        }
-                    })
-                    .catch(e => alert("Error de conexión."));
+                        body: JSON.stringify({ idProducto: this.seleccionado.idProducto, cantidad: cantidadFinal })
+                    }).then(r => { 
+                        if(r.ok) { 
+                            this.cargar(); 
+                            this.cerrar(); 
+                        } 
+                    });
                 },
-                cerrar() {
-                    if(this.modalBS) this.modalBS.hide();
-                    this.seleccionado = null;
-                }
+                cerrar() { if(this.modalBS) this.modalBS.hide(); this.seleccionado = null; }
             },
-            mounted() {
-                this.cargar();
-            }
+            mounted() { this.cargar(); }
         });
     </script>
 }

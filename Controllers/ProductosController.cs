@@ -17,36 +17,47 @@ namespace GestionVentas.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        public ActionResult Index(string busqueda, int pagina = 1, int tamanioPagina = 10)
+        public ActionResult Index(string busqueda = "", int pagina = 1, int tamanioPagina = 50)
         {
             ViewBag.FotoPerfil = HttpContext.Session.GetString("FotoPerfil");
+
             List<Productos> productos = new List<Productos>();
             int inicio = (pagina - 1) * tamanioPagina;
+            int totalRegistros = 0;
 
             using (SqlConnection conn = db.ObtenerConexion())
             {
                 conn.Open();
 
-                // La lista explícita de columnas evita la inclusión de PrecioVenta (calculada)
-                // Mantenemos StockMinimo aquí, ya que lo incluiste en la DB.
-                string consulta = "SELECT IdProducto, Nombre, Codigo, PrecioCosto, RecargoPorcentaje, NombreProveedor, StockActual, StockMinimo, Imagen, Descripcion FROM productos";
+                // CONTAR REGISTROS FILTRADOS
+                string consultaConteo = @"
+                    SELECT COUNT(*) 
+                    FROM productos
+                    WHERE (@busqueda = '' OR nombre LIKE @busqueda OR codigo LIKE @busqueda)";
 
-                if (!string.IsNullOrEmpty(busqueda))
-                    consulta += " WHERE nombre LIKE @busqueda OR codigo LIKE @busqueda";
+                using (SqlCommand cmdCount = new SqlCommand(consultaConteo, conn))
+                {
+                    cmdCount.Parameters.AddWithValue("@busqueda", "%" + busqueda + "%");
+                    totalRegistros = (int)cmdCount.ExecuteScalar();
+                }
 
-                consulta += " ORDER BY IdProducto OFFSET @inicio ROWS FETCH NEXT @tamanio ROWS ONLY";
+                // TRAER PRODUCTOS PAGINADOS YA FILTRADOS
+                string consulta = @"
+                    SELECT IdProducto, Nombre, Codigo, PrecioCosto, RecargoPorcentaje,
+                           NombreProveedor, StockActual, StockMinimo, Imagen, Descripcion
+                    FROM productos
+                    WHERE (@busqueda = '' OR nombre LIKE @busqueda OR codigo LIKE @busqueda)
+                    ORDER BY IdProducto
+                    OFFSET @inicio ROWS FETCH NEXT @tamanio ROWS ONLY";
 
                 using (SqlCommand cmd = new SqlCommand(consulta, conn))
                 {
-                    if (!string.IsNullOrEmpty(busqueda))
-                        cmd.Parameters.AddWithValue("@busqueda", $"%{busqueda}%");
-
+                    cmd.Parameters.AddWithValue("@busqueda", "%" + busqueda + "%");
                     cmd.Parameters.AddWithValue("@inicio", inicio);
                     cmd.Parameters.AddWithValue("@tamanio", tamanioPagina);
 
                     using (var reader = cmd.ExecuteReader())
                     {
-                        // Definición de Ordinales
                         int ordinalId = reader.GetOrdinal("IdProducto");
                         int ordinalNombre = reader.GetOrdinal("Nombre");
                         int ordinalCodigo = reader.GetOrdinal("Codigo");
@@ -65,18 +76,11 @@ namespace GestionVentas.Controllers
                                 IdProducto = reader.GetInt32(ordinalId),
                                 Nombre = reader.GetString(ordinalNombre),
                                 Codigo = reader.GetString(ordinalCodigo),
-
-                                // *** CORRECCIÓN CRÍTICA: Convertir INT a DECIMAL de forma segura ***
                                 PrecioCosto = reader.IsDBNull(ordinalCosto) ? 0.00M : Convert.ToDecimal(reader.GetValue(ordinalCosto)),
                                 RecargoPorcentaje = reader.IsDBNull(ordinalRecargo) ? 0.00M : Convert.ToDecimal(reader.GetValue(ordinalRecargo)),
-
                                 NombreProveedor = reader.IsDBNull(ordinalProveedor) ? null : reader.GetString(ordinalProveedor),
-
-                                // Lectura de Stock
                                 StockActual = reader.IsDBNull(ordinalStockActual) ? 0 : reader.GetInt32(ordinalStockActual),
                                 StockMinimo = reader.IsDBNull(ordinalStockMinimo) ? 0 : reader.GetInt32(ordinalStockMinimo),
-
-                                // Lectura de strings con nulos
                                 Imagen = reader.IsDBNull(ordinalImagen) ? null : reader.GetString(ordinalImagen),
                                 Descripcion = reader.IsDBNull(ordinalDescripcion) ? null : reader.GetString(ordinalDescripcion)
                             });
@@ -86,39 +90,55 @@ namespace GestionVentas.Controllers
             }
 
             ViewBag.Busqueda = busqueda;
-            ViewBag.Pagina = pagina;
+            ViewBag.PaginaActual = pagina;
+            ViewBag.TotalPaginas = (int)Math.Ceiling((double)totalRegistros / tamanioPagina);
             ViewBag.TamanioPagina = tamanioPagina;
+            ViewBag.TotalRegistros = totalRegistros;
 
             return View(productos);
-
         }
-       [HttpGet]
-public JsonResult Buscar(string term, string proveedor)
-{
-    // Traemos todos los productos inicialmente
-    var productos = db.ObtenerProductos();
 
-    // Filtro por Nombre o Código (el primer input)
+       [HttpGet]
+public JsonResult Buscar(string term, string proveedor, int pagina = 1)
+{
+    var productos = db.ObtenerProductos();
+    int tamanioPagina = 50; 
+
+    // 1. Filtrar por término
     if (!string.IsNullOrWhiteSpace(term))
     {
         productos = productos.Where(p =>
-            p.Nombre.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+            (p.Nombre != null && p.Nombre.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
             (p.Codigo != null && p.Codigo.Contains(term, StringComparison.OrdinalIgnoreCase))
         ).ToList();
     }
 
-    // Filtro por Proveedor (el segundo input que agregamos)
+    // 2. Filtrar por proveedor
     if (!string.IsNullOrWhiteSpace(proveedor))
     {
         productos = productos.Where(p =>
-            p.NombreProveedor != null && 
+            p.NombreProveedor != null &&
             p.NombreProveedor.Contains(proveedor, StringComparison.OrdinalIgnoreCase)
         ).ToList();
     }
 
-    return Json(productos);
+    // 3. Cálculos de paginación
+    int totalRegistros = productos.Count;
+    int totalPaginas = (int)Math.Ceiling((double)totalRegistros / tamanioPagina);
+
+    // 4. Enviar datos necesarios a los Headers
+    Response.Headers["X-Total-Count"] = totalRegistros.ToString();
+    Response.Headers["X-Pagina-Actual"] = pagina.ToString();
+    Response.Headers["X-Total-Paginas"] = totalPaginas.ToString();
+
+    // 5. Devolver solo el segmento de la página solicitada (Skip y Take)
+    var resultadoPaginado = productos
+        .Skip((pagina - 1) * tamanioPagina)
+        .Take(tamanioPagina)
+        .ToList();
+
+    return Json(resultadoPaginado);
 }
-        
 
         public ActionResult ObtenerProductos()
         {
@@ -155,11 +175,9 @@ public JsonResult Buscar(string term, string proveedor)
             {
                 if (ModelState.IsValid)
                 {
-                    string? nombreArchivo = null;
-
                     if (imagen != null && imagen.Length > 0)
                     {
-                        nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(imagen.FileName);
+                        string nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(imagen.FileName);
                         string rutaCarpeta = Path.Combine(_webHostEnvironment.WebRootPath, "imagenes", "productos");
                         Directory.CreateDirectory(rutaCarpeta);
 
@@ -176,7 +194,6 @@ public JsonResult Buscar(string term, string proveedor)
                     }
 
                     db.AgregarProducto(prod);
-
                     return RedirectToAction("Index");
                 }
             }
@@ -236,77 +253,69 @@ public JsonResult Buscar(string term, string proveedor)
             return View(producto);
         }
 
-       [HttpPost]
-[ValidateAntiForgeryToken]
-public IActionResult Edit(Productos model, IFormFile? imagen)
-{
-    // 1. Configurar la cultura para este hilo
-    var culturaArg = new System.Globalization.CultureInfo("es-AR");
-    System.Threading.Thread.CurrentThread.CurrentCulture = culturaArg;
-    System.Threading.Thread.CurrentThread.CurrentUICulture = culturaArg;
-
-    // 2. CORRECCIÓN MANUAL: Leer directamente del formulario para evitar los dos ceros extra
-    // Esto rescata el valor exacto que escribió el usuario (con coma)
-    string precioCostoRaw = Request.Form["PrecioCosto"].ToString();
-    string recargoRaw = Request.Form["RecargoPorcentaje"].ToString();
-
-    if (decimal.TryParse(precioCostoRaw, System.Globalization.NumberStyles.Any, culturaArg, out decimal precioLimpio))
-    {
-        model.PrecioCosto = precioLimpio;
-    }
-    if (decimal.TryParse(recargoRaw, System.Globalization.NumberStyles.Any, culturaArg, out decimal recargoLimpio))
-    {
-        model.RecargoPorcentaje = recargoLimpio;
-    }
-
-    ViewBag.FotoPerfil = HttpContext.Session.GetString("FotoPerfil");
-
-    // Revalidar el modelo después de la corrección manual
-    ModelState.Clear(); 
-    TryValidateModel(model);
-
-    if (!ModelState.IsValid)
-    {
-        model.Proveedores = db.ObtenerProveedores()
-            .Select(p => new SelectListItem
-            {
-                Value = p.NombreProveedor,
-                Text = p.NombreProveedor
-            }).ToList();
-        return View(model);
-    }
-
-    var producto = db.ObtenerProductoPorId(model.IdProducto);
-    if (producto == null) return NotFound();
-
-    // Asignar los valores corregidos
-    producto.Codigo = model.Codigo;
-    producto.Nombre = model.Nombre;
-    producto.Categoria = model.Categoria;
-    producto.Descripcion = model.Descripcion;
-    producto.PrecioCosto = model.PrecioCosto; // Valor ya limpio
-    producto.RecargoPorcentaje = model.RecargoPorcentaje; // Valor ya limpio
-    producto.StockActual = model.StockActual;
-    producto.StockMinimo = model.StockMinimo;
-    producto.NombreProveedor = model.NombreProveedor;
-
-    // Lógica de imagen (sin cambios para no romperla)
-    if (imagen != null && imagen.Length > 0)
-    {
-        string nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(imagen.FileName);
-        string rutaCarpeta = Path.Combine(_webHostEnvironment.WebRootPath, "imagenes", "productos");
-        Directory.CreateDirectory(rutaCarpeta);
-
-        using (var stream = new FileStream(Path.Combine(rutaCarpeta, nombreArchivo), FileMode.Create))
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(Productos model, IFormFile? imagen)
         {
-            imagen.CopyTo(stream);
+            var culturaArg = new System.Globalization.CultureInfo("es-AR");
+            System.Threading.Thread.CurrentThread.CurrentCulture = culturaArg;
+            System.Threading.Thread.CurrentThread.CurrentUICulture = culturaArg;
+
+            string precioCostoRaw = Request.Form["PrecioCosto"].ToString();
+            string recargoRaw = Request.Form["RecargoPorcentaje"].ToString();
+
+            if (decimal.TryParse(precioCostoRaw, System.Globalization.NumberStyles.Any, culturaArg, out decimal precioLimpio))
+                model.PrecioCosto = precioLimpio;
+
+            if (decimal.TryParse(recargoRaw, System.Globalization.NumberStyles.Any, culturaArg, out decimal recargoLimpio))
+                model.RecargoPorcentaje = recargoLimpio;
+
+            ViewBag.FotoPerfil = HttpContext.Session.GetString("FotoPerfil");
+
+            ModelState.Clear();
+            TryValidateModel(model);
+
+            if (!ModelState.IsValid)
+            {
+                model.Proveedores = db.ObtenerProveedores()
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.NombreProveedor,
+                        Text = p.NombreProveedor
+                    }).ToList();
+
+                return View(model);
+            }
+
+            var producto = db.ObtenerProductoPorId(model.IdProducto);
+            if (producto == null) return NotFound();
+
+            producto.Codigo = model.Codigo;
+            producto.Nombre = model.Nombre;
+            producto.Categoria = model.Categoria;
+            producto.Descripcion = model.Descripcion;
+            producto.PrecioCosto = model.PrecioCosto;
+            producto.RecargoPorcentaje = model.RecargoPorcentaje;
+            producto.StockActual = model.StockActual;
+            producto.StockMinimo = model.StockMinimo;
+            producto.NombreProveedor = model.NombreProveedor;
+
+            if (imagen != null && imagen.Length > 0)
+            {
+                string nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(imagen.FileName);
+                string rutaCarpeta = Path.Combine(_webHostEnvironment.WebRootPath, "imagenes", "productos");
+                Directory.CreateDirectory(rutaCarpeta);
+
+                using (var stream = new FileStream(Path.Combine(rutaCarpeta, nombreArchivo), FileMode.Create))
+                {
+                    imagen.CopyTo(stream);
+                }
+
+                producto.Imagen = "/imagenes/productos/" + nombreArchivo;
+            }
+
+            db.ActualizarProducto(producto);
+            return RedirectToAction("Index");
         }
-
-        producto.Imagen = "/imagenes/productos/" + nombreArchivo;
     }
-
-    db.ActualizarProducto(producto);
-    return RedirectToAction("Index");
-}
-}
 }

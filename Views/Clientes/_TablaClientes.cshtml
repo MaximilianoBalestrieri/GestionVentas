@@ -4,25 +4,44 @@
     int totalPaginas = ViewBag.TotalPaginas ?? 1;
     string filtro = ViewBag.Filtro ?? "";
 }
-
-<table class="table table-bordered">
-    <tr>
-        <th>DNI</th><th>Nombre</th><th>Domicilio</th><th>Localidad</th><th>Telefono</th><th>Acciones</th>
-    </tr>
-    @foreach (var c in Model)
-    {
-        <tr>
-            <td>@c.DniCliente</td>
-            <td>@c.NombreCliente</td>
-            <td>@c.Domicilio</td>
-            <td>@c.Localidad</td>
-            <td>@c.TelefonoCliente</td>
-            <td>
-                <a href="/Clientes/Edit/@c.IdCliente" class="btn btn-warning btn-sm">Editar</a>
-                <a href="/Clientes/Delete/@c.IdCliente" class="btn btn-danger btn-sm">Eliminar</a>
-            </td>
-        </tr>
+<style>
+    /* Forzar que las celdas no tengan padding vertical extra */
+    .table-sm td, .table-sm th {
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
+        font-size: 0.9rem; /* Un texto ligeramente más pequeño también ayuda a la vista */
     }
+</style>
+<table class="table table-bordered table-sm table-hover align-middle">
+    <thead class="table-light"> <tr>
+            <th class="py-2">DNI</th>
+            <th class="py-2">Nombre</th>
+            <th class="py-2">Domicilio</th>
+            <th class="py-2">Localidad</th>
+            <th class="py-2">Telefono</th>
+            <th class="py-2 text-center">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var c in Model)
+        {
+            <tr>
+                <td class="px-2">@c.DniCliente</td>
+                <td class="px-2">@c.NombreCliente</td>
+                <td class="px-2">@c.Domicilio</td>
+                <td class="px-2">@c.Localidad</td>
+                <td class="px-2">@c.TelefonoCliente</td>
+                <td class="text-center py-1">
+                    <a href="/Clientes/Edit/@c.IdCliente" class="btn btn-warning btn-sm" style="font-size: 0.8rem; padding: 0.2rem 0.5rem;">
+                        ✏️ Editar
+                    </a>
+                    <a href="/Clientes/Delete/@c.IdCliente" class="btn btn-danger btn-sm" style="font-size: 0.8rem; padding: 0.2rem 0.5rem;">
+                        🗑️ Eliminar
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
 </table>
 
 <nav>

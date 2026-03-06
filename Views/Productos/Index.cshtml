@@ -1,247 +1,278 @@
 @model List<GestionVentas.Models.Productos>
 @{
     ViewBag.Title = "Productos";
+    int totalPaginas = ViewBag.TotalPaginas ?? 1;
+    int paginaActual = ViewBag.PaginaActual ?? 1;
+    string busquedaActual = ViewBag.Busqueda ?? "";
 }
 
-<body>
+<style>
+    .table-sm-custom td, .table-sm-custom th {
+        padding-top: 2px !important;
+        padding-bottom: 2px !important;
+        vertical-align: middle;
+    }
+    .img-prev {
+        width: 30px;
+        height: 30px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+</style>
+
 <div class="container mt-4">
+    @* Formulario cambiado a GET para que la búsqueda persista al recargar/paginar *@
+    <form class="mb-3 d-flex align-items-center gap-2" method="get" action="@Url.Action("Index")">
+        <div class="mb-3 d-flex align-items-center gap-2">
+            <div class="input-group input-group-sm" style="width: 250px;">
+                <span class="input-group-text bg-white border-end-0">🔍</span>
+                <input type="text" id="inputBusqueda" name="busqueda" value="@busquedaActual" placeholder="Producto o código..." class="form-control border-start-0" autocomplete="off" />
+            </div>
 
-    <form class="mb-3 d-flex align-items-center gap-2" onsubmit="return false;">
-  <div class="mb-3 d-flex align-items-center gap-2">
-    <div class="input-group input-group-sm" style="width: 250px;">
-        <span class="input-group-text bg-white border-end-0">🔍</span>
-        <input type="text" id="inputBusqueda" placeholder="Producto o código..." class="form-control border-start-0" />
-    </div>
+            <div class="input-group input-group-sm" style="width: 200px;">
+                <span class="input-group-text bg-white border-end-0">🚚</span>
+                <input type="text" id="inputProveedor" placeholder="Filtrar proveedor..." class="form-control border-start-0" />
+            </div>
+            @* Botón oculto para que el "Enter" funcione naturalmente *@
+            <button type="submit" style="display:none;"></button>
+        </div>
+    </form>
 
-    <div class="input-group input-group-sm" style="width: 200px;">
-        <span class="input-group-text bg-white border-end-0">🚚</span>
-        <input type="text" id="inputProveedor" placeholder="Filtrar proveedor..." class="form-control border-start-0" />
-    </div>
+   <div class="d-flex align-items-baseline gap-3 mb-4">
+    <h1>🛒 Productos</h1>
+    <h3 class="text-muted fw-light" style="font-size: 1.2rem;">
+        (Se encontraron <span id="contadorProductos">@ViewBag.TotalRegistros</span> productos)
+    </h3>
 </div>
-   <!--   <button class="btn btn-sm btn-outline-primary" onclick="buscarProductos()">🔍</button>  -->
-</form>
-
-
-    <h1 class="mb-4">🛒 Producto</h1>
-
     <a href="@Url.Action("Create", "Productos")" class="btn btn-primary mb-3">
         ➕ Agregar Producto
     </a>
 
-
-   <table class="table table-striped table-bordered small">
-    <thead class="table-dark">
-        <tr>
-            <th class="text-center">Código</th>
-            <th style="width: 250px;">Nombre</th>
-            <th class="text-end">Precio Costo</th>
-            <th class="width: 50px; text-center">Recargo (%)</th>
-            <th class="text-end">Precio Venta</th>
-            <th>Stock</th>
-            <th id="ordenarProveedor" style="cursor:pointer;">Proveedor 🔽</th>
-
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var prod in Model)
-        {
-            var rutaImagen = prod.Imagen?.Replace("\\", "/") ?? "";
-            if (!string.IsNullOrEmpty(rutaImagen) && !rutaImagen.StartsWith("/"))
+    <table class="table table-striped table-bordered small table-sm-custom">
+        <thead class="table-dark">
+            <tr>
+                <th class="text-center">Código</th>
+                <th style="width: 250px;">Nombre</th>
+                <th class="text-end">Precio Costo</th>
+                <th class="text-center">Recargo (%)</th>
+                <th class="text-end">Precio Venta</th>
+                <th class="text-center">Stock</th>
+                <th id="ordenarProveedor" style="cursor:pointer;">Proveedor 🔽</th>
+                <th class="text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var prod in Model)
             {
-                rutaImagen = "/" + rutaImagen;
+                var rutaImagen = prod.Imagen?.Replace("\\", "/") ?? "";
+                if (!string.IsNullOrEmpty(rutaImagen) && !rutaImagen.StartsWith("/"))
+                {
+                    rutaImagen = "/" + rutaImagen;
+                }
+
+                var stockClass = prod.StockActual <= 3 ? "text-danger fw-bold" : "";
+
+                <tr>
+                    <td class="text-center">@prod.Codigo</td>
+                    <td>@prod.Nombre</td>
+                    <td class="text-end">$@prod.PrecioCosto.ToString("0.00")</td>
+                    <td class="text-center">@prod.RecargoPorcentaje %</td>
+                    <td class="text-end"><strong>$@prod.PrecioVenta.ToString("0.00")</strong></td>
+                    <td class="text-center @stockClass">@prod.StockActual</td>
+                    <td>@prod.NombreProveedor</td>
+                    <td class="text-center">
+                        <a href="@Url.Action("Edit", "Productos", new { id = prod.IdProducto })" class="btn btn-sm btn-warning">✏️</a>
+                        <a href="@Url.Action("Delete", "Productos", new { id = prod.IdProducto })" class="btn btn-sm btn-danger">🗑️</a>
+                        <button type="button"
+                                class="btn btn-sm btn-info"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalImagen"
+                                data-img="@rutaImagen"
+                                data-nombre="@prod.Nombre"
+                                data-descripcion="@prod.Descripcion">
+                            🖼️
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+  <div id="contenedorPaginacion">
+    <nav id="navPaginacion">
+        <ul class="pagination justify-content-center mt-4">
+            @if (paginaActual > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { pagina = paginaActual - 1, busqueda = busquedaActual })">Anterior</a>
+                </li>
             }
 
-            var stockClass = prod.StockActual <= 3 ? "text-danger fw-bold" : "";
+            @for (int i = 1; i <= totalPaginas; i++)
+            {
+                if (i == 1 || i == totalPaginas || (i >= paginaActual - 2 && i <= paginaActual + 2))
+                {
+                    <li class="page-item @(i == paginaActual ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { pagina = i, busqueda = busquedaActual })">@i</a>
+                    </li>
+                }
+                else if (i == paginaActual - 3 || i == paginaActual + 3)
+                {
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                }
+            }
 
-            <tr>
-                <td class="text-center">@prod.Codigo</td>
-                <td>@prod.Nombre</td>
-                <td class="text-end">$@prod.PrecioCosto.ToString("0.00")</td>
-                <td class="text-center">@prod.RecargoPorcentaje %</td>
-                <td class="text-end"><strong>$@prod.PrecioVenta.ToString("0.00")</strong></td>
-                <td class="text-center @stockClass">@prod.StockActual</td>
-                <td>@prod.NombreProveedor</td>
-                <td>
-                    <a href="@Url.Action("Edit", "Productos", new { id = prod.IdProducto })" class="btn btn-sm btn-warning">✏️</a>
-                    <a href="@Url.Action("Delete", "Productos", new { id = prod.IdProducto })" class="btn btn-sm btn-danger">🗑️</a>
-                    <button type="button"
-        class="btn btn-sm btn-info"
-        data-bs-toggle="modal"
-        data-bs-target="#modalImagen"
-        data-img="@rutaImagen"
-        data-nombre="@prod.Nombre"
-        data-descripcion="@prod.Descripcion">
-    🖼️ Ver Imagen
-</button>
-
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-
-
+            @if (paginaActual < totalPaginas)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { pagina = paginaActual + 1, busqueda = busquedaActual })">Siguiente</a>
+                </li>
+            }
+        </ul>
+    </nav>
+  </div>  
 </div>
 
-<div class="d-flex justify-content-center mt-4">
-    @for (int i = 1; i <= 10; i++)  // suponemos máximo 10 páginas por ahora
-    {
-        <a class="btn @(i == ViewBag.PaginaActual ? "btn-primary" : "btn-outline-primary") me-1"
-           href="@Url.Action("Index", new { pagina = i, busqueda = ViewBag.Busqueda })">
-            @i
-        </a>
-    }
-</div>
-
-<!-- Modal -->
+@* MODAL IMAGEN (Igual que el tuyo) *@
 <div class="modal fade" id="modalImagen" tabindex="-1" aria-labelledby="modalImagenLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content text-center">
       <div class="modal-header">
-        <h5 class="modal-title" id="modalImagenLabel">Imagen del producto</h5>
+        <h5 class="modal-title" id="modalImagenLabel">Detalles</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body text-center">
+      <div class="modal-body">
         <h6 id="nombreProducto" class="mb-2"></h6>
-        
-        <img id="imagenProducto"
-             src=""
-             alt="Imagen del producto"
-             width="180"
-             height="180"
-             style="object-fit: cover; border: 1px solid #ccc; border-radius: 8px;"
+        <img id="imagenProducto" src="" alt="Imagen" width="180" height="180" style="object-fit: cover; border: 1px solid #ccc; border-radius: 8px;"
              onerror="this.src='/imagenes/no-disponible.png'; document.getElementById('mensajeImagen').style.display = 'block';" />
-        <p id="descripcionProducto" class="text-muted" style="font-size: 0.9rem;"></p>
-        <p id="mensajeImagen" style="display:none; color: red; margin-top: 10px;">
-            ⚠️ No hay imagen cargada para este producto.
-        </p>
+        <p id="descripcionProducto" class="text-muted mt-2" style="font-size: 0.9rem;"></p>
+        <p id="mensajeImagen" style="display:none; color: red; margin-top: 10px;">⚠️ Sin imagen disponible.</p>
       </div>
     </div>
   </div>
 </div>
 
-
 @section Scripts {
 <script>
-    // --- Lógica del Modal de Imagen ---
+    // Lógica del Modal
     const modalImagen = document.getElementById('modalImagen');
     modalImagen.addEventListener('show.bs.modal', function (event) {
         const button = event.relatedTarget;
-        const imgSrc = button.getAttribute('data-img');
-        const nombre = button.getAttribute('data-nombre');
-        const descripcion = button.getAttribute('data-descripcion');
-
-        const imagenProducto = document.getElementById('imagenProducto');
-        const nombreProducto = document.getElementById('nombreProducto');
-        const descripcionProducto = document.getElementById('descripcionProducto');
-        const mensajeImagen = document.getElementById('mensajeImagen');
-
-        imagenProducto.src = imgSrc;
-        nombreProducto.textContent = nombre;
-        descripcionProducto.textContent = descripcion;
-        mensajeImagen.style.display = 'none';
+        document.getElementById('imagenProducto').src = button.getAttribute('data-img');
+        document.getElementById('nombreProducto').textContent = button.getAttribute('data-nombre');
+        document.getElementById('descripcionProducto').textContent = button.getAttribute('data-descripcion');
+        document.getElementById('mensajeImagen').style.display = 'none';
     });
 
-    // --- Busqueda de productos (Doble Filtro) ---
     const inputBusqueda = document.getElementById('inputBusqueda');
-    const inputProveedor = document.getElementById('inputProveedor'); // Asegurate que el id en el HTML coincida
+    const inputProveedor = document.getElementById('inputProveedor');
 
-    function realizarBusqueda() {
-        const valorTerm = inputBusqueda.value.trim();
-        const valorProv = inputProveedor ? inputProveedor.value.trim() : "";
+function realizarBusqueda(pagina = 1) {
+    const term = inputBusqueda.value.trim();
+    const prov = inputProveedor.value.trim();
 
-        // Enviamos ambos parámetros al servidor
-        fetch(`/Productos/Buscar?term=${encodeURIComponent(valorTerm)}&proveedor=${encodeURIComponent(valorProv)}`)
-            .then(response => {
-                if (!response.ok) throw new Error("Error en la respuesta del servidor");
-                return response.json();
-            })
-            .then(data => {
-                const tbody = document.querySelector("table tbody");
-                tbody.innerHTML = ""; // Limpiar resultados actuales
+    fetch(`/Productos/Buscar?term=${encodeURIComponent(term)}&proveedor=${encodeURIComponent(prov)}&pagina=${pagina}`)
+        .then(response => {
+            // Leemos los headers que configuramos en el controlador
+            const totalReal = response.headers.get("X-Total-Count");
+            const totalPaginas = response.headers.get("X-Total-Paginas");
+            const paginaActual = parseInt(response.headers.get("X-Pagina-Actual") || pagina);
 
-                if (data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No se encontraron productos</td></tr>`;
-                    return;
-                }
+            // 1. Actualizar contador de productos
+            if (totalReal) document.getElementById('contadorProductos').textContent = totalReal;
+            
+            // 2. Reconstruir los botones de paginación
+            if (totalPaginas) actualizarPaginacion(paginaActual, parseInt(totalPaginas));
 
-                console.log("Productos encontrados:", data);
-
-                data.forEach(prod => {
-                    // Manejo del nombre del proveedor (ajustado según lo que vimos antes)
-                    let proveedorStr = prod.nombreProveedor || prod.NombreProveedor || "Sin Proveedor";
-                    
-                    // Limpieza de ruta de imagen
-                    let rutaImg = prod.imagen ? prod.imagen.replaceAll("\\\\", "/").trim() : "";
-
-                    let fila = `<tr>
-                        <td class="text-center">${prod.codigo}</td>
-                        <td>${prod.nombre}</td>
-                        <td class="text-end">$${prod.precioCosto.toFixed(2)}</td>
-                        <td class="text-center">${prod.recargoPorcentaje} %</td>
-                        <td class="text-end"><strong>$${prod.precioVenta.toFixed(2)}</strong></td>
-                        <td class="text-center ${prod.stockActual <= 3 ? 'text-danger fw-bold' : ''}">${prod.stockActual}</td>
-                        <td>${proveedorStr}</td>
-                        <td>
-                            <a href="/Productos/Edit/${prod.idProducto}" class="btn btn-sm btn-warning">✏️</a>
-                            <a href="/Productos/Delete/${prod.idProducto}" class="btn btn-sm btn-danger">🗑️</a>
-                            <button type="button"
-                                    class="btn btn-sm btn-info"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalImagen"
-                                    data-img="${rutaImg}"
-                                    data-nombre="${prod.nombre}"
-                                    data-descripcion="${prod.descripcion}">
-                                🖼️ Ver Imagen
-                            </button>
-                        </td>
-                    </tr>`;
-
-                    tbody.innerHTML += fila;
-                });
-            })
-            .catch(error => {
-                console.error("Error al cargar productos:", error);
+            return response.json();
+        })
+        .then(data => {
+            const tbody = document.querySelector("table tbody");
+            tbody.innerHTML = "";
+            
+            data.forEach(prod => {
+                let stockClass = prod.stockActual <= 3 ? 'text-danger fw-bold' : '';
+                let fila = `<tr>
+                    <td class="text-center">${prod.codigo || ''}</td>
+                    <td>${prod.nombre || ''}</td>
+                    <td class="text-end">$${prod.precioCosto.toFixed(2)}</td>
+                    <td class="text-center">${prod.recargoPorcentaje} %</td>
+                    <td class="text-end"><strong>$${prod.precioVenta.toFixed(2)}</strong></td>
+                    <td class="text-center ${stockClass}">${prod.stockActual}</td>
+                    <td>${prod.nombreProveedor || '.'}</td>
+                    <td class="text-center">
+                        <a href="/Productos/Edit/${prod.idProducto}" class="btn btn-sm btn-warning">✏️</a>
+                        <a href="/Productos/Delete/${prod.idProducto}" class="btn btn-sm btn-danger">🗑️</a>
+                        <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalImagen" 
+                                data-img="${prod.imagen || ''}" data-nombre="${prod.nombre}" data-descripcion="${prod.descripcion}">🖼️</button>
+                    </td>
+                </tr>`;
+                tbody.innerHTML += fila;
             });
-    }
+        });
+}
 
-    // Escuchamos ambos inputs
     inputBusqueda.addEventListener('input', realizarBusqueda);
-    if (inputProveedor) {
-        inputProveedor.addEventListener('input', realizarBusqueda);
-    }
+    inputProveedor.addEventListener('input', realizarBusqueda);
 
-    // Función por si el botón de la lupa sigue existiendo
-    function buscarProductos() {
-        realizarBusqueda();
-    }
-
-    // --- Ordenar por proveedor ---
-    let ordenAscendente = true;
-
+    // Ordenar por Proveedor (Mantiene tu lógica)
+    let ordenAsc = true;
     document.getElementById('ordenarProveedor').addEventListener('click', function () {
         const tbody = document.querySelector("table tbody");
         const filas = Array.from(tbody.querySelectorAll("tr"));
-
         filas.sort((a, b) => {
-            const provA = a.children[6].textContent.trim().toLowerCase(); 
+            const provA = a.children[6].textContent.trim().toLowerCase();
             const provB = b.children[6].textContent.trim().toLowerCase();
-
-            if (provA < provB) return ordenAscendente ? -1 : 1;
-            if (provA > provB) return ordenAscendente ? 1 : -1;
-            return 0;
+            return ordenAsc ? provA.localeCompare(provB) : provB.localeCompare(provA);
         });
-
         tbody.innerHTML = "";
         filas.forEach(f => tbody.appendChild(f));
-
-        ordenAscendente = !ordenAscendente;
-        this.textContent = `Proveedor ${ordenAscendente ? "🔽" : "🔼"}`;
+        ordenAsc = !ordenAsc;
+        this.textContent = `Proveedor ${ordenAsc ? "🔽" : "🔼"}`;
     });
-</script>
 
+
+function actualizarPaginacion(actual, total) {
+    const contenedor = document.getElementById('contenedorPaginacion');
+    if (!contenedor) return;
+    
+    // Si no hay resultados o solo hay 1 página, limpiamos la paginación
+    if (total <= 1) {
+        contenedor.innerHTML = "";
+        return;
+    }
+
+    let html = `<nav id="navPaginacion"><ul class="pagination justify-content-center mt-4">`;
+
+    // Botón Anterior
+    if (actual > 1) {
+        html += `<li class="page-item">
+                    <a class="page-link" href="javascript:void(0)" onclick="realizarBusqueda(${actual - 1})">Anterior</a>
+                 </li>`;
+    }
+
+    // Bucle de páginas (Igual a tu lógica de C#)
+    for (let i = 1; i <= total; i++) {
+        if (i === 1 || i === total || (i >= actual - 2 && i <= actual + 2)) {
+            html += `<li class="page-item ${i === actual ? 'active' : ''}">
+                        <a class="page-link" href="javascript:void(0)" onclick="realizarBusqueda(${i})">${i}</a>
+                     </li>`;
+        } else if (i === actual - 3 || i === actual + 3) {
+            html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+    }
+
+    // Botón Siguiente
+    if (actual < total) {
+        html += `<li class="page-item">
+                    <a class="page-link" href="javascript:void(0)" onclick="realizarBusqueda(${actual + 1})">Siguiente</a>
+                 </li>`;
+    }
+
+    html += `</ul></nav>`;
+    contenedor.innerHTML = html;
 }
 
-</body>
+
+</script>
+}
