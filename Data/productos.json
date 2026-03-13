@@ -1,0 +1,67 @@
+[
+  {
+    "Id": 1,
+    "Nombre": "Taladro Percutor 13mm",
+    "Descripcion": "Potencia y precisión para tus trabajos en casa. Incluye maletín y accesorios.",
+    "PrecioAnterior": 45000,
+    "PrecioActual": 38500,
+    "Imagen": "/imagenes/productos/taladroElectrico.jpg"
+  },
+  {
+    "Id": 2,
+    "Nombre": "Pintura Látex Interior 20L",
+    "Descripcion": "Máximo cubrimiento y lavable. Disponible en blanco y colores pasteles.",
+    "PrecioAnterior": 32000,
+    "PrecioActual": 27900,
+    "Imagen": "/imagenes/productos/pintura.jpg"
+  },
+  {
+    "Id": 3,
+    "Nombre": "Set Llaves Combinadas",
+    "Descripcion": "Juego de 12 piezas de acero cromo vanadio. Garantía de por vida.",
+    "PrecioAnterior": 18500,
+    "PrecioActual": 14200,
+    "Imagen": "/imagenes/productos/juegoLlaves.jpg"
+  },
+  {
+    "Id": 4,
+    "Nombre": "Desmalezadora Sthil",
+    "Descripcion": "Potencia 120 mph...",
+    "PrecioAnterior": 375000,
+    "PrecioActual": 350000,
+    "Imagen": "/imagenes/productos/desmalezadoraSthil.webp"
+  },
+  {
+    "Id": 5,
+    "Nombre": "Llave Inglesa",
+    "Descripcion": "Robustes y calidad...",
+    "PrecioAnterior": 11000,
+    "PrecioActual": 7900,
+    "Imagen": "/imagenes/productos/llaveInglesa.webp"
+  },
+  {
+    "Id": 6,
+    "Nombre": "Martillo de Uña",
+    "Descripcion": "Acero inoxidable y mango de goma...",
+    "PrecioAnterior": 13500,
+    "PrecioActual": 10200,
+    "Imagen": "/imagenes/productos/martillo.png"
+  },
+  {
+    "Id": 7,
+    "Nombre": "Cinta Metrica",
+    "Descripcion": "de 5 mts...",
+    "PrecioAnterior": 9000,
+    "PrecioActual": 7500,
+    "Imagen": "/imagenes/productos/cintametrica.jpg"
+  },
+  {
+    "Id": 8,
+    "Nombre": "Cabezal de Desmalezadora",
+    "Descripcion": "Modelo universal...",
+    "PrecioAnterior": 45000,
+    "PrecioActual": 37200,
+    "Imagen": "/imagenes/productos/cabezalDesmalezadora.jpg"
+  }
+   
+]

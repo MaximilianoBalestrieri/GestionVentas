@@ -47,62 +47,16 @@
     </div>
 </div>
 
-      <section class="ofertas-container">
+     <section class="ofertas-container">
     <div class="container">
         <h2 class="titulo-seccion">Ofertas Imperdibles</h2>
-        <div class="grid-ofertas">
-
-            <div class="card-producto">
-                <div class="badge-oferta">OFERTA</div>
-                <div class="img-container">
-                    <img src="~/imagenes/productos/taladroElectrico.jpg" alt="Taladro">
-                </div>
-                <div class="info-producto">
-                    <h3>Taladro Percutor 13mm</h3>
-                    <p>Potencia y precisión para tus trabajos en casa. Incluye maletín y accesorios.</p>
-                    <div class="precio-box">
-                        <span class="precio-anterior">$45.000</span>
-                        <span class="precio-actual">$38.500</span>
-                    </div>
-                    <!-- <button class="btn-ver-mas">Consultar</button> -->
-                </div>
-            </div>
-
-            <div class="card-producto">
-                <div class="badge-oferta">OFERTA</div>
-                <div class="img-container">
-                    <img src="~/imagenes/productos/pintura.jpg" alt="Pintura">
-                </div>
-                <div class="info-producto">
-                    <h3>Pintura Látex Interior 20L</h3>
-                    <p>Máximo cubrimiento y lavable. Disponible en blanco y colores pasteles.</p>
-                    <div class="precio-box">
-                        <span class="precio-anterior">$32.000</span>
-                        <span class="precio-actual">$27.900</span>
-                    </div>
-                 <!-- <button class="btn-ver-mas">Consultar</button> -->
-                </div>
-            </div>
-
-            <div class="card-producto">
-                <div class="badge-oferta">OFERTA</div>
-                <div class="img-container">
-                    <img src="~/imagenes/productos/juegoLlaves.jpg" alt="Herramientas">
-                </div>
-                <div class="info-producto">
-                    <h3>Set Llaves Combinadas</h3>
-                    <p>Juego de 12 piezas de acero cromo vanadio. Garantía de por vida.</p>
-                    <div class="precio-box">
-                        <span class="precio-anterior">$18.500</span>
-                        <span class="precio-actual">$14.200</span>
-                    </div>
-                    <!-- <button class="btn-ver-mas">Consultar</button> -->
-                </div>
-            </div>
-
+        <!-- Contenedor vacío donde aparecerán los productos -->
+        <div id="grid-productos" class="grid-ofertas">
+            <p>Cargando ofertas...</p>
         </div>
     </div>
 </section>
+
 
   <section class="contacto-breve">
     <div class="contacto-container">
@@ -127,3 +81,42 @@
 
 </body>
 </html>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const grid = document.getElementById("grid-productos");
+
+        fetch('/api/ProductosApi')
+            .then(response => response.json())
+            .then(productos => {
+                grid.innerHTML = ""; // Limpiar el mensaje de carga
+
+                productos.forEach(p => {
+                    // Convertimos a número y formateamos con puntos de miles (es-AR)
+                    const anterior = Number(p.precioAnterior).toLocaleString('es-AR');
+                    const actual = Number(p.precioActual).toLocaleString('es-AR');
+
+                    const card = `
+                        <div class="card-producto">
+                            <div class="badge-oferta">OFERTA</div>
+                            <div class="img-container">
+                                <img src="${p.imagen}" alt="${p.nombre}">
+                            </div>
+                            <div class="info-producto">
+                                <h3>${p.nombre}</h3>
+                                <p>${p.descripcion}</p>
+                                <div class="precio-box">
+                                    <span class="precio-anterior">$${anterior}</span>
+                                    <span class="precio-actual">$${actual}</span>
+                                </div>
+                            </div>
+                        </div>`;
+                    grid.innerHTML += card;
+                });
+            })
+            .catch(error => {
+                console.error('Error cargando productos:', error);
+                grid.innerHTML = "<p>Error al cargar las ofertas.</p>";
+            });
+    });
+</script>

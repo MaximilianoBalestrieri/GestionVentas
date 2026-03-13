@@ -31,10 +31,9 @@ body {
 }
 
 .logo span {
-    color: #f39c12; /* Color naranja industrial */
+    color: #f39c12; 
 }
 
-/* BOTÓN LOGIN VERDE */
 .btn-login {
     background-color: #28a745;
     color: white !important;
@@ -70,13 +69,13 @@ body {
     margin-bottom: 10px;
 }
 
-/* Promociones */
+/* Promociones Generales */
 .info-section {
     padding: 50px 5%;
 }
 
 .container {
-    max-width: 1100px;
+    max-width: 1200px; /* Aumentado un poco para que entren mejor las 4 cards */
     margin: 0 auto;
 }
 
@@ -100,45 +99,19 @@ body {
     box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
-.tag {
-    background: #e74c3c;
-    color: white;
-    font-size: 10px;
-    padding: 3px 8px;
-    border-radius: 3px;
-    font-weight: bold;
-}
+/* =========================================
+   SECCIÓN DE OFERTAS (MODIFICADA PARA 4 CARDS)
+   ========================================= */
 
-.card h3 {
-    margin: 10px 0;
-}
-
-/* Footer y Contacto */
-.contacto-breve {
-    background: #eee;
-    text-align: center;
-    padding: 20px;
-    font-size: 0.9rem;
-}
-
-.footer {
-    background: #2c3e50;
-    color: #bdc3c7;
-    text-align: center;
-    padding: 15px;
-    font-size: 0.8rem;
-}
-
-/* Sección de Ofertas */
 .ofertas-container {
-    padding: 60px 5%;
+    padding: 40px 5%;
     background-color: #f8f9fa;
 }
 
 .titulo-seccion {
     text-align: center;
-    margin-bottom: 40px;
-    font-size: 2.2rem;
+    margin-bottom: 30px;
+    font-size: 1.8rem; /* Un poco más pequeño */
     color: #2c3e50;
     text-transform: uppercase;
     font-weight: 800;
@@ -146,68 +119,61 @@ body {
 
 .grid-ofertas {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 30px;
+    /* Forzamos 4 columnas en pantallas grandes */
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 20px; /* Reducimos el espacio entre cards */
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* Estilo de la Card */
 .card-producto {
     background: #fff;
-    border-radius: 12px;
+    border-radius: 10px; /* Bordes un poco menos redondeados */
     overflow: hidden;
     position: relative;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     display: flex;
     flex-direction: column;
 }
 
 .card-producto:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
-/* Badge de Oferta */
 .badge-oferta {
     position: absolute;
-    top: 15px;
-    left: 15px;
+    top: 10px;
+    left: 10px;
     background-color: #e74c3c;
     color: white;
-    padding: 5px 12px;
+    padding: 3px 8px;
     font-weight: bold;
-    font-size: 0.8rem;
-    border-radius: 5px;
+    font-size: 0.7rem; /* Badge más pequeño */
+    border-radius: 4px;
     z-index: 10;
 }
 
-/* Imagen del Producto */
 .img-container {
-    height: 150px;       /* Bajamos de 200px a 150px para que sea más pequeña */
+    height: 140px; /* Altura más baja para compactar */
     overflow: hidden;
-    background-color: #fff; /* Blanco queda mejor si la imagen es chica */
-    display: flex;       /* Centra la imagen */
+    background-color: #fff;
+    display: flex;
     justify-content: center;
     align-items: center;
     padding: 10px;
 }
 
 .img-container img {
-    width: 100%;
-    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
     object-fit: contain;
     transition: transform 0.5s ease;
 }
 
-.card-producto:hover .img-container img {
-    transform: scale(1.1);
-}
-
-/* Información del Producto */
 .info-producto {
-    padding: 20px;
+    padding: 15px; /* Reducido de 20px */
     text-align: center;
     flex-grow: 1;
     display: flex;
@@ -216,52 +182,58 @@ body {
 }
 
 .info-producto h3 {
-    font-size: 1.25rem;
-    margin-bottom: 10px;
+    font-size: 1.05rem; /* Título más pequeño */
+    margin-bottom: 8px;
     color: #333;
+    min-height: 2.2rem; /* Asegura alineación si el texto rompe en 2 líneas */
 }
 
 .info-producto p {
-    font-size: 0.9rem;
+    font-size: 0.8rem; /* Descripción más pequeña */
     color: #666;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
+    line-height: 1.3;
 }
 
-/* Precios */
 .precio-box {
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .precio-anterior {
     text-decoration: line-through;
     color: #999;
-    font-size: 0.9rem;
-    margin-right: 10px;
+    font-size: 0.8rem;
+    margin-right: 5px;
 }
 
 .precio-actual {
     color: #28a745;
-    font-size: 1.4rem;
+    font-size: 1.2rem; /* Precio un poco más pequeño */
     font-weight: bold;
 }
 
-/* Botón Consultar */
-.btn-ver-mas {
-    background-color: #2c3e50;
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background 0.3s;
+/* Responsivo para las Ofertas */
+@media (max-width: 1024px) {
+    .grid-ofertas {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }
 
-.btn-ver-mas:hover {
-    background-color: #f39c12;
-    color: #2c3e50;
+@media (max-width: 768px) {
+    .grid-ofertas {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
+@media (max-width: 480px) {
+    .grid-ofertas {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ========================================= */
+
+/* Ticker y otros elementos */
 .ticker-wrapper {
     width: 100%;
     overflow: hidden;
@@ -273,13 +245,13 @@ body {
 
 .ticker {
     display: flex;
-    width: fit-content; /* Se ajusta al tamaño de las palabras */
-    animation: moverTicker 25s linear infinite; /* Un poco más lento para más elegancia */
+    width: fit-content;
+    animation: moverTicker 25s linear infinite;
 }
 
 .ticker-group {
     display: flex;
-    flex-shrink: 0; /* Evita que las palabras se amontonen */
+    flex-shrink: 0;
 }
 
 .ticker-item {
@@ -292,15 +264,11 @@ body {
     white-space: nowrap;
 }
 
-/* Animación sin saltos */
 @keyframes moverTicker {
     0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); } /* Mueve exactamente la mitad (un grupo completo) */
+    100% { transform: translateX(-50%); }
 }
 
-.ticker-wrapper:hover .ticker {
-    animation-play-state: paused;
-}
 .contacto-breve {
     background: #f1f1f1;
     padding: 25px 0;
@@ -311,69 +279,81 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 30px; /* Espacio entre los datos */
-    flex-wrap: wrap; /* Para que en celulares se pongan uno abajo del otro */
+    gap: 30px;
+    flex-wrap: wrap;
 }
 
-.contacto-dato, .contacto-link {
+.contacto-link {
     font-size: 1rem;
     color: #444;
     text-decoration: none;
     font-weight: 500;
     display: flex;
     align-items: center;
-    transition: color 0.3s ease;
 }
 
-.contacto-link:hover {
-    color: #2c3e50;
-}
+.whatsapp:hover { color: #25d366; }
+.instagram:hover { color: #e1306c; }
 
-/* Colores específicos para que resalten al pasar el mouse */
-.whatsapp:hover {
-    color: #25d366; /* Verde WhatsApp */
+.footer {
+    background: #2c3e50;
+    color: #bdc3c7;
+    text-align: center;
+    padding: 15px;
+    font-size: 0.8rem;
 }
+/* --- AJUSTES RESPONSIVE --- */
 
-.instagram:hover {
-    color: #e1306c; /* Rosa Instagram */
-}
-
-.icono {
-    margin-right: 8px;
-    font-style: normal;
-}
-
-/* Ajuste para pantallas chicas */
-@media (max-width: 600px) {
-    .contacto-container {
-        flex-direction: column;
-        gap: 15px;
+/* Tablets (Menos de 992px) */
+@media (max-width: 992px) {
+    .grid-ofertas {
+        grid-template-columns: repeat(2, 1fr); /* 2 columnas en vez de 4 */
+    }
+    .hero h1 {
+        font-size: 2rem;
     }
 }
 
-/* Estilo para los iconos */
-.contacto-container i {
-    margin-right: 10px;
-    font-size: 1.2rem;
+/* Celulares (Menos de 768px) */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 10px 5%;
+    }
+    
+    .logo {
+        font-size: 1.2rem;
+    }
+
+    .hero {
+        height: auto;
+        padding: 40px 20px;
+    }
+
+    .hero h1 {
+        font-size: 1.6rem;
+    }
+
+    .grid-ofertas {
+        grid-template-columns: 1fr; /* 1 sola columna: ocupa todo el ancho */
+        gap: 15px;
+    }
+
+    .contacto-container {
+        flex-direction: column; /* Datos de contacto uno abajo del otro */
+        gap: 15px;
+        text-align: center;
+    }
+
+    .ticker-item {
+        font-size: 0.9rem;
+        padding: 0 20px;
+    }
 }
 
-/* Color oficial de WhatsApp */
-.whatsapp i {
-    color: #25D366;
-}
-
-/* Color oficial de Instagram (un degrade o el rosa clásico) */
-.instagram i {
-    color: #E1306C;
-}
-
-/* Ubicación en gris azulado */
-.fa-location-dot {
-    color: #2c3e50;
-}
-
-/* Efecto al pasar el mouse sobre el link entero */
-.contacto-link:hover {
-    opacity: 0.8;
-    text-decoration: underline;
+/* Optimización para imágenes en pantallas chicas */
+.img-container img {
+    max-width: 100%;
+    height: auto;
+    max-height: 140px;
+    object-fit: contain;
 }
