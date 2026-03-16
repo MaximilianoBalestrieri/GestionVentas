@@ -8,6 +8,7 @@ namespace GestionVentas.Models
     public decimal MontoVenta { get; set; }
     public string Vendedor { get; set; }
     public int IdCliente { get; set; }
+    public decimal? Descuento { get; set; }
     }
 public class ItemFactura
 {
@@ -21,6 +22,7 @@ public class VentaConProductos
 {
     public List<ProductoEnVenta> Productos { get; set; }
     public decimal MontoVenta { get; set; }
+    public decimal? Descuento { get; set; }
 }
 
 public class ProductoEnVenta
@@ -36,6 +38,7 @@ public class ProductoEnVenta
         public int IdCliente { get; set; }
         public string Vendedor { get; set; }
         public decimal MontoVenta { get; set; }
+        public decimal? Descuento { get; set; }
         public List<ProductoEnVenta> Productos { get; set; }
     }
     public class FacturaDTO

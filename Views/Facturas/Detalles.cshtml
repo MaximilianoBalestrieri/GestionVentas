@@ -79,14 +79,41 @@
         </tbody>
     </table>
 
-    <hr>
+  <hr>
 
-    <!-- Total -->
-    <div style="text-align: right; margin-top: 10px;">
-        <h4>Total: $@Model.MontoVenta.ToString("N2")</h4>
-    </div>
+<div style="text-align: right; margin-top: 10px;">
+    @{
+        // Calculamos el subtotal base
+        decimal subtotalCalculado = Model.Items.Sum(i => i.Cantidad * i.Precio);
+        decimal porcentaje = Model.Descuento.GetValueOrDefault(0);
+    }
+
+    @if (porcentaje > 0)
+    {
+        // SI HAY DESCUENTO: Mostramos Subtotal y luego la línea de Descuento
+        decimal montoDescuento = subtotalCalculado * (porcentaje / 100);
+
+        <p style="margin: 0; font-size: 1.1em; color: #666;">
+            Subtotal: $@subtotalCalculado.ToString("N2")
+        </p>
+        <p style="margin: 0; color: #d9534f; font-size: 1.2em; font-weight: bold;">
+            Descuento (@porcentaje.ToString("0")%): -$@montoDescuento.ToString("N2")
+        </p>
+    }
+    else
+    {
+        // SI NO HAY DESCUENTO: No mostramos nada extra para que no se repita el valor
+        }
+
+    <h3 style="margin-top: 5px; font-weight: bold; border-top: 1px solid #eee; pt-2">
+        Total a Pagar: $@Model.MontoVenta.ToString("N2")
+    </h3>
+    
+   
 </div>
-</div>
+
+
+
 <!-- Botón de imprimir -->
 <div class="text-center mt-4">
     <button onclick="imprimirFactura()" class="btn btn-primary">🖨️ Imprimir Factura</button>

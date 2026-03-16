@@ -9,6 +9,7 @@ namespace GestionVentas.Models
         public string Vendedor { get; set; }
         public string MedioPago { get; set; }
         public string TipoVenta { get; set; } 
+        public decimal? Descuento { get; set; }
         public List<FacturaItem> Items { get; set; }
     }
 

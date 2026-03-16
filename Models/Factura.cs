@@ -18,6 +18,7 @@ namespace GestionVentas.Models
         // --- NUEVOS CAMPOS PARA CAJA Y FIADO ---
         public string MedioPago { get; set; } // Efectivo, Transferencia, Tarjeta, CtaCte
         public string TipoVenta { get; set; } // Contado o Cuenta Corriente
+        public decimal? Descuento { get; set; }
 
         public List<FacturaItem> Items { get; set; } = new List<FacturaItem>();
     }

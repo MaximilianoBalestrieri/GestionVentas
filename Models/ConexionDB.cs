@@ -1566,7 +1566,7 @@ public void ActualizarTelefonoPresupuesto(int id, string nuevoTelefono)
         }
 
         //------------------- VENTAS --------------------
-     public (bool success, int idFactura, string error) RegistrarVenta(VentaCompleta venta)
+    public (bool success, int idFactura, string error) RegistrarVenta(VentaCompleta venta)
 {
     Console.WriteLine("🚀 RegistrarVenta iniciado.");
     using (var conn = ObtenerConexion())
@@ -1580,16 +1580,15 @@ public void ActualizarTelefonoPresupuesto(int id, string nuevoTelefono)
                 int idFactura = 0;
 
                 // 1. DETERMINAR EL ESTADO DE LA FACTURA
-                // Si es CtaCte, nace como 'Pendiente'. Si no, nace como 'Cobrada'.
                 bool esCtaCte = venta.MedioPago.Equals("CtaCte", StringComparison.OrdinalIgnoreCase) || 
                                venta.MedioPago.Equals("Cuenta Corriente", StringComparison.OrdinalIgnoreCase);
                 
                 string estadoInicial = esCtaCte ? "Pendiente" : "Cobrada";
 
-                // 2. INSERTAR FACTURA (Agregamos la columna 'estado')
+                // 2. INSERTAR FACTURA (Agregamos la columna 'descuento')
                 string insertFactura = @"
-                    INSERT INTO facturas (diaVenta, montoVenta, vendedor, idCliente, medioPago, tipoVenta, estado)
-                    VALUES (@diaVenta, @montoVenta, @vendedor, @idCliente, @medioPago, @tipoVenta, @estado);
+                    INSERT INTO facturas (diaVenta, montoVenta, vendedor, idCliente, medioPago, tipoVenta, estado, descuento)
+                    VALUES (@diaVenta, @montoVenta, @vendedor, @idCliente, @medioPago, @tipoVenta, @estado, @descuento);
                     SELECT SCOPE_IDENTITY();";
 
                 using (var cmdInsert = new SqlCommand(insertFactura, conn, transaction))
@@ -1600,7 +1599,12 @@ public void ActualizarTelefonoPresupuesto(int id, string nuevoTelefono)
                     cmdInsert.Parameters.AddWithValue("@idCliente", venta.IdCliente);
                     cmdInsert.Parameters.AddWithValue("@medioPago", venta.MedioPago);
                     cmdInsert.Parameters.AddWithValue("@tipoVenta", venta.TipoVenta);
-                    cmdInsert.Parameters.AddWithValue("@estado", estadoInicial); // <--- NUEVO
+                    cmdInsert.Parameters.AddWithValue("@estado", estadoInicial);
+                    
+                    // Manejo del descuento: si es 0 o nulo, grabamos DBNull
+                    cmdInsert.Parameters.AddWithValue("@descuento", (venta.Descuento.HasValue && venta.Descuento > 0) 
+                        ? (object)venta.Descuento.Value 
+                        : DBNull.Value);
 
                     idFactura = Convert.ToInt32(cmdInsert.ExecuteScalar());
                 }
@@ -1974,107 +1978,111 @@ public (bool success, string error) LiquidarCuentaCorriente(int idCliente, decim
         }
 
 
-        public List<Factura> ObtenerFacturas()
-        {
-            List<Factura> lista = new List<Factura>();
+       public List<Factura> ObtenerFacturas()
+{
+    List<Factura> lista = new List<Factura>();
 
-            using (var conn = ObtenerConexion())
-            {
-                conn.Open();
-                string query = @"
-            SELECT f.idFactura, f.diaVenta, f.montoVenta, f.vendedor, c.nombreCliente AS nombreCliente
+    using (var conn = ObtenerConexion())
+    {
+        conn.Open();
+        string query = @"
+            SELECT f.idFactura, f.diaVenta, f.montoVenta, f.vendedor, f.descuento, c.nombreCliente AS nombreCliente
             FROM facturas f
             JOIN clientes c ON f.idCliente = c.idCliente
-            ORDER BY f.idFactura DESC
-            ";
+            ORDER BY f.idFactura DESC";
 
-                using (var cmd = new SqlCommand(query, conn))
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        lista.Add(new Factura
-                        {
-                            IdFactura = Convert.ToInt32(reader["idFactura"]),
-                            DiaVenta = Convert.ToDateTime(reader["diaVenta"]),
-                            MontoVenta = Convert.ToDecimal(reader["montoVenta"]),
-                            Vendedor = reader["vendedor"].ToString(),
-                            NombreCliente = reader["nombreCliente"].ToString()
-                        });
-                    }
-                }
-            }
-
-            return lista;
-        }
-
-
-        public Factura ObtenerFacturaConItems(int idFactura)
+        using (var cmd = new SqlCommand(query, conn))
+        using (var reader = cmd.ExecuteReader())
         {
-            Factura factura = null;
-
-            using (var conn = ObtenerConexion())
+            while (reader.Read())
             {
-                conn.Open();
+                lista.Add(new Factura
+                {
+                    IdFactura = Convert.ToInt32(reader["idFactura"]),
+                    DiaVenta = Convert.ToDateTime(reader["diaVenta"]),
+                    MontoVenta = Convert.ToDecimal(reader["montoVenta"]),
+                    Vendedor = reader["vendedor"].ToString(),
+                    NombreCliente = reader["nombreCliente"].ToString(),
+                    // Cargamos el descuento (si es NULL en DB, ponemos 0)
+                    Descuento = reader["descuento"] != DBNull.Value ? Convert.ToDecimal(reader["descuento"]) : 0
+                });
+            }
+        }
+    }
+    return lista;
+}
 
-                string queryFactura = @"
-            SELECT f.idFactura, f.diaVenta, f.montoVenta, f.vendedor, c.nombreCliente, c.dniCliente, c.domicilio, c.localidad, c.telefonoCliente
+
+     public Factura ObtenerFacturaConItems(int idFactura)
+{
+    Factura factura = null;
+
+    using (var conn = ObtenerConexion())
+    {
+        conn.Open();
+
+        string queryFactura = @"
+            SELECT f.idFactura, f.diaVenta, f.montoVenta, f.vendedor, f.descuento, f.medioPago,
+                   c.nombreCliente, c.dniCliente, c.domicilio, c.localidad, c.telefonoCliente
             FROM facturas f
             JOIN clientes c ON f.idCliente = c.idCliente
             WHERE f.idFactura = @id";
 
-                using (var cmd = new SqlCommand(queryFactura, conn))
+        using (var cmd = new SqlCommand(queryFactura, conn))
+        {
+            cmd.Parameters.AddWithValue("@id", idFactura);
+            using (var reader = cmd.ExecuteReader())
+            {
+                if (reader.Read())
                 {
-                    cmd.Parameters.AddWithValue("@id", idFactura);
-                    using (var reader = cmd.ExecuteReader())
+                    factura = new Factura
                     {
-                        if (reader.Read())
-                        {
-                            factura = new Factura
-                            {
-                                IdFactura = Convert.ToInt32(reader["idFactura"]),
-                                DiaVenta = Convert.ToDateTime(reader["diaVenta"]),
-                                MontoVenta = Convert.ToDecimal(reader["montoVenta"]),
-                                Vendedor = reader["vendedor"].ToString(),
-                                NombreCliente = reader["nombreCliente"].ToString(),
-                                DniCliente = reader["dniCliente"].ToString(),
-                                Domicilio = reader["domicilio"].ToString(),
-                                Localidad = reader["localidad"].ToString(),
-                                TelefonoCliente = reader["telefonoCliente"].ToString(),
-                                Items = new List<FacturaItem>()
-                            };
-                        }
-                    }
+                        IdFactura = Convert.ToInt32(reader["idFactura"]),
+                        DiaVenta = Convert.ToDateTime(reader["diaVenta"]),
+                        MontoVenta = Convert.ToDecimal(reader["montoVenta"]),
+                        Vendedor = reader["vendedor"].ToString(),
+                        NombreCliente = reader["nombreCliente"].ToString(),
+                        DniCliente = reader["dniCliente"].ToString(),
+                        Domicilio = reader["domicilio"].ToString(),
+                        Localidad = reader["localidad"].ToString(),
+                        TelefonoCliente = reader["telefonoCliente"].ToString(),
+                        MedioPago = reader["medioPago"].ToString(), // Aprovechamos a traer el medio de pago
+                        // CLAVE: Traemos el descuento
+                        Descuento = reader["descuento"] != DBNull.Value ? Convert.ToDecimal(reader["descuento"]) : 0,
+                        Items = new List<FacturaItem>()
+                    };
                 }
+            }
+        }
 
-                if (factura != null)
-                {
-                    string queryItems = @"
+        if (factura != null)
+        {
+            string queryItems = @"
                 SELECT fi.nombreProd, fi.cantidad, fi.precio
                 FROM facturaitem fi
                 WHERE fi.idFactura = @id";
 
-                    using (var cmd = new SqlCommand(queryItems, conn))
+            using (var cmd = new SqlCommand(queryItems, conn))
+            {
+                cmd.Parameters.AddWithValue("@id", idFactura);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
                     {
-                        cmd.Parameters.AddWithValue("@id", idFactura);
-                        using (var reader = cmd.ExecuteReader())
+                        factura.Items.Add(new FacturaItem
                         {
-                            while (reader.Read())
-                            {
-                                factura.Items.Add(new FacturaItem
-                                {
-                                    NombreProd = reader["nombreProd"].ToString(),
-                                    Cantidad = Convert.ToInt32(reader["cantidad"]),
-                                    Precio = Convert.ToDecimal(reader["precio"])
-                                });
-                            }
-                        }
+                            NombreProd = reader["nombreProd"].ToString(),
+                            Cantidad = Convert.ToInt32(reader["cantidad"]),
+                            Precio = Convert.ToDecimal(reader["precio"])
+                        });
                     }
                 }
             }
-
-            return factura;
         }
+    }
+
+    return factura;
+}
 
 
         public void EliminarFactura(int idFactura)

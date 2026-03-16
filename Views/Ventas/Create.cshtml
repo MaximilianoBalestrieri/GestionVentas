@@ -313,15 +313,28 @@
         actualizarTotales();
     }
 
+// Escuchar cambios en el input de descuento
+document.getElementById("descuento").addEventListener("input", function() {
+    actualizarTotales();
+});
     function actualizarTotales() {
-        let sub = 0;
-        document.querySelectorAll(".sub").forEach(td => sub += parseFloat(td.innerText.replace("$", "")));
-        let desc = parseFloat(document.getElementById("descuento").value) || 0;
-        let total = sub - (sub * (desc / 100));
-        document.getElementById("subtotalFactura").innerText = "$" + sub.toFixed(2);
-        document.getElementById("totalFactura").innerText = "$" + total.toFixed(2);
-        document.getElementById("modalTotal").innerText = "$" + total.toFixed(2);
-    }
+    let sub = 0;
+    document.querySelectorAll(".sub").forEach(td => sub += parseFloat(td.innerText.replace("$", "")));
+    
+    // Obtenemos el descuento, si está vacío usamos 0
+    let descInput = document.getElementById("descuento").value;
+    let desc = parseFloat(descInput) || 0;
+    
+    // Validamos que no sea menor a 0 ni mayor a 100
+    if (desc < 0) desc = 0;
+    if (desc > 100) desc = 100;
+
+    let total = sub - (sub * (desc / 100));
+    
+    document.getElementById("subtotalFactura").innerText = "$" + sub.toFixed(2);
+    document.getElementById("totalFactura").innerText = "$" + total.toFixed(2);
+    document.getElementById("modalTotal").innerText = "$" + total.toFixed(2);
+}
 
     // --- COBRO Y VUELTO ---
     document.getElementById("modalAbonar").addEventListener("shown.bs.modal", function() {
@@ -349,48 +362,58 @@
     });
 
     // --- REGISTRO FINAL (AQUÍ CORREGIMOS EL NOMBREPROD) ---
-    document.getElementById("confirmarCompra").addEventListener("click", function() {
-        const idCliente = document.getElementById("idCliente").value;
-        const medio = document.querySelector('input[name="medioPago"]:checked').value;
-        const totalVenta = document.getElementById("totalFactura").innerText.replace("$", "").replace(",", ".");
-        
-        const productos = [];
-        document.querySelectorAll("#tablaFactura tbody tr").forEach(tr => {
-            productos.push({ 
-                IdProducto: tr.dataset.id, 
-                Cantidad: tr.querySelector(".cantidad").value, 
-                Precio: tr.querySelector(".pre").innerText.replace("$", "").replace(",", "."),
-                NombreProd: tr.cells[1].innerText // <--- SOLUCIÓN AL ERROR DE SQL
-            });
-        });
-
-        if(productos.length === 0) return alert("❌ Cargue productos para la venta.");
-
-        this.disabled = true;
-        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando...';
-
-        fetch("/Ventas/RegistrarVenta", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                IdCliente: idCliente,
-                MontoVenta: totalVenta,
-                Vendedor: vendedor,
-                MedioPago: medio,
-                TipoVenta: (medio === "CtaCte" ? "Cuenta Corriente" : "Contado"),
-                Items: productos
-            })
-        }).then(r => r.json()).then(data => {
-            if(data.success) {
-                alert("✅ ¡Venta registrada correctamente!");
-                location.reload();
-            } else {
-                alert("❌ Error: " + data.message);
-                this.disabled = false;
-                this.innerText = "CONFIRMAR Y FINALIZAR";
-            }
+   document.getElementById("confirmarCompra").addEventListener("click", function() {
+    const idCliente = document.getElementById("idCliente").value;
+    const medio = document.querySelector('input[name="medioPago"]:checked').value;
+    
+    // Capturamos el porcentaje de descuento (si está vacío, enviamos 0)
+    const porcentajeDescuento = document.getElementById("descuento").value || 0;
+    
+    const totalVenta = document.getElementById("totalFactura").innerText.replace("$", "").replace(",", ".");
+    
+    const productos = [];
+    document.querySelectorAll("#tablaFactura tbody tr").forEach(tr => {
+        productos.push({ 
+            IdProducto: tr.dataset.id, 
+            Cantidad: tr.querySelector(".cantidad").value, 
+            Precio: tr.querySelector(".pre").innerText.replace("$", "").replace(",", "."),
+            NombreProd: tr.cells[1].innerText 
         });
     });
+
+    if(productos.length === 0) return alert("❌ Cargue productos para la venta.");
+
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando...';
+
+    fetch("/Ventas/RegistrarVenta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            IdCliente: idCliente,
+            MontoVenta: totalVenta,
+            Vendedor: vendedor,
+            MedioPago: medio,
+            TipoVenta: (medio === "CtaCte" ? "Cuenta Corriente" : "Contado"),
+            Descuento: porcentajeDescuento, // <--- Enviamos el porcentaje al controlador
+            Items: productos
+        })
+    }).then(r => r.json()).then(data => {
+        if(data.success) {
+            alert("✅ ¡Venta registrada correctamente!");
+            location.reload();
+        } else {
+            alert("❌ Error: " + data.message);
+            this.disabled = false;
+            this.innerText = "CONFIRMAR Y FINALIZAR"; // Restauramos el texto original
+        }
+    }).catch(err => {
+        console.error("Error en la petición:", err);
+        alert("❌ Error de red al intentar registrar la venta.");
+        this.disabled = false;
+        this.innerText = "CONFIRMAR Y FINALIZAR";
+    });
+});
 
     // --- FILTROS Y CLIENTES ---
     document.getElementById("filtroCliente").addEventListener("input", function() {
