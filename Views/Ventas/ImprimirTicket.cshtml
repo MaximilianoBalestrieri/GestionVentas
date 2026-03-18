@@ -1,0 +1,184 @@
+@model GestionVentas.Models.Factura
+@{
+    Layout = null; // Sin Layout para que no meta estilos de Bootstrap que arruinen el tamaño
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>Ticket #@Model.IdFactura</title>
+    <style>
+        /* 1. CONFIGURACIÓN DEL PAPEL (Driver de Impresora) */
+        @@page {
+            size: 58mm auto; /* Ancho fijo 58mm, largo según contenido */
+            margin: 0;       /* Elimina márgenes automáticos de Chrome/Edge */
+        }
+
+        /* 2. ESTILOS GENERALES */
+        body {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px; /* Tamaño ideal para lectura en térmica */
+            line-height: 1.2;
+            background-color: white;
+        }
+
+        /* Contenedor que limita el área de impresión real */
+        .ticket {
+            width: 48mm; /* El área imprimible real suele ser 48mm-50mm */
+            margin: 0 auto;
+            padding: 2mm 1mm;
+            box-sizing: border-box;
+        }
+
+        /* 3. UTILIDADES DE TEXTO */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .bold { font-weight: bold; }
+        .linea { border-top: 1px dashed #000; margin: 6px 0; }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 5px 0;
+        }
+
+        th { 
+            border-bottom: 1px solid #000; 
+            text-align: left; 
+            font-size: 11px;
+        }
+
+        td { 
+            padding: 2px 0; 
+            vertical-align: top;
+            word-break: break-all;
+        }
+
+        .total-container {
+            margin-top: 8px;
+            font-size: 15px; /* Un poco más grande para que resalte */
+            font-weight: bold;
+        }
+
+        /* OCULTAR BOTONES AL IMPRIMIR */
+        @@media print {
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print" style="background: #f8f9fa; padding: 10px; text-align: center; border-bottom: 1px solid #ddd;">
+        <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer; background: #198754; color: white; border: none; border-radius: 5px;">
+            🖨️ IMPRIMIR AHORA
+        </button>
+        <button onclick="window.close()" style="padding: 10px 20px; cursor: pointer; background: #dc3545; color: white; border: none; border-radius: 5px; margin-left: 10px;">
+            ❌ CERRAR VENTANA
+        </button>
+        
+    </div>
+
+    <div class="ticket">
+        <div class="text-center">
+            <h3 style="margin: 0; font-size: 16px;">FERRETERÍA SANTIAGO</h3>
+            <small>La Paz - Córdoba</small><br>
+            Tel: 351-XXXXXXX
+        </div>
+
+        <div class="linea"></div>
+
+        <div>
+            <b>Ticket:</b> #@Model.IdFactura.ToString("D8")<br>
+            <b>Fecha:</b> @DateTime.Now.ToString("dd/MM/yyyy HH:mm")<br>
+           @* <b>Vend:</b> @Model.Vendedor *@
+        </div>
+
+        <div class="linea"></div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 42%;">Producto</th>
+                    <th style="width: 15%;" class="text-center">Cant</th>
+                    <th style="width: 43%;" class="text-right">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td>@item.NombreProd</td>
+                        <td class="text-center">@item.Cantidad</td>
+                        <td class="text-right">$@((item.Precio * item.Cantidad).ToString("N2"))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="linea"></div>
+
+        <div class="text-right">
+    @{
+        // Calculamos el monto del descuento de forma segura
+   
+        // 1. Calculamos el Subtotal Real (Suma de precio x cantidad sin descuentos)
+        decimal subtotalReal = Model.Items.Sum(i => i.Precio * i.Cantidad);
+        
+        // 2. Obtenemos el porcentaje de descuento
+        decimal porcentaje = Convert.ToDecimal(Model.Descuento);
+        
+        // 3. Calculamos cuánto dinero se descontó
+        decimal montoDescuento = subtotalReal * (porcentaje / 100m);
+        
+        // 4. El Total Final es lo que efectivamente se cobró
+        decimal totalFinal = Convert.ToDecimal(Model.MontoVenta);
+    }
+
+    <span>Subtotal: $@subtotalReal.ToString("N2")</span><br>
+    
+    @if (porcentaje > 0)
+    {
+        <span style="color: #000;">Desc. (@porcentaje.ToString("0")%): -$@montoDescuento.ToString("N2")</span><br>
+    }
+
+    <div class="total-container">
+        TOTAL: $@totalFinal.ToString("N2")
+    </div>
+</div>
+
+        <div class="linea"></div>
+
+        <div class="text-center" style="margin-top: 10px;">
+            ¡GRACIAS POR SU COMPRA!<br>
+            
+            <small>--- www.ferreteriasantiago.com.ar ---</small> <br>
+            
+        </div>
+        <div class="linea"></div>
+        <div style="height: 60px;"></div>
+</div>
+
+<script>
+    window.onload = function() {
+        // Ejecutamos la impresión del sistema inmediatamente
+        window.focus();
+        window.print();
+        
+        // OPCIONAL: Cerramos la pestaña automáticamente después de imprimir/cancelar
+        // Esto evita que te queden mil pestañas abiertas de tickets viejos
+        window.onafterprint = function() {
+            window.close();
+        };
+
+        // Si el usuario cancela, también cerramos a los pocos segundos
+        setTimeout(function() {
+             window.close(); // Descomentá esto si querés que se cierre sí o sí
+        }, 3000);
+    };
+</script>
+</body>
+</html>

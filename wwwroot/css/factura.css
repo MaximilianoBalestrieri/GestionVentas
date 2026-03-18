@@ -1,39 +1,48 @@
- @media print {
-        body * {
-            visibility: hidden;
-        }
-
-        #facturaParaImprimir, #facturaParaImprimir * {
-            visibility: visible;
-        }
-
-        #facturaParaImprimir {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-        }
-
-        .row {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 0 -5px;
-        }
-
-        .col-md-4, .col-md-6 {
-            padding: 0 5px;
-            box-sizing: border-box;
-        }
-
-        .col-md-4 {
-            width: 33.33%;
-        }
-
-        .col-md-6 {
-            width: 50%;
-        }
-
-        .mb-1 {
-            margin-bottom: 5px;
-        }
+@media print {
+    /* 1. Ocultamos absolutamente todo el layout de la web */
+    header, footer, nav, .navbar, .no-print, .btn, hr.no-print {
+        display: none !important;
+        height: 0;
+        margin: 0;
+        padding: 0;
     }
+
+    /* 2. Limpiamos el cuerpo */
+    body {
+        visibility: hidden;
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: white !important;
+    }
+
+    /* 3. Forzamos el contenedor a tamaño A4 */
+    #facturaParaImprimir {
+        visibility: visible !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100% !important; /* Ocupa el ancho del papel disponible */
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 10mm !important; /* Margen interno para que no pegue al borde del papel */
+        box-sizing: border-box;
+    }
+
+    /* Aseguramos que todo lo de adentro sea visible */
+    #facturaParaImprimir * {
+        visibility: visible !important;
+    }
+
+    /* Ocultamos sombras y bordes que son solo para la web */
+    .shadow-sm, .border {
+        box-shadow: none !important;
+        border: 1px solid #eee !important;
+    }
+}
+
+/* Estilo para la pantalla (fuera de la impresión) */
+#facturaParaImprimir {
+    background-color: white;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}

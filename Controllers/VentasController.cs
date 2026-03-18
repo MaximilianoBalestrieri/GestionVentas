@@ -18,7 +18,7 @@ namespace GestionVentas.Controllers
 
         public ActionResult Create()
         {
-            bool hayCaja = db.VerificarSiHayCajaAbierta(); 
+            bool hayCaja = db.VerificarSiHayCajaAbierta();
 
             if (!hayCaja)
             {
@@ -27,8 +27,17 @@ namespace GestionVentas.Controllers
             }
 
             var productos = db.ObtenerProductos() ?? new List<Productos>();
-            ViewBag.nombreyApellido = User.Identity.Name ?? "Vendedor"; 
+            ViewBag.nombreyApellido = User.Identity.Name ?? "Vendedor";
             return View(productos);
+        }
+
+
+        public IActionResult ImprimirTicket(int id)
+        {
+            var factura = db.ObtenerFacturaConItems(id); // Tu método que trae factura + lista de productos
+            if (factura == null) return NotFound();
+
+            return View(factura);
         }
 
         [HttpPost]
@@ -43,17 +52,17 @@ namespace GestionVentas.Controllers
                 // IMPORTANTE: Asegúrate que db.RegistrarVenta guarde la factura con Estado = 'Pendiente' si es CtaCte
                 var resultado = db.RegistrarVenta(datos);
 
-                if (resultado.success) 
+                if (resultado.success)
                 {
                     // --- LÓGICA DE IMPACTO EN CAJA ---
                     var cajaAbierta = db.Cajas.FirstOrDefault(c => c.EstaAbierta);
-                    
+
                     if (cajaAbierta != null)
                     {
                         string medio = datos.MedioPago ?? "Efectivo";
 
                         // FILTRO CLAVE: Solo impacta en caja si NO es CtaCte/Fiado
-                        bool esCtaCte = medio.Equals("CtaCte", StringComparison.OrdinalIgnoreCase) || 
+                        bool esCtaCte = medio.Equals("CtaCte", StringComparison.OrdinalIgnoreCase) ||
                                         medio.Equals("Cuenta Corriente", StringComparison.OrdinalIgnoreCase) ||
                                         medio.Equals("Fiado", StringComparison.OrdinalIgnoreCase);
 
@@ -61,7 +70,7 @@ namespace GestionVentas.Controllers
                         {
                             // Si es Efectivo o Transferencia, registramos el movimiento de dinero ahora
                             string etiquetaMedio = medio.Contains("Transferencia") ? "(Transferencia)" : "(Efectivo)";
-                            
+
                             var mov = new MovimientoCaja
                             {
                                 CajaId = cajaAbierta.Id,
@@ -75,7 +84,7 @@ namespace GestionVentas.Controllers
 
                             // Sumamos al esperado porque el dinero (o el saldo bancario) entró realmente
                             cajaAbierta.MontoEsperado += datos.MontoVenta;
-                            
+
                             db.Cajas.Update(cajaAbierta);
                             db.SaveChanges();
                         }
@@ -84,10 +93,11 @@ namespace GestionVentas.Controllers
                     }
 
                     string nroFacturaFormateado = "0001-" + resultado.idFactura.ToString("D8");
-                    return Json(new { 
-                        success = true, 
-                        idFactura = resultado.idFactura, 
-                        nroFactura = nroFacturaFormateado 
+                    return Json(new
+                    {
+                        success = true,
+                        idFactura = resultado.idFactura,
+                        nroFactura = nroFacturaFormateado
                     });
                 }
                 else

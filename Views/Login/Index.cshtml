@@ -31,7 +31,7 @@
             {
                 <div class="form-group">
                     <label for="usuario">Usuario</label>
-                    @Html.TextBox("usuario", ViewBag.Usuario as string, new { @class = "form-control", placeholder = "Tu usuario", required = "required", id = "usuario" })
+                    @Html.TextBox("usuario", ViewBag.Usuario as string, new { @class = "form-control", placeholder = "Tu usuario", required = "required", id = "usuario", autofocus = "autofocus" })
                 </div>
 
                 <div class="form-group">
@@ -58,3 +58,17 @@
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Buscamos el input por su ID y le damos el foco
+        const inputUsuario = document.getElementById("usuario");
+        if (inputUsuario) {
+            inputUsuario.focus();
+            
+            // Si ya tiene texto (por el ViewBag), ponemos el cursor al final
+            if (inputUsuario.value.length > 0) {
+                inputUsuario.setSelectionRange(inputUsuario.value.length, inputUsuario.value.length);
+            }
+        }
+    });
+</script>

@@ -6,125 +6,101 @@
 
 <link rel="stylesheet" href="/css/factura.css" />
 
-<div id="facturaParaImprimir" style="max-width: 800px; margin: auto; font-family: Arial, sans-serif;">
+<div id="facturaParaImprimir" style="margin: auto; font-family: Arial, sans-serif;">
     <br>
-<div class="p-3 border rounded bg-white shadow-sm">
-    <!-- Encabezado con logo -->
-    <div class="d-flex align-items-center mb-3" id="facturaEncabezado">
-        <img src="/imagenes/logo.png" alt="Logo" style="height: 50px; margin-right: 15px;">
-        <div>
-            <h2 style="margin: 0;">Ferretería Santiago</h2>
-            <small class="text-muted">La Paz - Córdoba</small>
-        </div>
-    </div>
-    <hr style="margin-top: 0; margin-bottom: 15px;">
-
-<h2 class="mb-4">Factura N° @Model.IdFactura</h2>
-<div class="mb-3">
-    <strong>Fecha:</strong> @Model.DiaVenta.ToString("dd/MM/yyyy")<br />
-    <strong>Vendedor:</strong> @Model.Vendedor<br />
-</div>
-<hr>
- 
-    <div class="card mb-0 border-0">
-        <div class="card-body pb-2">
-            <h5 class="card-title">Datos del Cliente</h5>
-
-            <div class="row">
-                <div class="col-md-4">
-                    <p class="mb-1"><strong>Nombre:</strong> @Model.NombreCliente</p>
-                </div>
-                <div class="col-md-4">
-                    <p class="mb-1"><strong>DNI:</strong> @Model.DniCliente</p>
-                </div>
-                <div class="col-md-4">
-                    <p class="mb-1"><strong>Teléfono:</strong> @Model.TelefonoCliente</p>
-                </div>
+    <div class="p-4 border rounded bg-white shadow-sm">
+        <div class="d-flex align-items-center mb-3">
+            <img src="/imagenes/logo.png" alt="Logo" style="height: 50px; margin-right: 15px;">
+            <div>
+                <h2 style="margin: 0;">Ferretería Santiago</h2>
+                <small class="text-muted">La Paz - Córdoba</small>
             </div>
+        </div>
+        <hr style="margin-top: 0; margin-bottom: 15px;">
 
-            <div class="row mt-2">
-                <div class="col-md-6">
-                    <p class="mb-1"><strong>Domicilio:</strong> @Model.Domicilio</p>
+        <h2 class="mb-4">Factura N° @Model.IdFactura</h2>
+        <div class="mb-3">
+            <strong>Fecha:</strong> @Model.DiaVenta.ToString("dd/MM/yyyy")<br />
+            <strong>Vendedor:</strong> @Model.Vendedor<br />
+        </div>
+        <hr>
+        
+        <div class="card mb-3 border-0">
+            <div class="card-body p-0">
+                <h5 class="card-title">Datos del Cliente</h5>
+                <div class="row">
+                    <div class="col-md-4"><p class="mb-1"><strong>Nombre:</strong> @Model.NombreCliente</p></div>
+                    <div class="col-md-4"><p class="mb-1"><strong>DNI:</strong> @Model.DniCliente</p></div>
+                    <div class="col-md-4"><p class="mb-1"><strong>Teléfono:</strong> @Model.TelefonoCliente</p></div>
                 </div>
-                <div class="col-md-6">
-                    <p class="mb-1"><strong>Localidad:</strong> @Model.Localidad</p>
+                <div class="row mt-2">
+                    <div class="col-md-6"><p class="mb-1"><strong>Domicilio:</strong> @Model.Domicilio</p></div>
+                    <div class="col-md-6"><p class="mb-1"><strong>Localidad:</strong> @Model.Localidad</p></div>
                 </div>
             </div>
         </div>
-    </div>
 
-
-
-
-
-<table style="width: 100%; border-collapse: collapse;" border="1">
-        <thead>
-            <tr style="background-color: #f2f2f2;">
-                <th style="padding: 8px;">Producto</th>
-                <th style="padding: 8px;">Cantidad</th>
-                <th style="padding: 8px;">Precio Unitario</th>
-                <th style="padding: 8px;">Subtotal</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.Items)
-            {
-                <tr>
-                    <td style="padding: 8px;">@item.NombreProd</td>
-                    <td style="padding: 8px;">@item.Cantidad</td>
-                    <td style="padding: 8px;">$@item.Precio.ToString("N2")</td>
-                    <td style="padding: 8px;">$@((item.Cantidad * item.Precio).ToString("N2"))</td>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;" border="1">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th style="padding: 8px;">Producto</th>
+                    <th style="padding: 8px;">Cantidad</th>
+                    <th style="padding: 8px;">Precio Unitario</th>
+                    <th style="padding: 8px;">Subtotal</th>
                 </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td style="padding: 8px;">@item.NombreProd</td>
+                        <td style="padding: 8px; text-align: center;">@item.Cantidad</td>
+                        <td style="padding: 8px; text-align: right;">$@item.Precio.ToString("N2")</td>
+                        <td style="padding: 8px; text-align: right;">$@((item.Cantidad * item.Precio).ToString("N2"))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div style="text-align: right; margin-top: 20px;">
+            @{
+                decimal subtotalCalc = Model.Items.Sum(i => i.Cantidad * i.Precio);
+                decimal porc = Model.Descuento.GetValueOrDefault(0);
             }
-        </tbody>
-    </table>
 
-  <hr>
+            @if (porc > 0)
+            {
+                decimal montoDesc = subtotalCalc * (porc / 100);
+                <p style="margin: 0; color: #666;">Subtotal: $@subtotalCalc.ToString("N2")</p>
+                <p style="margin: 0; color: #d9534f; font-weight: bold;">Descuento (@porc.ToString("0")%): -$@montoDesc.ToString("N2")</p>
+            }
+            <h3 style="margin-top: 10px; font-weight: bold; border-top: 2px solid #333; display: inline-block; padding-top: 5px;">
+                Total a Pagar: $@Model.MontoVenta.ToString("N2")
+            </h3>
+        </div>
+    </div>
+</div>
 
-<div style="text-align: right; margin-top: 10px;">
-    @{
-        // Calculamos el subtotal base
-        decimal subtotalCalculado = Model.Items.Sum(i => i.Cantidad * i.Precio);
-        decimal porcentaje = Model.Descuento.GetValueOrDefault(0);
-    }
-
-    @if (porcentaje > 0)
-    {
-        // SI HAY DESCUENTO: Mostramos Subtotal y luego la línea de Descuento
-        decimal montoDescuento = subtotalCalculado * (porcentaje / 100);
-
-        <p style="margin: 0; font-size: 1.1em; color: #666;">
-            Subtotal: $@subtotalCalculado.ToString("N2")
-        </p>
-        <p style="margin: 0; color: #d9534f; font-size: 1.2em; font-weight: bold;">
-            Descuento (@porcentaje.ToString("0")%): -$@montoDescuento.ToString("N2")
-        </p>
-    }
-    else
-    {
-        // SI NO HAY DESCUENTO: No mostramos nada extra para que no se repita el valor
-        }
-
-    <h3 style="margin-top: 5px; font-weight: bold; border-top: 1px solid #eee; pt-2">
-        Total a Pagar: $@Model.MontoVenta.ToString("N2")
-    </h3>
+<div class="text-center mt-4 mb-5 no-print">
+    <hr style="max-width: 800px; margin: 20px auto;">
+    <button onclick="window.print()" class="btn btn-primary btn-lg px-4 shadow-sm">
+        <i class="bi bi-file-earmark-pdf"></i> Imprimir Factura (A4)
+    </button>
     
-   
+    <a href="@Url.Action("ImprimirTicket", "Ventas", new { id = Model.IdFactura })" 
+       target="_blank" class="btn btn-info btn-lg text-white px-4 shadow-sm">
+        <i class="bi bi-receipt"></i> imprimir Ticket 
+    </a>
+
+    <button onclick="location.href='@Url.Action("Index")'" class="btn btn-secondary btn-lg px-4 shadow-sm">
+        <i class="bi bi-arrow-left"></i> Volver
+    </button>
 </div>
-
-
-
-<!-- Botón de imprimir -->
-<div class="text-center mt-4">
-    <button onclick="imprimirFactura()" class="btn btn-primary">🖨️ Imprimir Factura</button>
-    <button onclick="location.href='@Url.Action("Index")'" class="btn btn-secondary">Volver</button>
-
-</div>
-
 
 <script>
    function imprimirFactura() {
         window.print();
+       }
     }
 </script>
 

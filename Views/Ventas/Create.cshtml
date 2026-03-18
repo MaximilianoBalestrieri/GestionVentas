@@ -237,6 +237,36 @@
     </div>
 </div>
 
+
+<div class="modal fade" id="modalImpresion" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-primary border-2 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title w-100 text-center"><i class="bi bi-printer"></i> ¿Cómo desea el comprobante?</h5>
+            </div>
+            <div class="modal-body p-4">
+                <div class="d-grid gap-3">
+                    <button type="button" class="btn btn-outline-dark btn-lg py-3" id="btnImprimirA4">
+                        <i class="bi bi-file-earmark-pdf fs-3"></i><br>
+                        <strong>Imprimir Factura (A4)</strong>
+                    </button>
+
+                    <button type="button" class="btn btn-outline-primary btn-lg py-3" id="btnImprimirTicket">
+                        <i class="bi bi-receipt-cutoff fs-3"></i><br>
+                        <strong>Imprimir Ticket </strong>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-danger px-4" onclick="location.reload()">
+                    <i class="bi bi-x-circle"></i> Finalizar sin imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 @section Scripts {
 <script>
     const vendedor = '@ViewBag.nombreyApellido';
@@ -362,26 +392,23 @@ document.getElementById("descuento").addEventListener("input", function() {
     });
 
     // --- REGISTRO FINAL (AQUÍ CORREGIMOS EL NOMBREPROD) ---
-   document.getElementById("confirmarCompra").addEventListener("click", function() {
+   document.getElementById("confirmarCompra").addEventListener("click", function () {
     const idCliente = document.getElementById("idCliente").value;
     const medio = document.querySelector('input[name="medioPago"]:checked').value;
-    
-    // Capturamos el porcentaje de descuento (si está vacío, enviamos 0)
     const porcentajeDescuento = document.getElementById("descuento").value || 0;
-    
     const totalVenta = document.getElementById("totalFactura").innerText.replace("$", "").replace(",", ".");
-    
+
     const productos = [];
     document.querySelectorAll("#tablaFactura tbody tr").forEach(tr => {
-        productos.push({ 
-            IdProducto: tr.dataset.id, 
-            Cantidad: tr.querySelector(".cantidad").value, 
+        productos.push({
+            IdProducto: tr.dataset.id,
+            Cantidad: tr.querySelector(".cantidad").value,
             Precio: tr.querySelector(".pre").innerText.replace("$", "").replace(",", "."),
-            NombreProd: tr.cells[1].innerText 
+            NombreProd: tr.cells[1].innerText
         });
     });
 
-    if(productos.length === 0) return alert("❌ Cargue productos para la venta.");
+    if (productos.length === 0) return alert("❌ Cargue productos para la venta.");
 
     this.disabled = true;
     this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando...';
@@ -395,19 +422,39 @@ document.getElementById("descuento").addEventListener("input", function() {
             Vendedor: vendedor,
             MedioPago: medio,
             TipoVenta: (medio === "CtaCte" ? "Cuenta Corriente" : "Contado"),
-            Descuento: porcentajeDescuento, // <--- Enviamos el porcentaje al controlador
+            Descuento: porcentajeDescuento,
             Items: productos
         })
-    }).then(r => r.json()).then(data => {
-        if(data.success) {
-            alert("✅ ¡Venta registrada correctamente!");
-            location.reload();
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // 1. Cerramos el modal de cobrar
+            bootstrap.Modal.getInstance(document.getElementById("modalAbonar")).hide();
+
+            // 2. Configuramos el botón de IMPRIMIR A4
+            document.getElementById("btnImprimirA4").onclick = function () {
+                window.open('/Facturas/Detalles?id=' + data.idFactura, '_blank');
+                location.reload();
+            };
+
+            // 3. Configuramos el botón de IMPRIMIR TICKET
+            document.getElementById("btnImprimirTicket").onclick = function () {
+                window.open('/Ventas/ImprimirTicket/' + data.idFactura, '_blank');
+                location.reload();
+            };
+
+            // 4. Mostramos el modal de elección de impresión
+            var modalImp = new bootstrap.Modal(document.getElementById('modalImpresion'));
+            modalImp.show();
+
         } else {
             alert("❌ Error: " + data.message);
             this.disabled = false;
-            this.innerText = "CONFIRMAR Y FINALIZAR"; // Restauramos el texto original
+            this.innerText = "CONFIRMAR Y FINALIZAR";
         }
-    }).catch(err => {
+    })
+    .catch(err => {
         console.error("Error en la petición:", err);
         alert("❌ Error de red al intentar registrar la venta.");
         this.disabled = false;
