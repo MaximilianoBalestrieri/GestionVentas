@@ -58,10 +58,10 @@
             </div>
         </div>
     </div>
-
-    <div class="row g-2 align-items-end panel-carga-rapida">
+@* ------------------------ ingreso de producto ------------------------- *@
+    <div class="row g-2 align-items-end panel-carga-rapida">   
         <div class="col-md-3">
-            <label class="form-label mb-1 small"><strong>Código de Ptoducto</strong></label>
+            <label class="form-label mb-1 small"><strong>Código de Producto</strong></label>
             <div class="input-group input-group-sm">
              
                 <input type="text" id="inputCodigoRapido" class="form-control" placeholder="Ingrese código">
@@ -105,6 +105,7 @@
                 </tbody>
         </table>
     </div>
+@*-------------------- Fin ingreso de producto --------------------- *@
 
     <div class="row mt-3">
         <div class="col-md-7">
@@ -132,6 +133,7 @@
     </div>
 </div>
 
+@* -------------------  Modal Listado de Productos -------------------*@
 <div class="modal fade" id="modalProductos" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -174,6 +176,8 @@
         </div>
     </div>
 </div>
+@* ------------------- Fin Modal Listado de Productos -------------------*@
+
 
 <div class="modal fade" id="clientesModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -308,10 +312,36 @@
     });
 
     function seleccionarDesdeModal(id, cod, nom, pre) {
-        agregarFila(id, cod, nom, pre, 1);
-        bootstrap.Modal.getInstance(document.getElementById("modalProductos")).hide();
-        inputCodigo.focus();
+    // 1. Llenamos los inputs de la "Carga Rápida"
+    document.getElementById("inputCodigoRapido").value = cod;
+    document.getElementById("inputNombreRapido").value = nom;
+    document.getElementById("inputPrecioRapido").value = "$" + parseFloat(pre).toFixed(2);
+    
+    // 2. IMPORTANTE: Sincronizamos la variable global para que el botón "Agregar" sepa qué subir
+    productoEncontrado = {
+        idProducto: id,
+        codigo: cod,
+        nombre: nom,
+        precioVenta: pre
+    };
+
+    // 3. Estética: Marcamos como válido
+    document.getElementById("inputNombreRapido").classList.add("is-valid-custom");
+
+    // 4. Cerramos el modal de búsqueda
+    const modalElement = document.getElementById("modalProductos");
+    const modalInstance = bootstrap.Modal.getInstance(modalElement);
+    if (modalInstance) {
+        modalInstance.hide();
     }
+
+    // 5. Llevamos el foco a la cantidad para que solo tengan que escribir el número y dar Enter
+    const inputCant = document.getElementById("inputCantidadRapida");
+    setTimeout(() => {
+        inputCant.focus();
+        inputCant.select();
+    }, 500); // Un pequeño delay ayuda a que el foco pegue bien tras cerrar el modal
+}
 
     function agregarFila(id, cod, nom, pre, cant) {
         let tbody = document.querySelector("#tablaFactura tbody");
